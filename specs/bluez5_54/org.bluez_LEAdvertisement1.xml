@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+    <interface name="org.bluez.LEAdvertisement1">
+        <method name="Release"/>
+
+        <!-- broadcast/peripheral -->
+        <property name="Type" type="s" access="read"/>
+
+        <!-- List of UUIDs for advertising data 'Service UUID' field -->
+        <property name="ServiceUUIDs" type="as" access="read"/>
+
+        <!-- kv pairs of manufacturer ids and mfg data -->
+        <property name="ManufacturerData" type="a{qv}" access="read"/>
+
+        <!-- UUIDs to include in advertising data 'service solicitation' field -->
+        <property name="SolicitUUIDs" type="as" access="read"/>
+
+        <!-- kv pairs of service UUIDs and their data (defined by service) -->
+        <property name="ServiceData" type="a{sv}" access="read"/>
+
+        <!--
+            Experimental. KV pairs of advertising types to include in advertising data.
+            Note: Types already handled by other properties must not be used here.
+            Format: <type-id> => <byte array>
+        -->
+        <property name="Data" type="a{sv}" access="read"/>
+
+        <!-- Experimental. -->
+        <property name="Discoverable" type="b" access="readwrite"/>
+
+        <!--
+            Experimental. Do not use with advertisement Type=broadcast.
+            Set the discoverable timeout, in seconds. Use 0 to leave discoverable forever.
+         -->
+        <property name="DiscoverableTimeout" type="q" access="readwrite"/>
+
+        <!--
+            List of features to include in advertising packet.
+            See LEAdvertisingManager.SupportedIncludes for allowed values.
+        -->
+
+        <!--
+            Local name to be used in advertising report. Truncated to fit if too large for packet.
+            Note: BLE 4.x has a (max) 37 byte payload; 5.x is up to 255 for the entire advertising channel PDU.
+            Note: If this is present, do not include local-name in Includes.
+        -->
+        <property name="LocalName" type="s" access="read"/>
+
+
+        <!-- 16 bit appearance ID (Bluetooth SIG assigned number) -->
+        <property name="Appearance" type="q" access="read"/>
+
+        <!-- Advertisement duration in seconds (default 2) -->
+        <property name="Duration" type="q" access="read">
+            <annotation name="" value="2"/>
+        </property>
+
+        <!-- Advertisement lifetime in seconds -->
+        <property name="Timeout" type="q" access="read"/>
+
+        <!--
+            Experimental. Secondary channel to use. Always set to "1M except when "Coded."
+            Values: "1M" (default)
+                    "2M"
+                    "Coded"
+         -->
+        <!--
+             BlueZ will try to read this property if it exists at all.
+             gdbus-codegen will always produce this property; there is no easy way to remove them.
+             The other experimental properties here are disabled for the same reason.
+        -->
+        <!-- Broken: BlueZ is supposed to ignore this if not listed in bluetoothd.conf
+             [Experimental] section but always processes it.
+        <property name="SecondaryChannel" type="s" access="read"/>
+        -->
+
+        <!--
+            Experimental:
+            Minimum advertising interval to be used by the advertising set, in milliseconds.
+            Range: 20-10485000
+            Must not be larger than MaxInterval.
+         -->
+        <property name="MinInterval" type="u" access="read"/>
+
+        <!-- See MinInterval -->
+        <property name="MaxInterval" type="u" access="read"/>
+
+        <!--
+            Experimental. Advertising set requested transmit power.
+            Only available if the CanSetTxPower feature is enabled on the Advertising Manager.
+            Range: -127 .. 20 dBm
+         -->
+        <property name="TxPower" type="n" access="read"/>
+    </interface>
+</node>

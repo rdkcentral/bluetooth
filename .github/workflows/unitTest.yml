@@ -1,0 +1,72 @@
+name: unit test
+on:
+  push:
+    branches: [ main, develop ]
+  merge_group:
+  pull_request:
+    branches: [ main, develop ]
+    
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '2.7' # Not needed with a `.ruby-version` or `.tool-versions`
+        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+
+    - name: Setup deps
+      run: |
+        sudo apt-get update
+        echo 'DEBIAN_FRONTEND="noninteractive" TZ="Europe/London"' >> $GITHUB_ENV
+        sudo apt-get install -y ruby-full libglib2.0-dev libcjson-dev gcovr
+        sudo apt-get purge -y ccache
+    
+    - name: Install bundler
+      run: |
+        gem install bundler -v 2.4.22
+  
+    - name: Clone and setup CMock
+      run: |
+        git clone https://github.com/ThrowTheSwitch/CMock.git /opt/CMock
+        cd /opt/CMock
+        git checkout v2.5.3
+        bundle install 
+        gem install ceedling  -v 0.31.1
+
+    - name: download bluez 
+      run: |
+        git clone https://github.com/bluez/bluez.git
+        git -C bluez checkout tags/5.48   
+        mkdir -p unitTest/support/include/bluetooth/audio/
+        mv bluez/profiles/audio/a2dp-codecs.h unitTest/support/include/bluetooth/audio/a2dp-codecs.h
+        mv bluez/lib/bluetooth.h unitTest/support/include/bluetooth/bluetooth.h
+          
+    - name: Run Unit Tests
+      run: |
+        ceedling gcov:all utils:gcov
+        coverage=$(gcovr -r . -s 2>/dev/null | grep 'executed' | awk '{print $3}')
+    - name: Generate HTML Report
+      uses: threeal/gcovr-action@v1.1.0
+      with:
+        excludes: | 
+          build/test/mocks 
+          build/test/runners
+          unitTest/
+  
+        html-details: true
+        html-out: summary-coverage.html
+    - name: Move HTML files to own directory
+      run: |
+        mkdir coverage-results
+        mv *.html coverage-results
+        mv *.css coverage-results
+            
+    - name: Upload HTML Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: Unit-test-coverage-report
+        path: ./coverage-results

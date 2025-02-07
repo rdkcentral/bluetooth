@@ -1,0 +1,60 @@
+1. To build on Linux PC/RPi
+------------------------
+
+libtoolize --force
+aclocal
+autoheader
+automake --force-missing --add-missing
+autoconf
+autoreconf --install
+
+Prerequisities to build using Option 2.1/2.2 listed below
+---------------------------------------------------------
+Copy a2dp-codec.h from http://www.kernel.org/pub/linux/bluetooth/bluez-5.54.tar.xz to your PREFIX/include
+For example: If you PREFIX is /xyz/abc/local, then
+$$ cd /xyz/abc/local
+$$ mkdir -p include/bluetooth/audio
+
+copy a2dp-codecs.h  to the created folder structure
+/xyz/abc/local/include/bluetooth/audio/a2dp-codecs.h
+
+In addition to the above Ubuntu 20.04, we will need bluetooth.h
+- $$ sudo apt-get install libbluetooth-dev
+- In addition newer version of gcc is present on Ubuntu 20.04, so remove -Werror from Makefile.am, if needed
+
+
+2.1 To configure and build use DBus with Bluez4
+-------------------------------------------
+$$ CPPFLAGS=-I/xyz/abc/local/include ./configure --prefix=/xyz/abc/local/ --enable-btr-ifce=bluez4
+$$ make V=1
+$$ make install
+
+2.2 To configure and use DBus with Bluez5
+-------------------------------------------
+$$ CPPFLAGS=-I/xyz/abc/local/include ./configure --prefix=/xyz/abc/local/ --enable-btr-ifce=bluez5
+$$ make V=1
+$$ make install
+
+2.3 To configure and use GDBus with Bluez5
+-------------------------------------------
+$$ PATH=/xyz/abc/local/bin:$PATH PKG_CONFIG_PATH=/xyz/abc/local/lib/x86_64-linux-gnu/pkgconfig CPPFLAGS=-I/xyz/abc/local/include ./configure --prefix=/xyz/abc/local/ --enable-btr-ifce=gdbus_bluez5
+$$ make V=1
+$$ make install
+
+2.4 To configure and use DBus with Bluez5 - Le MODE
+-------------------------------------------
+$$ CPPFLAGS=-I/xyz/abc/local/include ./configure --prefix=/xyz/abc/local/ --enable-btr-ifce=bluez5 --enable-leonly=yes
+$$ make V=1
+$$ make install
+
+2.5 To configure and use GDBus with Bluez5 - Le Mode only
+-------------------------------------------
+$$ PATH=/xyz/abc/local/bin:$PATH PKG_CONFIG_PATH=/xyz/abc/local/lib/x86_64-linux-gnu/pkgconfig CPPFLAGS=-I/xyz/abc/local/include ./configure --prefix=/home/user/Comcast/PC/local/ --enable-btr-ifce=gdbus_bluez5 --enable-leonly=yes
+$$ make V=1
+$$ make install
+
+
+3. To clean and then remove all configurations
+----------------------------------------------
+$$ make clean
+$$ make distclean

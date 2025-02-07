@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+    <interface name="org.bluez.Agent1">
+        <!-- Called when AgentManager1 unregisters this agent -->
+        <method name="Release"/>
+
+        <!--
+            Called when BlueZ needs to know the legacy pairing PIN
+            Possible errors:
+              - org.bluez.Error.Rejected (wrong PIN)
+              - org.bluez.Error.Canceled (Pairing cancelled by user)
+         -->
+        <method name="RequestPinCode">
+            <!-- This should be a string between 1 and 16 chars long, and may be alphanumeric -->
+            <arg type="s" direction="out" name="pin"/>
+
+            <arg type="o" direction="in" name="device"/>
+        </method>
+
+        <!-- Used by old keyboards. Cancel is called when the PIN should no longer be displayed. -->
+        <method name="DisplayPinCode">
+            <arg type="o" direction="in" name="device"/>
+            <arg type="s" direction="in" name="pincode"/>
+        </method>
+
+        <!--
+            Called when BlueZ needs to get the authentication passkey.
+            The returned value should be a numeric between 0 and 999999.
+
+            Possible Errors: @see_also RequestPinCode
+        -->
+        <method name="RequestPasskey">
+            <arg type="o" direction="in" name="device"/>
+            <arg type="u" direction="out" name="passkey"/>
+        </method>
+
+        <!--
+            Called when BlueZ wants to display the peer passkey.
+            When the passkey is not to be displayed anymore, the Cancel method will be called.
+
+            Note: The passkey is exactly 6 digits; zero pad short numbers
+
+            This may be called multiple times as the key is typed in.
+        -->
+        <method name="DisplayPasskey">
+            <arg type="o" direction="in" name="device"/>
+            <arg type="u" direction="in" name="passkey"/>
+
+            <!-- The number of typed keys so far -->
+            <arg type="q" direction="in" name="entered"/>
+        </method>
+
+        <!--
+            Called when BlueZ wants to confirm a passkey (e.g., Secure Connections numeric comparison)
+
+            Return nothing on confirmation, otherwise return an error.
+
+            Possible errors: @see_also RequestPinCode
+        -->
+        <method name="RequestConfirmation">
+            <arg type="o" direction="in" name="device"/>
+            <arg type="u" direction="in" name="passkey"/>
+        </method>
+
+        <!--
+            Called when BlueZ wants to authorize an incoming just-works or cable pairing request.
+            When authorizing a cable pairing request, the device to be authorized isn't on the
+            bluetooth network yet.
+
+            Possible errors: @see_also RequestPinCode
+        -->
+        <method name="RequestAuthorization">
+            <arg type="o" direction="in" name="device"/>
+        </method>
+
+        <!--
+            Called when BlueZ wants to authorize a connection/service request
+
+            Possible errors: @see_also RequestPinCode
+         -->
+        <method name="AuthorizeService">
+            <arg type="o" direction="in" name="device"/>
+            <arg type="s" direction="in" name="uuid"/>
+        </method>
+
+        <!-- Called whenever the pairing request has been cancelled. Any passkey/confirmation display must be stopped. -->
+        <method name="Cancel"/>
+    </interface>
+</node>

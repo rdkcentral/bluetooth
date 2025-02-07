@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+    <interface name="org.bluez.GattService1">
+        <property type="s" name="UUID" access="read"/>
+        <property type="b" name="Primary" access="read"/>
+        <property type="o" name="Device" access="read"/> <!-- only present on remote services -->
+        <!-- List included services' object paths (optional) -->
+        <!--
+        <property type="ao" name="Includes" access="read"/>
+        -->
+        <property type="q" name="Handle" access="readwrite"/> <!-- database id for the service. Use 0x0000 to auto-allocate on registration. Optional -->
+    </interface>
+</node>

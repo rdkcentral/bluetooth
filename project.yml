@@ -1,0 +1,179 @@
+---
+
+# Notes:
+# Sample project C code is not presently written to produce a release artifact.
+# As such, release build options are disabled.
+# This sample, therefore, only demonstrates running a collection of unit tests.
+
+:project:
+  :use_exceptions: FALSE
+  :use_test_preprocessor: TRUE
+  :use_auxiliary_dependencies: TRUE
+  :build_root: build
+#  :release_build: TRUE
+  :test_file_prefix: test_
+  :which_ceedling: gem
+  :ceedling_version: 0.31.1
+  :default_tasks:
+    - test:all
+
+#:test_build:
+#  :use_assembly: TRUE
+
+#:release_build:
+#  :output: MyApp.out
+#  :use_assembly: FALSE
+
+:environment:
+
+
+:extension:
+  :executable: .out
+
+:build_info:
+  :test_compiler_flags:
+    - "`pkg-config --cflags --libs glib-2.0`"
+:paths:
+  :test:
+    - +:unitTest/**
+    - -:unitTest/support
+  :source:
+    - /usr/include/glib-2.0
+    - /usr/lib/x86_64-linux-gnu/glib-2.0/include
+    - src/**
+    - include/**
+  :support:
+    - unitTest/support
+  :libraries: []
+
+:defines:
+  # in order to add common defines:
+  #  1) remove the trailing [] from the :common: section
+  #  2) add entries to the :common: section (e.g. :test: has TEST defined)
+  :common: &common_defines []
+  :test:
+    - *common_defines
+    - TEST
+  :test_preprocess:
+    - *common_defines
+    - TEST
+
+:cmock:
+  :mock_prefix: mock_
+  :when_no_prototypes: :warn
+  :enforce_strict_ordering: TRUE
+  :plugins:
+    - :ignore
+    - :callback
+  :treat_as:
+    uint8:    HEX8
+    uint16:   HEX16
+    uint32:   UINT32
+    int8:     INT8
+    bool:     UINT8
+
+# Add -gcov to the plugins list to make sure of the gcov plugin
+# You will need to have gcov and gcovr both installed to make it work.
+# For more information on these options, see docs in plugins/gcov
+:gcov:
+  :html_report: true
+  :html_report_type: full
+  :reports:
+    - HtmlDetailed
+
+#:tools:
+# Ceedling defaults to using gcc for compiling, linking, etc.
+# As [:tools] is blank, gcc will be used (so long as it's in your system path)
+# See documentation to configure a given toolchain for use
+:tools:
+  :test_compiler:
+    :executable: gcc
+    :arguments:
+      - -Wall
+      - "`pkg-config --cflags --libs glib-2.0`"
+      - -I"$": COLLECTION_PATHS_TEST_TOOLCHAIN_INCLUDE
+      - -I"$": COLLECTION_PATHS_TEST_SUPPORT_SOURCE_INCLUDE_VENDOR
+      - -I/usr/include/glib-2.0
+      - -I/usr/lib/glib-2.0/include
+      - -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
+      - -I/usr/local/include/cjson
+      - -I/usr/include/cjson
+      - -D$: COLLECTION_DEFINES_TEST_AND_VENDOR
+      - -DBUILD_FOR_PI
+      - -DSAFEC_DUMMY_API
+      - -DUNIT_TEST
+      - -DUSE_ACM
+      - -DUSE_BLUEZ5
+      - -DBTR_IFCE_DBUS_BLUEZ5
+      - -DJSON_PATH_UNIT_TEST='"unitTest/support/jsonUnderTest.json"'
+      - -DUSE_GST1
+      - -c ${1}
+      - -o ${2}
+      - -lglib-2.0
+      - -lcjson
+  :test_linker:
+    :executable: gcc
+    :arguments:
+      - ${1}
+      - -lpthread
+      - -lglib-2.0
+      - -lcjson
+      - -o ${2}
+  :gcov_compiler:
+    :executable: gcc
+    :arguments:
+      - -Wall
+      - "`pkg-config --cflags --libs glib-2.0`"
+      - -g
+      - -fprofile-arcs
+      - -ftest-coverage
+      - -I"$": COLLECTION_PATHS_TEST_TOOLCHAIN_INCLUDE
+      - -I"$": COLLECTION_PATHS_TEST_SUPPORT_SOURCE_INCLUDE_VENDOR
+      - -I/usr/include/glib-2.0
+      - -I/usr/lib/glib-2.0/include
+      - -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
+      - -I/usr/local/include/cjson
+      - -I/usr/include/cjson
+      - -D$: COLLECTION_DEFINES_TEST_AND_VENDOR
+      - -DBUILD_FOR_PI
+      - -DCODE_COVERAGE
+      - -DGCOV_COMPILER
+      - -DSAFEC_DUMMY_API
+      - -DJSON_PATH_UNIT_TEST='"unitTest/support/jsonUnderTest.json"'
+      - -DUNIT_TEST
+      - -DUSE_ACM
+      - -DUSE_BLUEZ5
+      - -DBTR_IFCE_DBUS_BLUEZ5
+      - -DUSE_GST1
+      - -c ${1}
+      - -o ${2}
+      - -lglib-2.0
+      - -lcjson
+  :gcov_linker:
+    :executable: gcc
+    :arguments:
+      - ${1}
+      - -lpthread
+      - -lglib-2.0
+      - -lgcov 
+      - -lcjson
+      - -o ${2}
+# LIBRARIES
+# These libraries are automatically injected into the build process. Those specified as
+# common will be used in all types of builds. Otherwise, libraries can be injected in just
+# tests or releases. These options are MERGED with the options in supplemental yaml files.
+:libraries:
+  :placement: :end
+  :flag: "${1}"  # or "-L ${1}" for example
+  :common: &common_libraries []
+  :test:
+    - *common_libraries
+  :release:
+    - *common_libraries
+:plugins:
+  :load_paths:
+    - "#{Ceedling.load_path}"
+  :enabled:
+    - stdout_pretty_tests_report
+    - module_generator
+    - gcov
