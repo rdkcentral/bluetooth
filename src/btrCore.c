@@ -21,6 +21,12 @@
 #include <config.h>
 #endif
 
+#ifndef UNIT_TEST
+#define STATIC static
+#else 
+#define STATIC 
+#define STREAM_IN_SUPPORTED
+#endif
 /* System Headers */
 #include <stdio.h>
 #include <limits.h>
@@ -219,14 +225,14 @@ static gpointer btrCore_OutTask (gpointer apsthBTRCore);
 static gpointer btrCore_BatteryLevelThread( gpointer apsthBTRCore);
 
 /* Incoming Callbacks Prototypes */
-static int btrCore_BTAdapterStatusUpdateCb (enBTAdapterProp aeBtAdapterProp, stBTAdapterInfo* apstBTAdapterInfo,  void* apUserData);
-static int btrCore_BTDeviceStatusUpdateCb (enBTDeviceType aeBtDeviceType, enBTDeviceState aeBtDeviceState, stBTDeviceInfo* apstBTDeviceInfo,  void* apUserData);
-static int btrCore_BTDeviceConnectionIntimationCb (enBTDeviceType  aeBtDeviceType, stBTDeviceInfo* apstBTDeviceInfo, unsigned int aui32devPassKey, unsigned char ucIsReqConfirmation, void* apUserData);
-static int btrCore_BTDeviceAuthenticationCb (enBTDeviceType  aeBtDeviceType, stBTDeviceInfo* apstBTDeviceInfo, void* apUserData);
+STATIC  int btrCore_BTAdapterStatusUpdateCb (enBTAdapterProp aeBtAdapterProp, stBTAdapterInfo* apstBTAdapterInfo,  void* apUserData);
+STATIC  int btrCore_BTDeviceStatusUpdateCb (enBTDeviceType aeBtDeviceType, enBTDeviceState aeBtDeviceState, stBTDeviceInfo* apstBTDeviceInfo,  void* apUserData);
+STATIC  int btrCore_BTDeviceConnectionIntimationCb (enBTDeviceType  aeBtDeviceType, stBTDeviceInfo* apstBTDeviceInfo, unsigned int aui32devPassKey, unsigned char ucIsReqConfirmation, void* apUserData);
+STATIC  int btrCore_BTDeviceAuthenticationCb (enBTDeviceType  aeBtDeviceType, stBTDeviceInfo* apstBTDeviceInfo, void* apUserData);
 #ifndef LE_MODE
-static enBTRCoreRet btrCore_BTMediaStatusUpdateCb (stBTRCoreAVMediaStatusUpdate* apMediaStreamStatus, const char*  apBtdevAddr, void* apUserData);
+STATIC  enBTRCoreRet btrCore_BTMediaStatusUpdateCb (stBTRCoreAVMediaStatusUpdate* apMediaStreamStatus, const char*  apBtdevAddr, void* apUserData);
 #endif
-static enBTRCoreRet btrCore_BTLeStatusUpdateCb (stBTRCoreLeGattInfo* apstBtrLeInfo, const char*  apcBtdevAddr, void* apvUserData);
+STATIC  enBTRCoreRet btrCore_BTLeStatusUpdateCb (stBTRCoreLeGattInfo* apstBtrLeInfo, const char*  apcBtdevAddr, void* apvUserData);
 
 /* Static Function Definition */
 static void
@@ -6510,7 +6516,7 @@ BTRCore_RegisterConnectionAuthenticationCb (
 }
 
 /*  Incoming Callbacks */
-static int
+STATIC  int
 btrCore_BTAdapterStatusUpdateCb (
     enBTAdapterProp  aeBtAdapterProp,
     stBTAdapterInfo* apstBTAdapterInfo,
@@ -6577,7 +6583,7 @@ btrCore_BTAdapterStatusUpdateCb (
 }
 
 
-static int
+STATIC  int
 btrCore_BTDeviceStatusUpdateCb (
     enBTDeviceType  aeBtDeviceType,
     enBTDeviceState aeBtDeviceState,
@@ -6781,7 +6787,7 @@ btrCore_BTDeviceStatusUpdateCb (
 }
 
 
-static int
+STATIC  int
 btrCore_BTDeviceConnectionIntimationCb (
     enBTDeviceType  aeBtDeviceType,
     stBTDeviceInfo* apstBTDeviceInfo,
@@ -6856,7 +6862,7 @@ btrCore_BTDeviceConnectionIntimationCb (
     return i32DevConnIntimRet;
 }
 
-static int
+STATIC  int
 btrCore_BTDeviceAuthenticationCb (
     enBTDeviceType  aeBtDeviceType,
     stBTDeviceInfo* apstBTDeviceInfo,
@@ -6950,7 +6956,7 @@ btrCore_BTDeviceAuthenticationCb (
 
 
 #ifndef LE_MODE
-static enBTRCoreRet
+STATIC  enBTRCoreRet
 btrCore_BTMediaStatusUpdateCb (
     stBTRCoreAVMediaStatusUpdate*   apMediaStreamStatus,
     const char*                     apBtdevAddr,
@@ -7086,7 +7092,7 @@ btrCore_BTMediaStatusUpdateCb (
 #endif
 
 
-static enBTRCoreRet
+STATIC  enBTRCoreRet
 btrCore_BTLeStatusUpdateCb (
     stBTRCoreLeGattInfo*    apstBtrLeInfo,
     const char*             apcBtdevAddr,
