@@ -8297,3 +8297,36 @@ void test_btrCore_BTDeviceConnectionIntimationCb_HID1(void) {
 
     printf("Test case for HID device type passed!\n");
 }
+
+void test_btrCore_BTAdapterStatusUpdateCb(void) {
+    // Arrange
+    stBTRCoreHdl* mockHandle = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    memset(mockHandle, 0, sizeof(stBTRCoreHdl));
+    mockHandle->curAdapterPath = "/org/bluez/hci0";
+
+    // Mock data for the test
+    stBTAdapterInfo mockAdapterInfo;
+    memset(&mockAdapterInfo, 0, sizeof(stBTAdapterInfo));
+    strcpy(mockAdapterInfo.pcPath, mockHandle->curAdapterPath);
+    mockAdapterInfo.bDiscoverable = TRUE;
+    mockAdapterInfo.bDiscovering = TRUE;
+
+    // Act
+    int result = btrCore_BTAdapterStatusUpdateCb(enBTAdPropDiscoveryStatus, &mockAdapterInfo, mockHandle);
+
+    // Assert
+    TEST_ASSERT_EQUAL(0, result);
+
+    result = btrCore_BTAdapterStatusUpdateCb(enBTAdPropAdvTimeout, &mockAdapterInfo, mockHandle);
+
+    // Assert
+    TEST_ASSERT_EQUAL(0, result);
+
+    result = btrCore_BTAdapterStatusUpdateCb(enBTAdPropUnknown, &mockAdapterInfo, mockHandle);
+
+    // Assert
+    TEST_ASSERT_EQUAL(0, result);
+
+    // Cleanup
+    free(mockHandle);
+}
