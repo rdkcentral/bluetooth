@@ -8330,3 +8330,48 @@ void test_btrCore_BTAdapterStatusUpdateCb(void) {
     // Cleanup
     free(mockHandle);
 }
+void test_BTRCore_GetDeviceTypeClass(void) {
+    // Arrange
+    stBTRCoreHdl* btrCoreHdl = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    memset(btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+
+    btrCoreHdl->numOfScannedDevices = 1;
+    btrCoreHdl->stScannedDevicesArr[0].tDeviceId = 0;
+    btrCoreHdl->stScannedDevicesArr[0].enDeviceType = enBTRCore_DC_Tile;
+
+    tBTRCoreDevId devId = 0; // This should be less than BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES
+    enBTRCoreDeviceType devType;
+    enBTRCoreDeviceClass devClass;
+
+    // Act
+    enBTRCoreRet result = BTRCore_GetDeviceTypeClass((tBTRCoreHandle)btrCoreHdl, devId, &devType, &devClass);
+
+    // Assert
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
+
+    // Cleanup
+    free(btrCoreHdl);
+}
+void test_BTRCore_GetDeviceTypeClass_GreaterThanOrEqualToMaxDiscoveredDevices(void) {
+    // Arrange
+    stBTRCoreHdl* btrCoreHdl = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    memset(btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+
+    btrCoreHdl->numOfScannedDevices = 1;
+    btrCoreHdl->stScannedDevicesArr[0].tDeviceId = 123456789; // Some unique ID
+    btrCoreHdl->stScannedDevicesArr[0].enDeviceType = enBTRCore_DC_Tile;
+
+    tBTRCoreDevId devId = 123456789; // This should be greater than or equal to BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES
+    enBTRCoreDeviceType devType;
+    enBTRCoreDeviceClass devClass;
+
+    // Act
+    enBTRCoreRet result = BTRCore_GetDeviceTypeClass((tBTRCoreHandle)btrCoreHdl, devId, &devType, &devClass);
+
+    // Assert
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
+
+    // Cleanup
+    free(btrCoreHdl);
+}
+
