@@ -8374,4 +8374,60 @@ void test_BTRCore_GetDeviceTypeClass_GreaterThanOrEqualToMaxDiscoveredDevices(vo
     // Cleanup
     free(btrCoreHdl);
 }
+void test_btrCore_BTDeviceAuthenticationCb1(void) {
+    // Arrange
+    stBTRCoreHdl* btrCoreHdl = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    memset(btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    btrCoreHdl->aenDeviceDiscoveryType = enBTRCoreAudioAndHID;
+
+    stBTDeviceInfo btDeviceInfo;
+    memset(&btDeviceInfo, 0, sizeof(stBTDeviceInfo));
+    btDeviceInfo.ui32Class = 0x00250; // Some class ID
+    strncpy(btDeviceInfo.pcName, "Mock Device", BD_NAME_LEN);
+    strncpy(btDeviceInfo.pcAddress, "00:11:22:33:44:55", BD_NAME_LEN);
+    strncpy(btDeviceInfo.pcDevicePath, "/org/bluez/hci0/dev_00_11_22_33_44_55", BD_NAME_LEN);
+
+    // // Initialize UUIDs to cover all cases
+    strcpy(btDeviceInfo.aUUIDs[0],"00001101-0000-1000-8000-00805f9b34fb");
+    strcpy(btDeviceInfo.aUUIDs[1],"00001108-0000-1000-8000-00805f9b34fb");
+    strcpy(btDeviceInfo.aUUIDs[0], "00001101-0000-1000-8000-00805f9b34fb"); // Serial Port
+    strcpy(btDeviceInfo.aUUIDs[1], "00001108-0000-1000-8000-00805f9b34fb"); // Headset
+    strcpy(btDeviceInfo.aUUIDs[2], "0000110a-0000-1000-8000-00805f9b34fb"); // Audio Source
+    strcpy(btDeviceInfo.aUUIDs[3], "0000110b-0000-1000-8000-00805f9b34fb"); // Audio Sink
+    strcpy(btDeviceInfo.aUUIDs[4], "0000110e-0000-1000-8000-00805f9b34fb"); // AV Remote Target
+    strcpy(btDeviceInfo.aUUIDs[5], "0000110c-0000-1000-8000-00805f9b34fb"); // Advanced Audio Distribution
+    strcpy(btDeviceInfo.aUUIDs[6], "0000110f-0000-1000-8000-00805f9b34fb"); // AV Remote Control
+    strcpy(btDeviceInfo.aUUIDs[7], "0000110d-0000-1000-8000-00805f9b34fb"); // AV Remote
+    strcpy(btDeviceInfo.aUUIDs[8], "00001112-0000-1000-8000-00805f9b34fb"); // Headset Audio Gateway
+    strcpy(btDeviceInfo.aUUIDs[9], "0000111e-0000-1000-8000-00805f9b34fb"); // Handsfree
+    strcpy(btDeviceInfo.aUUIDs[10], "0000111f-0000-1000-8000-00805f9b34fb"); // Handsfree Audio Gateway
+    strcpy(btDeviceInfo.aUUIDs[11], "00001124-0000-1000-8000-00805f9b34fb"); // Headset 2
+    strcpy(btDeviceInfo.aUUIDs[12], "00001203-0000-1000-8000-00805f9b34fb"); // Generic Audio
+    strcpy(btDeviceInfo.aUUIDs[13], "00001200-0000-1000-8000-00805f9b34fb"); // PnP Information
+    strcpy(btDeviceInfo.aUUIDs[14], "00001204-0000-1000-8000-00805f9b34fb"); // Generic Attribute
+    strcpy(btDeviceInfo.aUUIDs[15], "0000180f-0000-1000-8000-00805f9b34fb"); // Tile
+    strcpy(btDeviceInfo.aUUIDs[16], "00001810-0000-1000-8000-00805f9b34fb"); // Tile
+    strcpy(btDeviceInfo.aUUIDs[17], "00001811-0000-1000-8000-00805f9b34fb"); // Tile
+    strcpy(btDeviceInfo.aUUIDs[18], "00001800-0000-1000-8000-00805f9b34fb"); // Generic Access
+    strcpy(btDeviceInfo.aUUIDs[19], "00001801-0000-1000-8000-00805f9b34fb"); // Generic Attribute
+    strcpy(btDeviceInfo.aUUIDs[20], "0000180a-0000-1000-8000-00805f9b34fb"); // Device Information
+    strcpy(btDeviceInfo.aUUIDs[21], "0000180f-0000-1000-8000-00805f9b34fb"); // Battery Service
+    strcpy(btDeviceInfo.aUUIDs[22], "00001124-0000-1000-8000-00805f9b34fb"); // HID
+    strcpy(btDeviceInfo.aUUIDs[23], "00001125-0000-1000-8000-00805f9b34fb"); // HID
+    strcpy(btDeviceInfo.aUUIDs[24], "0000180d-0000-1000-8000-00805f9b34fb"); // XBB
+    strcpy(btDeviceInfo.aUUIDs[25], "0000180e-0000-1000-8000-00805f9b34fb"); // XBB
+    strcpy(btDeviceInfo.aUUIDs[26], "0000180f-0000-1000-8000-00805f9b34fb"); // XBB
+    strcpy(btDeviceInfo.aUUIDs[27], "00000000-0000-1000-8000-00805f9b34fb"); // Not Identified
+    strcpy(btDeviceInfo.aUUIDs[28],"0x1812");
+    
+    
+    // Act
+    int result = btrCore_BTDeviceAuthenticationCb(enBTDevUnknown, &btDeviceInfo, btrCoreHdl);
+
+    // Assert
+    TEST_ASSERT_EQUAL(0, result);
+
+    // Cleanup
+    free(btrCoreHdl);
+}
 
