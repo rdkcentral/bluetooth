@@ -192,7 +192,6 @@ void test_BTRCore_Init_should_ReturnFailure_when_InitializationFails(void)
     actual_result = BTRCore_Init(&hBTRCore);
 
     TEST_ASSERT_EQUAL(expected_result, actual_result);
-   //s TEST_ASSERT_NULL(&hBTRCore);
 }
 
 void test_BTRCore_RegisterAgent_should_RegisterBluetoothCoreAgentSuccessfully(void)
@@ -471,15 +470,10 @@ void test_BTRCore_GetAdapter_should_ReturnInvalidAdapter_when_BtrCore_BTGetAdapt
     BtrCore_BTGetAdapterPath_ExpectAndReturn((void*)hBTRCore->connHdl,NULL,NULL);
     
     actual_result = BTRCore_GetAdapter(hBTRCore, &adapter);
-
-   
-
-
     TEST_ASSERT_EQUAL(expected_result, actual_result);
 
     free(hBTRCore);
 }
-
 
 
 void test_BTRCore_GetAdapter_should_GetBluetoothCoreAdapterSuccessfully_when_curAdapterPathIsNull(void)
@@ -1072,13 +1066,109 @@ void test_BTRCore_SetAdapterDeviceName_should_SetBluetoothCoreAdapterDeviceNameS
     free(hBTRCore);
 }
 
-
-
-
-
 // Mock function
 int mock_BtrCore_BTSetProp2(void *apBtConn,const char* pAdapterPath,enBTDeviceType enBTDeviceType,unBTOpIfceProp prop,const void* pValue) {
     return 0; // Simulate failure
+}
+int _mockgetprop(void *apBtConn, const char *apcOpIfcePath, enBTOpIfceType aenBtOpIfceType, unBTOpIfceProp aunBtOpIfceProp, void *apvVal)
+{
+ strncpy(apvVal ,"hello",strlen("hello"));
+    
+    return 0;
+}
+
+
+int _mockgetsupported
+ (
+    void*                   apBtConn,
+    const char*             apBtAdapter,
+    stBTPairedDeviceInfo*   pairedDevices
+){
+    //stBTPairedDeviceInfo pairedDevices = {0};
+ 
+    pairedDevices->numberOfDevices = 2;
+ 
+    // Initialize first device
+    strcpy(pairedDevices->devicePath[0], "/path/to/device1");
+    pairedDevices->deviceInfo[0].bPaired = 1;
+    pairedDevices->deviceInfo[0].bConnected = 1;
+    pairedDevices->deviceInfo[0].bTrusted = 1;
+    pairedDevices->deviceInfo[0].bBlocked = 0;
+    pairedDevices->deviceInfo[0].bServicesResolved = 1;
+    pairedDevices->deviceInfo[0].ui16Vendor = 1234;
+    pairedDevices->deviceInfo[0].ui16VendorSource = 1;
+    pairedDevices->deviceInfo[0].ui16Product = 5678;
+    pairedDevices->deviceInfo[0].ui16Version = 1;
+    pairedDevices->deviceInfo[0].ui32Class = 0x1F00;
+    pairedDevices->deviceInfo[0].i32RSSI = -40;
+    pairedDevices->deviceInfo[0].ui16Appearance = 0;
+    pairedDevices->deviceInfo[0].i16TxPower = 0;
+    pairedDevices->deviceInfo[0].bLegacyPairing = 0;
+    strcpy(pairedDevices->deviceInfo[0].pcModalias, "modalias1");
+    strcpy(pairedDevices->deviceInfo[0].pcAdapter, "adapter1");
+    strcpy(pairedDevices->deviceInfo[0].pcName, "Device1");
+    strcpy(pairedDevices->deviceInfo[0].pcAddress, "00:11:22:33:44:55");
+    strcpy(pairedDevices->deviceInfo[0].pcAlias, "Alias1");
+    strcpy(pairedDevices->deviceInfo[0].pcIcon, "icon1");
+    strcpy(pairedDevices->deviceInfo[0].pcDevicePrevState, "prevState1");
+    strcpy(pairedDevices->deviceInfo[0].pcDeviceCurrState, "currState1");
+    strcpy(pairedDevices->deviceInfo[0].pcDevicePath, "/path/to/device1");
+    strcpy(pairedDevices->deviceInfo[0].aUUIDs[0], "uuid1");
+    strcpy(pairedDevices->deviceInfo[0].saServices[0].pcUUIDs, "serviceUUID1");
+    pairedDevices->deviceInfo[0].saServices[0].len = 0;
+ 
+    // Initialize second device
+    strcpy(pairedDevices->devicePath[1], "/path/to/device2");
+    pairedDevices->deviceInfo[1].bPaired = 1;
+    pairedDevices->deviceInfo[1].bConnected = 0;
+    pairedDevices->deviceInfo[1].bTrusted = 0;
+    pairedDevices->deviceInfo[1].bBlocked = 0;
+    pairedDevices->deviceInfo[1].bServicesResolved = 0;
+    pairedDevices->deviceInfo[1].ui16Vendor = 4321;
+    pairedDevices->deviceInfo[1].ui16VendorSource = 2;
+    pairedDevices->deviceInfo[1].ui16Product = 8765;
+    pairedDevices->deviceInfo[1].ui16Version = 2;
+    pairedDevices->deviceInfo[1].ui32Class = 0x2F00;
+    pairedDevices->deviceInfo[1].i32RSSI = -50;
+    pairedDevices->deviceInfo[1].ui16Appearance = 1;
+    pairedDevices->deviceInfo[1].i16TxPower = 1;
+    pairedDevices->deviceInfo[1].bLegacyPairing = 1;
+    strcpy(pairedDevices->deviceInfo[1].pcModalias, "modalias2");
+    strcpy(pairedDevices->deviceInfo[1].pcAdapter, "adapter2");
+    strcpy(pairedDevices->deviceInfo[1].pcName, "Device2");
+    strcpy(pairedDevices->deviceInfo[1].pcAddress, "66:77:88:99:AA:BB");
+    strcpy(pairedDevices->deviceInfo[1].pcAlias, "Alias2");
+    strcpy(pairedDevices->deviceInfo[1].pcIcon, "icon2");
+    strcpy(pairedDevices->deviceInfo[1].pcDevicePrevState, "prevState2");
+    strcpy(pairedDevices->deviceInfo[1].pcDeviceCurrState, "currState2");
+    strcpy(pairedDevices->deviceInfo[1].pcDevicePath, "/path/to/device2");
+    strcpy(pairedDevices->deviceInfo[1].aUUIDs[0], "uuid2");
+    strcpy(pairedDevices->deviceInfo[1].saServices[0].pcUUIDs, "serviceUUID2");
+    pairedDevices->deviceInfo[1].saServices[0].len = 0;
+
+
+
+    for (int i = 0; i < pairedDevices->numberOfDevices; i++) {
+        printf("Device %d Path: %s, Address: %s\n", 
+               i, pairedDevices->devicePath[i], pairedDevices->deviceInfo[i].pcAddress);
+    }
+ 
+    return 0;
+ 
+}
+
+int
+mock_BTDiscoverDevice (
+    void*                           apstBtIfceHdl,
+    const char*                     apcDevPath,
+    stBTDeviceSupportedServiceList* pProfileList
+) {
+    
+    pProfileList->numberOfService = 2;
+    if(pProfileList->numberOfService == 2)
+    return 0;
+    else 
+    return  -1;
 }
 
 void test_BTRCore_SetAdapterDeviceName_should_ReturnFailure_when_BtrCore_BTSetPropFails(void) {
@@ -1116,17 +1206,7 @@ void test_BTRCore_SetAdapterDeviceName_should_ReturnFailure_when_BtrCore_BTSetPr
     free(adapter.pcAdapterDevName);
     free(hBTRCore->curAdapterPath);
     free(hBTRCore);
-}
-
-int _mockgetprop(void *apBtConn, const char *apcOpIfcePath, enBTOpIfceType aenBtOpIfceType, unBTOpIfceProp aunBtOpIfceProp, void *apvVal)
-{
- strncpy(apvVal ,"hello",strlen("hello"));
-    
-    return 0;
-}
-
-
-
+} 
 void test_BTRCore_GetAdapterName_should_GetBluetoothCoreAdapterNameSuccessfully(void) {
     // Allocate memory for the BTRCore handle and check if it's not null
     stBTRCoreHdl* hBTRCore = malloc(sizeof(stBTRCoreHdl)); 
@@ -1139,14 +1219,14 @@ void test_BTRCore_GetAdapterName_should_GetBluetoothCoreAdapterNameSuccessfully(
 
      
     char name[BD_NAME_LEN] = "hello";
-   unsigned int nameSize = strlen(name) < BD_NAME_LEN ? strlen(name) : BD_NAME_LEN - 1;
+    unsigned int nameSize = strlen(name) < BD_NAME_LEN ? strlen(name) : BD_NAME_LEN - 1;
 
     unBTOpIfceProp prop;
     prop.enBtAdapterProp = enBTAdPropName;
 
     // Expectations for BtrCore_BTGetProp
     // Pass 'name' correctly to simulate the behavior as the real function will modify this value.
-   BtrCore_BTGetProp_StubWithCallback(_mockgetprop);
+    BtrCore_BTGetProp_StubWithCallback(_mockgetprop);
    //BtrCore_BTGetProp_ExpectAndReturn(hBTRCore->connHdl, adapterPath, enBTAdapter, prop, name , 0);
    
    //BtrCore_BTGetProp_IgnoreAndReturn(enBTRCoreSuccess);
@@ -1156,7 +1236,7 @@ void test_BTRCore_GetAdapterName_should_GetBluetoothCoreAdapterNameSuccessfully(
 
     // Validate the results
     TEST_ASSERT_EQUAL(expected_result, actual_result);
-     TEST_ASSERT_EQUAL_MEMORY(name, adapterName, nameSize);
+    TEST_ASSERT_EQUAL_MEMORY(name, adapterName, nameSize);
     
     free(hBTRCore);
 }
@@ -1520,101 +1600,6 @@ void test_BTRCore_GetSupportedServices_InvalidDevId(void) {
     TEST_ASSERT_EQUAL(enBTRCoreInvalidArg, ret);
 }
 
-
-int _mockgetsupported
- (
-    void*                   apBtConn,
-    const char*             apBtAdapter,
-    stBTPairedDeviceInfo*   pairedDevices
-){
-    //stBTPairedDeviceInfo pairedDevices = {0};
- 
-    pairedDevices->numberOfDevices = 2;
- 
-    // Initialize first device
-    strcpy(pairedDevices->devicePath[0], "/path/to/device1");
-    pairedDevices->deviceInfo[0].bPaired = 1;
-    pairedDevices->deviceInfo[0].bConnected = 1;
-    pairedDevices->deviceInfo[0].bTrusted = 1;
-    pairedDevices->deviceInfo[0].bBlocked = 0;
-    pairedDevices->deviceInfo[0].bServicesResolved = 1;
-    pairedDevices->deviceInfo[0].ui16Vendor = 1234;
-    pairedDevices->deviceInfo[0].ui16VendorSource = 1;
-    pairedDevices->deviceInfo[0].ui16Product = 5678;
-    pairedDevices->deviceInfo[0].ui16Version = 1;
-    pairedDevices->deviceInfo[0].ui32Class = 0x1F00;
-    pairedDevices->deviceInfo[0].i32RSSI = -40;
-    pairedDevices->deviceInfo[0].ui16Appearance = 0;
-    pairedDevices->deviceInfo[0].i16TxPower = 0;
-    pairedDevices->deviceInfo[0].bLegacyPairing = 0;
-    strcpy(pairedDevices->deviceInfo[0].pcModalias, "modalias1");
-    strcpy(pairedDevices->deviceInfo[0].pcAdapter, "adapter1");
-    strcpy(pairedDevices->deviceInfo[0].pcName, "Device1");
-    strcpy(pairedDevices->deviceInfo[0].pcAddress, "00:11:22:33:44:55");
-    strcpy(pairedDevices->deviceInfo[0].pcAlias, "Alias1");
-    strcpy(pairedDevices->deviceInfo[0].pcIcon, "icon1");
-    strcpy(pairedDevices->deviceInfo[0].pcDevicePrevState, "prevState1");
-    strcpy(pairedDevices->deviceInfo[0].pcDeviceCurrState, "currState1");
-    strcpy(pairedDevices->deviceInfo[0].pcDevicePath, "/path/to/device1");
-    strcpy(pairedDevices->deviceInfo[0].aUUIDs[0], "uuid1");
-    strcpy(pairedDevices->deviceInfo[0].saServices[0].pcUUIDs, "serviceUUID1");
-    pairedDevices->deviceInfo[0].saServices[0].len = 0;
- 
-    // Initialize second device
-    strcpy(pairedDevices->devicePath[1], "/path/to/device2");
-    pairedDevices->deviceInfo[1].bPaired = 1;
-    pairedDevices->deviceInfo[1].bConnected = 0;
-    pairedDevices->deviceInfo[1].bTrusted = 0;
-    pairedDevices->deviceInfo[1].bBlocked = 0;
-    pairedDevices->deviceInfo[1].bServicesResolved = 0;
-    pairedDevices->deviceInfo[1].ui16Vendor = 4321;
-    pairedDevices->deviceInfo[1].ui16VendorSource = 2;
-    pairedDevices->deviceInfo[1].ui16Product = 8765;
-    pairedDevices->deviceInfo[1].ui16Version = 2;
-    pairedDevices->deviceInfo[1].ui32Class = 0x2F00;
-    pairedDevices->deviceInfo[1].i32RSSI = -50;
-    pairedDevices->deviceInfo[1].ui16Appearance = 1;
-    pairedDevices->deviceInfo[1].i16TxPower = 1;
-    pairedDevices->deviceInfo[1].bLegacyPairing = 1;
-    strcpy(pairedDevices->deviceInfo[1].pcModalias, "modalias2");
-    strcpy(pairedDevices->deviceInfo[1].pcAdapter, "adapter2");
-    strcpy(pairedDevices->deviceInfo[1].pcName, "Device2");
-    strcpy(pairedDevices->deviceInfo[1].pcAddress, "66:77:88:99:AA:BB");
-    strcpy(pairedDevices->deviceInfo[1].pcAlias, "Alias2");
-    strcpy(pairedDevices->deviceInfo[1].pcIcon, "icon2");
-    strcpy(pairedDevices->deviceInfo[1].pcDevicePrevState, "prevState2");
-    strcpy(pairedDevices->deviceInfo[1].pcDeviceCurrState, "currState2");
-    strcpy(pairedDevices->deviceInfo[1].pcDevicePath, "/path/to/device2");
-    strcpy(pairedDevices->deviceInfo[1].aUUIDs[0], "uuid2");
-    strcpy(pairedDevices->deviceInfo[1].saServices[0].pcUUIDs, "serviceUUID2");
-    pairedDevices->deviceInfo[1].saServices[0].len = 0;
-
-
-
-     for (int i = 0; i < pairedDevices->numberOfDevices; i++) {
-        printf("Device %d Path: %s, Address: %s\n", 
-               i, pairedDevices->devicePath[i], pairedDevices->deviceInfo[i].pcAddress);
-    }
- 
-    return 0;
- 
-}
-
-
- int
-mock_BTDiscoverDevice (
-    void*                           apstBtIfceHdl,
-    const char*                     apcDevPath,
-    stBTDeviceSupportedServiceList* pProfileList
-) {
-    
-    pProfileList->numberOfService = 2;
-    if(pProfileList->numberOfService == 2)
-    return 0;
-    else 
-    return  -1;
-}
- 
 void test_BTRCore_GetSupportedServices_Success(void) {
     tBTRCoreHandle hBTRCore = (tBTRCoreHandle)1;
     stBTRCoreSupportedServiceList profileList;
@@ -1634,9 +1619,6 @@ void test_BTRCore_GetSupportedServices_Success(void) {
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
     TEST_ASSERT_EQUAL(2, profileList.numberOfService);
 }
-
-
-
 
 void test_BTRCore_GetSupportedServices_DiscoveryFailure(void) {
     tBTRCoreHandle hBTRCore = (tBTRCoreHandle)1;
@@ -1661,21 +1643,51 @@ int mock_BTIsDeviceConnectable (
         enBTDeviceClass                 aenBtDeviceClass,
         enBTDeviceType*                 apenBtDeviceType,
         stBTRCoreBTDevice*              apstFoundDevice
-    ) {
-        if (!apstBtIfceHdl || !apcDevPath || !apenBtDeviceType || !apstFoundDevice) {
-            return -1;
-        }
-
-        // Simulate the behavior of the original function
-        // For example, we can assume that if the device path contains "valid", it returns 1 (match found)
-        if (strstr(apcDevPath, "valid") != NULL) {
-            return 1;
-        }
-
-        // Otherwise, return 0 (no match found)
-        return 0;
+) 
+{
+    if (!apstBtIfceHdl || !apcDevPath || !apenBtDeviceType || !apstFoundDevice) {
+        return -1;
     }
+    // Simulate the behavior of the original function
+    // For example, we can assume that if the device path contains "valid", it returns 1 (match found)
+    if (strstr(apcDevPath, "valid") != NULL) {
+        return 1;
+    }
+    // Otherwise, return 0 (no match found)
+    return 0;
+}
+int mock_BTRCore_AVMedia_GetElementTrackInfo(
+    tBTRCoreAVMediaHdl avMediaHdl,
+    const char* pDeviceAddress,
+    tBTRCoreMediaElementId aBtrMediaElementId,
+    stBTRCoreAVMediaTrackInfo* apstBTMediaTrackInfo
+)
+ {
+    apstBTMediaTrackInfo->ui32TrackNumber = 1;
+    strncpy(apstBTMediaTrackInfo->pcTitle, "Test Track", sizeof(apstBTMediaTrackInfo->pcTitle) - 1);
+    apstBTMediaTrackInfo->pcTitle[sizeof(apstBTMediaTrackInfo->pcTitle) - 1] = '\0';
+        return enBTRCoreSuccess;
+ }
 
+
+int _mock_BTGetPairedDeviceInfo1(
+    void* apBtConn, const char* apBtAdapter, stBTPairedDeviceInfo* pairedDevices
+) {
+    pairedDevices->numberOfDevices = 1;
+    pairedDevices->deviceInfo[0].bPaired = 1;
+    strcpy(pairedDevices->deviceInfo[0].pcAddress, "00:11:22:33:44:55");
+    return 0;
+}
+int _mock_BTGetPairedDeviceInfo(
+    void* apBtConn, const char* apBtAdapter, stBTPairedDeviceInfo* pairedDevices
+) {
+    pairedDevices->numberOfDevices = 1;
+    pairedDevices->deviceInfo[0].bPaired = 1;
+    strcpy(pairedDevices->deviceInfo[0].pcAddress, "00:11:22:33:44:55");
+
+    return 0;
+}
+ 
 
 void test_BTRCore_IsDeviceConnectable_NULL_hBTRCore(void) {
     enBTRCoreRet ret = BTRCore_IsDeviceConnectable(NULL, 0);
@@ -1718,7 +1730,7 @@ void test_BTRCore_IsDeviceConnectable_BTIsDeviceConnectable_non_zero(void) {
     stBTRCoreHdl hBTRCore;
     hBTRCore.numOfPairedDevices = 1;
     hBTRCore.stKnownDevicesArr[0].pcDeviceAddress[0] = "00:11:22:33:44:55";
-     BtrCore_BTIsDeviceConnectable_IgnoreAndReturn(1);
+    BtrCore_BTIsDeviceConnectable_IgnoreAndReturn(1);
   //  BtrCore_BTIsDeviceConnectable_ExpectAndReturn(NULL, "00:11:22:33:44:55", 1);
    // BtrCore_BTIsDeviceConnectable_StubWithCallback(mock_BTIsDeviceConnectable);
     enBTRCoreRet ret = BTRCore_IsDeviceConnectable(&hBTRCore, 0);
@@ -1830,8 +1842,8 @@ void test_BTRCore_MediaControl_DeviceNotConnected(void) {
     device.bDeviceConnected = FALSE;
     device.pcDeviceName[0] = "Device1";
 
-     BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mockgetsupported);
-      BTRCore_AVMedia_MediaControl_ExpectAndReturn(hBTRCore.avMediaHdl, deviceAddress, enBTRCoreMediaCtrlPlay, eBTRCoreAVMediaFlowUnknown, NULL, "Device1", enBTRCoreFailure);
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mockgetsupported);
+    BTRCore_AVMedia_MediaControl_ExpectAndReturn(hBTRCore.avMediaHdl, deviceAddress, enBTRCoreMediaCtrlPlay, eBTRCoreAVMediaFlowUnknown, NULL, "Device1", enBTRCoreFailure);
 
     // Call the function under test
     enBTRCoreRet ret = BTRCore_MediaControl(&hBTRCore, 0, enBTDevUnknown, enBTRCoreMediaCtrlPlay, NULL);
@@ -1870,7 +1882,7 @@ void test_BTRCore_MediaControl_Play_Success(void) {
 void test_BTRCore_MediaControl_PauseCommand(void) {
     stBTRCoreHdl hBTRCore;
     stBTRCoreBTDevice knownDevice ;
-     const char* deviceAddress = "/path/to/device1";
+    const char* deviceAddress = "/path/to/device1";
     memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
     memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
 
@@ -1880,7 +1892,7 @@ void test_BTRCore_MediaControl_PauseCommand(void) {
 
    
     BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mockgetsupported);
-     BTRCore_AVMedia_MediaControl_ExpectAndReturn(NULL, deviceAddress, enBTRCoreAVMediaCtrlPause, eBTRCoreAVMediaFlowUnknown, NULL, "Device1", enBTRCoreSuccess);
+    BTRCore_AVMedia_MediaControl_ExpectAndReturn(NULL, deviceAddress, enBTRCoreAVMediaCtrlPause, eBTRCoreAVMediaFlowUnknown, NULL, "Device1", enBTRCoreSuccess);
  
     enBTRCoreRet ret = BTRCore_MediaControl(&hBTRCore, 0, enBTDevUnknown, enBTRCoreMediaCtrlPause, NULL);
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
@@ -1890,8 +1902,8 @@ void test_BTRCore_MediaControl_PauseCommand(void) {
 
 void test_BTRCore_MediaControl_StopCommand(void) {
     stBTRCoreHdl hBTRCore;
-     stBTRCoreBTDevice knownDevice ;
-     const char* deviceAddress = "/path/to/device1";
+    stBTRCoreBTDevice knownDevice ;
+    const char* deviceAddress = "/path/to/device1";
     memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
     memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
 
@@ -1919,7 +1931,7 @@ void test_BTRCore_MediaControl_UnknownCommand(void) {
     knownDevice.pcDeviceName[0] = "Device1";
 
    // btrCore_GetDeviceInfoKnown_ExpectAndReturn(&hBTRCore, 0, enBTDevUnknown, NULL, NULL, NULL, NULL, NULL, NULL, NULL, enBTRCoreSuccess);
-     BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mockgetsupported);
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mockgetsupported);
     enBTRCoreRet ret = BTRCore_MediaControl(&hBTRCore, 0, enBTDevUnknown, enBTRCoreMediaCtrlUnknown, NULL);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
 }
@@ -1939,7 +1951,7 @@ void test_BTRCore_GetMediaTrackInfo_GetDeviceInfoKnown_Fails(void) {
     stBTRCoreMediaTrackInfo trackInfo;
     stBTRCoreBTDevice knownDevice;
     const char* deviceAddress = "/path/to/device1";
-      memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
+    memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
     memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
 
      knownDevice.bDeviceConnected = FALSE;
@@ -1955,20 +1967,15 @@ void test_BTRCore_GetMediaTrackInfo_DeviceNotConnected(void) {
     stBTRCoreHdl hBTRCore;
     enBTRCoreRet ret;
   
- //   stBTRCoreMediaTrackInfo trackInfo;
+ // stBTRCoreMediaTrackInfo trackInfo;
     stBTRCoreBTDevice knownDevice ;
-   const char* deviceAddress = "/path/to/device1";
+    const char* deviceAddress = "/path/to/device1";
      //const char* deviceAddress = NULL;
-      memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
+    memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
     memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
-      knownDevice.bDeviceConnected = FALSE;
-
-     BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mockgetsupported);
-      // BTRCore_AVMedia_GetTrackInfo_IgnoreAndReturn(1);
-     // BTRCore_AVMedia_GetTrackInfo_ExpectAndReturn(hBTRCore.avMediaHdl, NULL,NULL, enBTRCoreSuccess);
-     // btrCore_GetDeviceInfoKnown_ExpectAndReturn(&hBTRCore, devId, devType, &knownDevice, enBTRCoreSuccess);
-    //  BtrCore_BTGetPairedDeviceInfo_IgnoreAndReturn(-1);
-       BTRCore_AVMedia_GetTrackInfo_ExpectAndReturn(NULL, deviceAddress,NULL, enBTRCoreFailure);
+    knownDevice.bDeviceConnected = FALSE;
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mockgetsupported);
+    BTRCore_AVMedia_GetTrackInfo_ExpectAndReturn(NULL, deviceAddress,NULL, enBTRCoreFailure);
     //knownDevice.bDeviceConnected = FALSE;
     ret = BTRCore_GetMediaTrackInfo(&hBTRCore, 0, enBTDevUnknown, NULL);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
@@ -1980,21 +1987,18 @@ void test_BTRCore_GetMediaTrackInfo_DeviceNotConnected(void) {
 void test_BTRCore_GetMediaTrackInfo_AVMedia_GetTrackInfo_Fails(void) {
     stBTRCoreHdl hBTRCore;
     enBTRCoreRet ret;
-     tBTRCoreDevId aBTRCoreDevId;
+    tBTRCoreDevId aBTRCoreDevId;
     stBTRCoreMediaTrackInfo trackInfo;
     stBTRCoreBTDevice knownDevice ;
 
-     memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
+    memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
     memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
     memset(&trackInfo, 0, sizeof(stBTRCoreMediaTrackInfo));
-       memset(&aBTRCoreDevId,0,sizeof(tBTRCoreDevId));
-
+    memset(&aBTRCoreDevId,0,sizeof(tBTRCoreDevId));
     const char* deviceAddress = "/path/to/device1";
     knownDevice.bDeviceConnected = TRUE ;
     //knownDevice.pcDeviceName[0] = "Device1";
-   
-
-     BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mockgetsupported);
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mockgetsupported);
     BTRCore_AVMedia_GetTrackInfo_ExpectAndReturn(hBTRCore.avMediaHdl,deviceAddress, (stBTRCoreAVMediaTrackInfo*)&trackInfo, enBTRCoreFailure);
 
     ret = BTRCore_GetMediaTrackInfo(&hBTRCore, aBTRCoreDevId,  enBTDevUnknown, &trackInfo);
@@ -2049,27 +2053,13 @@ void test_BTRCore_GetMediaElementTrackInfo_NullDeviceInfo(void) {
 void test_BTRCore_GetMediaElementTrackInfo_DeviceNotConnected(void) {
     stBTRCoreHdl hBTRCore;
     stBTRCoreBTDevice device;
-     device.bDeviceConnected = FALSE ;
+    device.bDeviceConnected = FALSE ;
   //  btrCore_GetDeviceInfoKnown_ExpectAnyArgsAndReturn(enBTRCoreSuccess);
    //  btrCore_GetDeviceInfoKnown_ReturnThruPtr_pstKnownDevice(&device);
-     BTRCore_AVMedia_GetElementTrackInfo_IgnoreAndReturn(1);
+    BTRCore_AVMedia_GetElementTrackInfo_IgnoreAndReturn(1);
     enBTRCoreRet ret = BTRCore_GetMediaElementTrackInfo(&hBTRCore, 0, enBTDevUnknown,NULL, NULL);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
 }
-
-
- int mock_BTRCore_AVMedia_GetElementTrackInfo(
-    tBTRCoreAVMediaHdl avMediaHdl,
-    const char* pDeviceAddress,
-    tBTRCoreMediaElementId aBtrMediaElementId,
-    stBTRCoreAVMediaTrackInfo* apstBTMediaTrackInfo
-)
- {
-    apstBTMediaTrackInfo->ui32TrackNumber = 1;
-    strncpy(apstBTMediaTrackInfo->pcTitle, "Test Track", sizeof(apstBTMediaTrackInfo->pcTitle) - 1);
-    apstBTMediaTrackInfo->pcTitle[sizeof(apstBTMediaTrackInfo->pcTitle) - 1] = '\0';
-        return enBTRCoreSuccess;
- }
 
 
  
@@ -2080,20 +2070,12 @@ void test_BTRCore_GetMediaPositionInfo_hBTRCore_NULL(void) {
     TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
 }
 
-
-
-
 void test_BTRCore_GetMediaPositionInfo_btrCore_GetDeviceInfoKnown_Fails(void) {
     stBTRCoreHdl hBTRCore;
     stBTRCoreMediaPositionInfo mediaPositionInfo;
     stBTRCoreBTDevice knownDevice ;
  //   knownDevice.bDeviceConnected = FALSE ;
     const char* deviceAddress = "/path/to/device1";
-
-
-   // btrCore_GetDeviceInfoKnown_ExpectAnyArgsAndReturn(enBTRCoreSuccess);
-  //  btrCore_GetDeviceInfoKnown_ReturnThruPtr_pstKnownDevice(&knownDevice);
-  // BTRCore_AVMedia_GetPositionInfo_ExpectAndReturn(0,&knownDevice,NULL,enBTRCoreSuccess);
     enBTRCoreRet ret = BTRCore_GetMediaPositionInfo(&hBTRCore, deviceAddress, 0, &mediaPositionInfo);
     TEST_ASSERT_EQUAL(enBTRCoreDeviceNotFound, ret);
 }
@@ -2106,13 +2088,8 @@ void test_BTRCore_GetMediaPositionInfo_AVMedia_GetPositionInfo_Fails(void) {
     stBTRCoreBTDevice knownDevice;
     knownDevice.bDeviceConnected = TRUE ;
 
-     memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
-       BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mockgetsupported);
-  //  memset(&device, 0, sizeof(stBTRCoreBTDevice));
-   // memset(&mediaPositionInfo, 0, sizeof(stBTRCoreMediaPositionInfo));
-
-   // btrCore_GetDeviceInfoKnown_ExpectAnyArgsAndReturn(enBTRCoreSuccess);
-   // btrCore_GetDeviceInfoKnown_ReturnThruPtr_pstKnownDevice(&knownDevice);
+    memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mockgetsupported);
     BTRCore_AVMedia_GetPositionInfo_IgnoreAndReturn(enBTRCoreFailure);
 
     enBTRCoreRet ret = BTRCore_GetMediaPositionInfo(&hBTRCore, 0, 0, &mediaPositionInfo);
@@ -2120,14 +2097,6 @@ void test_BTRCore_GetMediaPositionInfo_AVMedia_GetPositionInfo_Fails(void) {
 }
 
 
-int _mock_BTGetPairedDeviceInfo1(
-    void* apBtConn, const char* apBtAdapter, stBTPairedDeviceInfo* pairedDevices
-) {
-    pairedDevices->numberOfDevices = 1;
-    pairedDevices->deviceInfo[0].bPaired = 1;
-    strcpy(pairedDevices->deviceInfo[0].pcAddress, "00:11:22:33:44:55");
-    return 0;
-}
 
 void test_BTRCore_GetMediaPositionInfo_DeviceNotConnected(void) {
     stBTRCoreHdl hBTRCore;
@@ -2161,17 +2130,6 @@ void test_BTRCore_GetMediaPositionInfo_DeviceNotConnected(void) {
 
     // Verify the result
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
-}
-
-
-
-int _mock_BTGetPairedDeviceInfo(
-    void* apBtConn, const char* apBtAdapter, stBTPairedDeviceInfo* pairedDevices
-) {
-    pairedDevices->numberOfDevices = 1;
-    pairedDevices->deviceInfo[0].bPaired = 1;
-    strcpy(pairedDevices->deviceInfo[0].pcAddress, "00:11:22:33:44:55");
-    return 0;
 }
 
 void test_BTRCore_GetMediaElementTrackInfo_Success(void) {
@@ -2226,23 +2184,15 @@ void test_BTRCore_GetMediaProperty_NullHandle(void) {
     TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
 }
 
-
-
-
-
 void test_BTRCore_GetMediaProperty_Success(void) {
     stBTRCoreHdl btrCoreHandle;
     tBTRCoreDevId aBTRCoreDevId;
     enBTDeviceType lenBTDeviceType;
     stBTRCoreBTDevice knownDevice ;
   
-     const char* mediaPropertyKey;
-     void*   mediaPropertyValue;
+    const char* mediaPropertyKey;
+    void*   mediaPropertyValue;
     knownDevice.bDeviceConnected = TRUE;
-
-
- 
-   
     memset(&btrCoreHandle, 0, sizeof(stBTRCoreHdl));
     memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
  //   memset(&mediaPositionInfo, 0, sizeof(stBTRCoreMediaPositionInfo));
@@ -2250,14 +2200,13 @@ void test_BTRCore_GetMediaProperty_Success(void) {
    // btrCoreHandle.knownDevices[0] = knownDevice;
 
    // btrCore_GetDeviceInfoKnown_ExpectAndReturn(&btrCoreHandle, 0, 0, &knownDevice, NULL, NULL, enBTRCoreSuccess);
-   
-   BTRCore_AVMedia_GetMediaProperty_IgnoreAndReturn(enBTRCoreSuccess);
-   BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mockgetsupported);
+    BTRCore_AVMedia_GetMediaProperty_IgnoreAndReturn(enBTRCoreSuccess);
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mockgetsupported);
     enBTRCoreRet ret = BTRCore_GetMediaProperty(&btrCoreHandle, 0, 0, "propertyKey", NULL);
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
 }
 
- int mock_BtrCore_BTGetPairedDeviceInfo(void* apstBtIfceHdl, const char* apcDevPath, stBTRCoreBTDevice* apstFoundDevice) {
+int mock_BtrCore_BTGetPairedDeviceInfo(void* apstBtIfceHdl, const char* apcDevPath, stBTRCoreBTDevice* apstFoundDevice) {
     if (!apstBtIfceHdl || !apcDevPath || !apstFoundDevice) {
         return -1;
     }
@@ -2267,45 +2216,59 @@ void test_BTRCore_GetMediaProperty_Success(void) {
     }
     return -1;
 }
+// Mock functions
+int mock_BTRCore_AVMedia_IsMediaElementNotPlayable(
+    tBTRCoreAVMediaHdl avMediaHdl,
+    const char* pDeviceAddress,
+    tBTRCoreMediaElementId aBtrMediaElementId,
+    char* isPlayable
+) {
+    *isPlayable = 0; // Simulate that the media element is not playable
+    return enBTRCoreFailure;
+}
+int  mock_BTRCore_AVMedia_IsMediaElementPlayable(
+    tBTRCoreAVMediaHdl avMediaHdl,
+    const char* pDeviceAddress,
+    tBTRCoreMediaElementId aBtrMediaElementId,
+    char* isPlayable
+) {
+    *isPlayable = 1; // Simulate that the media element is playable
+    return enBTRCoreSuccess;
+}
 
+int mock_BTRCore_AVMedia_SelectTrack(
+    tBTRCoreAVMediaHdl avMediaHdl,
+    const char* pDeviceAddress,
+    tBTRCoreMediaElementId aBtrMediaElementId
+) {
+    return enBTRCoreSuccess; // Simulate successful track selection
+}
 
 void test_BTRCore_GetMediaProperty_DeviceNotConnected(void) {
     stBTRCoreHdl hBTRCore;
     stBTRCoreDevStateInfo devStateInfo;
     tBTRCoreDevId aBTRCoreDevId;
     stBTRCoreBTDevice device;
-
-    
-
     // Initialize the structures to avoid undefined behavior
-     memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
-     memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
-     memset(&aBTRCoreDevId, 0, sizeof( tBTRCoreDevId));
-      memset(&device, 0, sizeof(stBTRCoreBTDevice));
+    memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+    memset(&aBTRCoreDevId, 0, sizeof( tBTRCoreDevId));
+    memset(&device, 0, sizeof(stBTRCoreBTDevice));
 
-      devStateInfo.eDeviceCurrState = enBTRCoreDevStDisconnected;
-     device.bDeviceConnected = FALSE ;
+    devStateInfo.eDeviceCurrState = enBTRCoreDevStDisconnected;
+    device.bDeviceConnected = FALSE ;
     // Set the device state as disconnected
     //devStateInfo.eDeviceCurrState = enBTRCoreDevStDisconnected;
 
     // Assuming stScannedDevStInfoArr is an array, set the first element to the device state info
-     hBTRCore.stScannedDevStInfoArr[0] = devStateInfo;
-
-     hBTRCore.avMediaHdl = (void*)0x80; 
+    hBTRCore.stScannedDevStInfoArr[0] = devStateInfo;
+    hBTRCore.avMediaHdl = (void*)0x80; 
 
     // Define the media property key and value
     const char* mediaPropertyKey = "someMediaPropertyKey";
     void* mediaPropertyValue = NULL; // Assuming you want to retrieve the value
-
-    
     BtrCore_BTGetPairedDeviceInfo_StubWithCallback( mock_BtrCore_BTGetPairedDeviceInfo);
-   // BTRCore_AVMedia_GetMediaProperty_ExpectAndReturn(hBTRCore.avMediaHdl, "valid", mediaPropertyKey, mediaPropertyValue,enBTRCoreFailure);
-     //   BTRCore_AVMedia_GetMediaProperty_StopIgnore();
-    // Call the function under test
-    // Call the function under test
     enBTRCoreRet ret = BTRCore_GetMediaProperty(&hBTRCore, aBTRCoreDevId, enBTRCoreUnknown, mediaPropertyKey, mediaPropertyValue);
-
-
     // Verify the result
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
 }
@@ -2317,8 +2280,8 @@ void test_BTRCore_SelectMediaElement_NullHandle(void) {
 
 
 void test_BTRCore_SelectMediaElement_InvalidMediaElementId(void) {
-     stBTRCoreHdl hBTRCore;
-      memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
+    stBTRCoreHdl hBTRCore;
+    memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
      
     BtrCore_BTGetPairedDeviceInfo_StubWithCallback( mock_BtrCore_BTGetPairedDeviceInfo); 
     enBTRCoreRet ret = BTRCore_SelectMediaElement(&hBTRCore, 1, -1, enBTDevAudioSink, enBTRCoreMedETypeTrack);
@@ -2344,20 +2307,14 @@ void test_BTRCore_SelectMediaElement_DeviceNotConnected(void) {
 
     // Set the device as not connected
     knownDevice.bDeviceConnected = FALSE;
-     knownDevice.tDeviceId = aBTRCoreDevId;
-   // hBTRCore.stKnownDevicesArr[0] = knownDevice;
-
-    // Mock btrCore_GetDeviceInfoKnown to return success and device info
-
-     strncpy(knownDevice.pcDevicePath, deviceAddress, sizeof(knownDevice.pcDevicePath) - 1);
+    knownDevice.tDeviceId = aBTRCoreDevId;
+    strncpy(knownDevice.pcDevicePath, deviceAddress, sizeof(knownDevice.pcDevicePath) - 1);
     knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
    // knownDevice.tDeviceId = 1;
     strncpy(knownDevice.pcDevicePath,"Test Device", sizeof(knownDevice.pcDevicePath) - 1);
     knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
    // btrCore_GetDeviceInfoKnown_StubWithCallback(_mock_btrCore_GetDeviceInfoKnown);
-
-
-      // Set the number of scanned devices and paired devices
+   // Set the number of scanned devices and paired devices
     hBTRCore.numOfScannedDevices = 1;
     hBTRCore.numOfPairedDevices = 1;
 
@@ -2391,20 +2348,17 @@ void test_BTRCore_SelectMediaElement_DeviceConnected(void) {
 
     // Set the device as not connected
     knownDevice.bDeviceConnected = TRUE;
-     knownDevice.tDeviceId = aBTRCoreDevId;
-   // hBTRCore.stKnownDevicesArr[0] = knownDevice;
+    knownDevice.tDeviceId = aBTRCoreDevId;
+    // hBTRCore.stKnownDevicesArr[0] = knownDevice;
 
     // Mock btrCore_GetDeviceInfoKnown to return success and device info
 
-     strncpy(knownDevice.pcDevicePath, deviceAddress, sizeof(knownDevice.pcDevicePath) - 1);
+    strncpy(knownDevice.pcDevicePath, deviceAddress, sizeof(knownDevice.pcDevicePath) - 1);
     knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
    // knownDevice.tDeviceId = 1;
     strncpy(knownDevice.pcDevicePath,"Test Device", sizeof(knownDevice.pcDevicePath) - 1);
     knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
-   // btrCore_GetDeviceInfoKnown_StubWithCallback(_mock_btrCore_GetDeviceInfoKnown);
-
-
-      // Set the number of scanned devices and paired devices
+   // Set the number of scanned devices and paired devices
     hBTRCore.numOfScannedDevices = 1;
     hBTRCore.numOfPairedDevices = 1;
 
@@ -2422,13 +2376,7 @@ void test_BTRCore_SelectMediaElement_DeviceConnected(void) {
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
 }
 
-
-
-
 void test_BTRCore_SelectMediaElement_DifferentMediaElementTypes(void) {
- 
-
-
     stBTRCoreHdl hBTRCore;
     stBTRCoreDevStateInfo devStateInfo;
     stBTRCoreMediaElementInfoList mediaElementListInfo;
@@ -2438,7 +2386,7 @@ void test_BTRCore_SelectMediaElement_DifferentMediaElementTypes(void) {
     const char* deviceAddress = "00:11:22:33:44:55";
     enBTRCoreDeviceType aenBTRCoreDevType = enBTRCoreSpeakers;
     eBTRCoreMedElementType aenBTRCoreMedElementType = enBTRCoreMedETypeTrack;
-     enBTRCoreRet result;
+    enBTRCoreRet result;
 
     // Initialize structures
     memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
@@ -2448,20 +2396,16 @@ void test_BTRCore_SelectMediaElement_DifferentMediaElementTypes(void) {
 
     // Set the device as not connected
     knownDevice.bDeviceConnected = TRUE;
-     knownDevice.tDeviceId = aBTRCoreDevId;
-   // hBTRCore.stKnownDevicesArr[0] = knownDevice;
-
+    knownDevice.tDeviceId = aBTRCoreDevId;
     // Mock btrCore_GetDeviceInfoKnown to return success and device info
 
-     strncpy(knownDevice.pcDevicePath, deviceAddress, sizeof(knownDevice.pcDevicePath) - 1);
+    strncpy(knownDevice.pcDevicePath, deviceAddress, sizeof(knownDevice.pcDevicePath) - 1);
     knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
    // knownDevice.tDeviceId = 1;
     strncpy(knownDevice.pcDevicePath,"Test Device", sizeof(knownDevice.pcDevicePath) - 1);
     knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
    // btrCore_GetDeviceInfoKnown_StubWithCallback(_mock_btrCore_GetDeviceInfoKnown);
-
-
-      // Set the number of scanned devices and paired devices
+   // Set the number of scanned devices and paired devices
     hBTRCore.numOfScannedDevices = 1;
     hBTRCore.numOfPairedDevices = 1;
 
@@ -2471,37 +2415,28 @@ void test_BTRCore_SelectMediaElement_DifferentMediaElementTypes(void) {
 
     BTRCore_AVMedia_IsMediaElementPlayable_IgnoreAndReturn(enBTRCoreSuccess);
     BTRCore_AVMedia_ChangeBrowserLocation_IgnoreAndReturn(enBTRCoreSuccess);
-      result = BTRCore_SelectMediaElement(&hBTRCore, 0,0, enBTDevAudioSink, enBTRCoreMedETypeAlbum);
+    result = BTRCore_SelectMediaElement(&hBTRCore, 0,0, enBTDevAudioSink, enBTRCoreMedETypeAlbum);
 
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
-
-      result = BTRCore_SelectMediaElement(&hBTRCore, 0, 0, enBTDevAudioSink, enBTRCoreMedETypeArtist);
+    result = BTRCore_SelectMediaElement(&hBTRCore, 0, 0, enBTDevAudioSink, enBTRCoreMedETypeArtist);
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
-
-
 
     result = BTRCore_SelectMediaElement(&hBTRCore, 0, 0, enBTDevAudioSink, enBTRCoreMedETypeGenre);
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
-
-      result = BTRCore_SelectMediaElement(&hBTRCore, 0, 0, enBTDevAudioSink, enBTRCoreMedETypeCompilation);
+	
+    result = BTRCore_SelectMediaElement(&hBTRCore, 0, 0, enBTDevAudioSink, enBTRCoreMedETypeCompilation);
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
 
-      result = BTRCore_SelectMediaElement(&hBTRCore, 0, 0, enBTDevAudioSink, enBTRCoreMedETypePlayList);
+    result = BTRCore_SelectMediaElement(&hBTRCore, 0, 0, enBTDevAudioSink, enBTRCoreMedETypePlayList);
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
 
-      result = BTRCore_SelectMediaElement(&hBTRCore, 0, 0, enBTDevAudioSink, enBTRCoreMedETypeTrackList);
+    result = BTRCore_SelectMediaElement(&hBTRCore, 0, 0, enBTDevAudioSink, enBTRCoreMedETypeTrackList);
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
 
-      result = BTRCore_SelectMediaElement(&hBTRCore, 0, 0, enBTDevAudioSink, enBTRCoreMedETypeTrack);
+    result = BTRCore_SelectMediaElement(&hBTRCore, 0, 0, enBTDevAudioSink, enBTRCoreMedETypeTrack);
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, result); 
-
 }
-
-
-
-
 void test_BTRCore_GetMediaElementList_ValidInputs(void) {
-   
     stBTRCoreHdl hBTRCore;
     stBTRCoreDevStateInfo devStateInfo;
     stBTRCoreBTDevice knownDevice;
@@ -2538,10 +2473,7 @@ void test_BTRCore_GetMediaElementList_ValidInputs(void) {
     hBTRCore.stScannedDevicesArr[0] = knownDevice;
     hBTRCore.stKnownDevicesArr[0] = knownDevice;
 
-     hBTRCore.leHdl = (void*)0x123456;  
-            
-    
-
+    hBTRCore.leHdl = (void*)0x123456;  
     // Mock necessary functions
     BTRCore_AVMedia_SelectMediaBrowserElements_IgnoreAndReturn(enBTRCoreSuccess);
     BTRCore_AVMedia_GetMediaElementList_IgnoreAndReturn(enBTRCoreSuccess);
@@ -2553,9 +2485,6 @@ void test_BTRCore_GetMediaElementList_ValidInputs(void) {
     // Verify the result
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
 }
-
-
-
 void test_BTRCore_GetMediaElementList_InvalidHandle(void) {
     tBTRCoreHandle hBTRCore = NULL;
     tBTRCoreDevId aBTRCoreDevId = 12345;
@@ -2570,7 +2499,6 @@ void test_BTRCore_GetMediaElementList_InvalidHandle(void) {
     TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, result);
 }
 
-
 void test_BTRCore_GetMediaElementList_DeviceNotConnected(void) {
     stBTRCoreHdl hBTRCore;
     stBTRCoreBTDevice knownDevice;
@@ -2579,9 +2507,7 @@ void test_BTRCore_GetMediaElementList_DeviceNotConnected(void) {
     tBTRCoreDevId aBTRCoreDevId = 12345;
     tBTRCoreMediaElementId aBtrMediaElementId = 1; // Initialize with a valid media element ID
     enBTRCoreDeviceType aenBTRCoreDevType = enBTRCoreSpeakers; // Initialize with a valid device type
-    eBTRCoreMedElementType aenBTRCoreMedElementType = enBTRCoreMedETypeTrack;  // Media element type (Track)
-
-     
+    eBTRCoreMedElementType aenBTRCoreMedElementType = enBTRCoreMedETypeTrack;  // Media element type (Track)  
 
     memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
     memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
@@ -2591,10 +2517,10 @@ void test_BTRCore_GetMediaElementList_DeviceNotConnected(void) {
     // Initialize knownDevice fields
     knownDevice.bDeviceConnected = FALSE; // Device is not connected
     knownDevice.tDeviceId = aBTRCoreDevId;
-     const char* deviceAddress = "00:11:22:33:44:55";
+    const char* deviceAddress = "00:11:22:33:44:55";
 
 
-     strncpy(knownDevice.pcDevicePath, deviceAddress, sizeof(knownDevice.pcDevicePath) - 1);
+    strncpy(knownDevice.pcDevicePath, deviceAddress, sizeof(knownDevice.pcDevicePath) - 1);
     knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
    // knownDevice.tDeviceId = 1;
     strncpy(knownDevice.pcDevicePath,"Test Device", sizeof(knownDevice.pcDevicePath) - 1);
@@ -2605,9 +2531,7 @@ void test_BTRCore_GetMediaElementList_DeviceNotConnected(void) {
     hBTRCore.numOfPairedDevices = 1;
     hBTRCore.stScannedDevicesArr[0] = knownDevice;
     hBTRCore.stKnownDevicesArr[0] = knownDevice;
-
-
-
+	
     BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mock_BTGetPairedDeviceInfo1);
 
     // Call the function
@@ -2650,7 +2574,7 @@ void test_BTRCore_SetMediaElementActive_InvalidMediaElementId(void) {
     hBTRCore.stKnownDevicesArr[0] = knownDevice;
     // Mock the necessary functions
     BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mock_BTGetPairedDeviceInfo1);
-      BTRCore_AVMedia_IsMediaElementPlayable_IgnoreAndReturn(enBTRCoreFailure);
+    BTRCore_AVMedia_IsMediaElementPlayable_IgnoreAndReturn(enBTRCoreFailure);
 
     // Call the function with an invalid media element ID
     enBTRCoreRet result = BTRCore_SetMediaElementActive(&hBTRCore, aBTRCoreDevId, aBtrMediaElementId, aenBTRCoreDevType,aenBTRCoreDevType);
@@ -2658,20 +2582,6 @@ void test_BTRCore_SetMediaElementActive_InvalidMediaElementId(void) {
     // Verify the result
     TEST_ASSERT_EQUAL(enBTRCoreFailure, result);
 }
-
-
-
-// Mock functions
-int mock_BTRCore_AVMedia_IsMediaElementNotPlayable(
-    tBTRCoreAVMediaHdl avMediaHdl,
-    const char* pDeviceAddress,
-    tBTRCoreMediaElementId aBtrMediaElementId,
-    char* isPlayable
-) {
-    *isPlayable = 0; // Simulate that the media element is not playable
-    return enBTRCoreFailure;
-}
-
 void test_BTRCore_SetMediaElementActive_MediaElementNotPlayable(void) {
     stBTRCoreHdl hBTRCore;
     stBTRCoreDevStateInfo devStateInfo;
@@ -2716,34 +2626,16 @@ void test_BTRCore_SetMediaElementActive_MediaElementNotPlayable(void) {
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
 }
 
-
-int  mock_BTRCore_AVMedia_IsMediaElementPlayable(
-    tBTRCoreAVMediaHdl avMediaHdl,
-    const char* pDeviceAddress,
-    tBTRCoreMediaElementId aBtrMediaElementId,
-    char* isPlayable
-) {
-    *isPlayable = 1; // Simulate that the media element is playable
-    return enBTRCoreSuccess;
-}
-
-int mock_BTRCore_AVMedia_SelectTrack(
-    tBTRCoreAVMediaHdl avMediaHdl,
-    const char* pDeviceAddress,
-    tBTRCoreMediaElementId aBtrMediaElementId
-) {
-    return enBTRCoreSuccess; // Simulate successful track selection
-}
 void test_BTRCore_SetMediaElementActive_Success(void) {
     stBTRCoreHdl hBTRCore;
     stBTRCoreDevStateInfo devStateInfo;
     stBTRCoreBTDevice knownDevice;
     stBTRCoreMediaElementInfoList mediaElementListInfo;
-     tBTRCoreDevId aBTRCoreDevId = 12345; // Initialize with a valid device ID
-     const char* deviceAddress = "00:11:22:33:44:55";
-      tBTRCoreMediaElementId aBtrMediaElementId = 1; // Initialize with a valid media element ID
-       enBTRCoreDeviceType aenBTRCoreDevType = enBTRCoreSpeakers; // Initialize with a valid device type
-      eBTRCoreMedElementType aenBTRCoreMedElementType = enBTRCoreMedETypeTrack;  // Media element type (Track)
+    tBTRCoreDevId aBTRCoreDevId = 12345; // Initialize with a valid device ID
+    const char* deviceAddress = "00:11:22:33:44:55";
+    tBTRCoreMediaElementId aBtrMediaElementId = 1; // Initialize with a valid media element ID
+    enBTRCoreDeviceType aenBTRCoreDevType = enBTRCoreSpeakers; // Initialize with a valid device type
+    eBTRCoreMedElementType aenBTRCoreMedElementType = enBTRCoreMedETypeTrack;  // Media element type (Track)
 
 
     // Initialize the structures to avoid undefined behavior
@@ -2818,7 +2710,7 @@ void test_BTRCore_SetMediaElementActive_DeviceNotConnected(void) {
     hBTRCore.numOfPairedDevices = 1;
     hBTRCore.stKnownDevicesArr[0] = knownDevice;
     // Mock necessary functions (no need to mock them for this case)
-   BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mock_BTGetPairedDeviceInfo1);
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mock_BTGetPairedDeviceInfo1);
     // Call the function under test
     enBTRCoreRet ret = BTRCore_SetMediaElementActive(&hBTRCore, aBTRCoreDevId, aBtrMediaElementId, aenBTRCoreDevType, aenBTRCoreMedElementType);
 
@@ -2841,9 +2733,6 @@ void test_BTRCore_GetLEProperty_InvalidDeviceId(void) {
     TEST_ASSERT_EQUAL(enBTRCoreDeviceNotFound, ret);
 }
 
-
-
-
 int mock_BTRCore_LE_GetGattProperty(
     tBTRCoreLeHdl leHdl,
     tBTRCoreDevId tDeviceId,
@@ -2857,6 +2746,22 @@ int mock_BTRCore_LE_GetGattProperty(
     }
     return enBTRCoreSuccess;
 }
+
+int mock_BtrCore_LE_PerformGattOp(
+    tBTRCoreLeHdl leHdl,
+    tBTRCoreDevId tDeviceId,
+    const char* pcBTRCoreLEUuid,
+    enBTRCoreLEGattOp enBTRCoreLEGattOp,
+    char* apLeOpArg,
+    char* rpLeOpRes
+) {
+    // Simulate successful GATT operation
+    if (enBTRCoreLEGattOp == enBTRCoreLEGOpReadValue) {
+        strncpy(rpLeOpRes, "ReadValue", 9);
+    }
+    return enBTRCoreSuccess;
+}
+
 
 void test_BTRCore_GetLEProperty_Success(void) {
     stBTRCoreHdl hBTRCore;
@@ -2985,7 +2890,7 @@ void test_BTRCore_BatteryWriteOTAControl_ValidArguments(void) {
 void test_BTRCore_BatteryWriteOTAControl_NoPairedDevices(void) {
     stBTRCoreHdl coreHandle;
     coreHandle.numOfPairedDevices = 0;
-     BtrCore_LE_BatteryWriteOTAControl_IgnoreAndReturn(enBTRCoreSuccess);
+    BtrCore_LE_BatteryWriteOTAControl_IgnoreAndReturn(enBTRCoreSuccess);
     
     enBTRCoreRet ret = BTRCore_BatteryWriteOTAControl(&coreHandle, 0, "some_uuid", 0);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
@@ -3030,7 +2935,7 @@ void test_BTRCore_BatterySetLED_NullUUID(void) {
 void test_BTRCore_BatterySetLED_NoPairedDevices(void) {
     stBTRCoreHdl hBTRCore = { .numOfPairedDevices = 0 };
     //BtrCore_LE_BatterySetLED_IgnoreAndReturn(enBTRCoreSuccess);
-     BtrCore_LE_BatterySetLED_ExpectAndReturn(hBTRCore.leHdl, 0, "valid_uuid", enBTRCoreSuccess);
+    BtrCore_LE_BatterySetLED_ExpectAndReturn(hBTRCore.leHdl, 0, "valid_uuid", enBTRCoreSuccess);
     enBTRCoreRet result = BTRCore_BatterySetLED(&hBTRCore, 0, "valid_uuid");
     TEST_ASSERT_EQUAL(enBTRCoreFailure, result);
 }
@@ -3125,23 +3030,6 @@ void test_BTRCore_PerformLEOp_NullUUID(void) {
     tBTRCoreHandle handle = (tBTRCoreHandle)1;
     enBTRCoreRet ret = BTRCore_PerformLEOp(handle, 0, NULL, enBTRCoreLeOpGReadValue, NULL, NULL);
     TEST_ASSERT_EQUAL(enBTRCoreInvalidArg, ret);
-}
-
-
-
-int mock_BtrCore_LE_PerformGattOp(
-    tBTRCoreLeHdl leHdl,
-    tBTRCoreDevId tDeviceId,
-    const char* pcBTRCoreLEUuid,
-    enBTRCoreLEGattOp enBTRCoreLEGattOp,
-    char* apLeOpArg,
-    char* rpLeOpRes
-) {
-    // Simulate successful GATT operation
-    if (enBTRCoreLEGattOp == enBTRCoreLEGOpReadValue) {
-        strncpy(rpLeOpRes, "ReadValue", 9);
-    }
-    return enBTRCoreSuccess;
 }
 
 void test_BTRCore_PerformLEOp_ValidHandleUUID_ReadValue(void) {
@@ -3479,9 +3367,6 @@ void test_BTRCore_PairDevice_should_PairBluetoothCoreDeviceSuccessfully(void) {
     free(hBTRCore);
 }
 
-
-
-
 void test_BTRCore_UnPairDevice_should_ReturnNotInitialized_when_HandleIsNULL(void)
 {
     tBTRCoreHandle hBTRCore = NULL;
@@ -3511,13 +3396,6 @@ void test_BTRCore_UnPairDevice_DeviceNotFound(void) {
 
     free(pBTRCore);
 }
-
-
-
-
-
-
-
 
 void test_BTRCore_GetListOfPairedDevices_should_ReturnNotInitialized_when_HandleIsNULL(void)
 {
@@ -3555,12 +3433,7 @@ _mock_BTGetPairedDeviceInfo3 (
     //stBTPairedDeviceInfo pairedDevices = {0};
 
     memset(pairedDevices, 0, sizeof(stBTPairedDeviceInfo));
-
-    
-
-    pairedDevices->numberOfDevices = 2;
-
-    
+    pairedDevices->numberOfDevices = 2;   
 
     // Initialize first device
     strcpy(pairedDevices->devicePath[0], "/path/to/device1");
@@ -3590,8 +3463,6 @@ _mock_BTGetPairedDeviceInfo3 (
     strcpy(pairedDevices->deviceInfo[0].aUUIDs[0], "uuid1");
     strcpy(pairedDevices->deviceInfo[0].saServices[0].pcUUIDs, "serviceUUID1");
     pairedDevices->deviceInfo[0].saServices[0].len = 0;
-
-    
 
     // Initialize second device
     strcpy(pairedDevices->devicePath[1], "/path/to/device2");
@@ -3627,8 +3498,6 @@ _mock_BTGetPairedDeviceInfo3 (
 
 }
  
-
-
 void test_BTRCore_GetListOfPairedDevices_should_GetPairedDevicesSuccessfully(void)
 {
     stBTRCoreHdl* hBTRCore = malloc(sizeof(stBTRCoreHdl)); 
@@ -3638,10 +3507,7 @@ void test_BTRCore_GetListOfPairedDevices_should_GetPairedDevicesSuccessfully(voi
 
     // Initialize hBTRCore to zero
     memset(hBTRCore, 0, sizeof(stBTRCoreHdl));
-
-   
-
-hBTRCore->connHdl = 1; // Example value, adjust as needed
+    hBTRCore->connHdl = 1; // Example value, adjust as needed
     hBTRCore->curAdapterPath = "/test/path";
 
     // Sample details for 1st Known Device 
@@ -3657,15 +3523,8 @@ hBTRCore->connHdl = 1; // Example value, adjust as needed
     hBTRCore->stKnownDevicesArr[1].bDeviceConnected = TRUE;  // Assuming this means paired
     strncpy(hBTRCore->stKnownDevicesArr[1].pcDeviceName, "device1", sizeof("device1"));
     strncpy(hBTRCore->stKnownDevicesArr[1].pcDeviceAddress, "address1", sizeof("address1"));
-
-      //BtrCore_BTGetPairedDeviceInfo_IgnoreAndReturn(0);
-
-        BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mock_BTGetPairedDeviceInfo3);
-//btrCore_PopulateListOfPairedDevices_IgnoreAndReturn(enBTRCoreSuccess);
-
-    actual_result = BTRCore_GetListOfPairedDevices(hBTRCore, &listOfDevices);
-
-      
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mock_BTGetPairedDeviceInfo3);
+    actual_result = BTRCore_GetListOfPairedDevices(hBTRCore, &listOfDevices);   
     // Print debugging information
     printf("actual_result: %d expected_result: %d\n", actual_result, expected_result);
     printf("numberOfDevices: %d\n", listOfDevices.numberOfDevices);
@@ -3679,12 +3538,6 @@ hBTRCore->connHdl = 1; // Example value, adjust as needed
 
     free(hBTRCore);
 }
-
-
-
-
-
-
 
 void test_BTRCore_GetListOfPairedDevices_should_ReturnFailure_when_PopulateListOfPairedDevicesFails(void)
 {
@@ -3713,18 +3566,11 @@ void test_BTRCore_GetListOfPairedDevices_should_ReturnFailure_when_PopulateListO
 
     free(hBTRCore);
 }
-
-
-
-
-
 void test_BTRCore_FindDevice_should_ReturnNotInitialized_when_HandleIsNULL(void)
 {
     tBTRCoreDevId deviceId = 1;
     TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, BTRCore_FindDevice(NULL, deviceId));
 }
-
-
 
 void test_BTRCore_FindDevice_should_ReturnFailure_when_BtrCore_BTPerformAdapterOpFails(void)
 {
@@ -3745,9 +3591,6 @@ void test_BTRCore_FindDevice_should_ReturnFailure_when_BtrCore_BTPerformAdapterO
     free(hBTRCore);
 }
 
-
-
-
 void test_BTRCore_FindDevice_should_ReturnSuccess_when_BtrCore_BTPerformAdapterOpSucceeds(void)
 {
     stBTRCoreHdl* hBTRCore = malloc(sizeof(stBTRCoreHdl));
@@ -3766,8 +3609,6 @@ void test_BTRCore_FindDevice_should_ReturnSuccess_when_BtrCore_BTPerformAdapterO
 
     free(hBTRCore);
 }
-
-
 
 void test_BTRCore_FindService_should_ReturnNotInitialized_when_HandleIsNULL(void)
 {
@@ -3804,8 +3645,6 @@ void test_BTRCore_FindService_should_ReturnFailure_when_BtrCore_BTFindServiceSup
     free(hBTRCore);
 }
 
-
-
 int _mock_BTFindServiceSupported
  (
     void*           apstBtIfceHdl,
@@ -3825,7 +3664,7 @@ void test__BTRCore_FindServiceshould_ReturnSuccess_when_ServiceExists(void)
     const char* UUID = "1234";
     char XMLdata[100];
     int found;
-hBTRCore->connHdl = 1; // Example value, adjust as needed
+    hBTRCore->connHdl = 1; // Example value, adjust as needed
     hBTRCore->curAdapterPath = "/test/path";
 
     // Set up the expected return values for the function calls inside BTRCore_FindService 
@@ -3835,14 +3674,6 @@ hBTRCore->connHdl = 1; // Example value, adjust as needed
     stBTRCoreBTDevice deviceInfo = {0};
     stBTRCoreDevStateInfo devStInfo = {0};
     const char* deviceAddress = "00:11:22:33:44:55";  // replace with actual device address you expect 
-
-    // Assume btrCore_GetDeviceInfoKnown will successfully get device info 
-  // btrCore_GetDeviceInfoKnown_ExpectAndReturn(hBTRCore, deviceId, enBTRCoreUnknown, &devType, &deviceInfo, &devStInfo, &deviceAddress, enBTRCoreSuccess);
-  
-
-    // Assume BtrCore_BTFindServiceSupported will successfully find the service 
-    //BtrCore_BTFindServiceSupported_ExpectAndReturn(hBTRCore->connHdl, deviceAddress, UUID, XMLdata, 1);  // return 1 indicating service is found 
-
     //BtrCore_BTGetPairedDeviceInfo_IgnoreAndReturn(0);
     BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mock_BTGetPairedDeviceInfo3);
     BtrCore_BTFindServiceSupported_StubWithCallback(_mock_BTFindServiceSupported);
@@ -3874,11 +3705,6 @@ void test_BTRCore_GetDeviceConnected_NullHandle(void) {
     TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
 }
 
-
-
-
-
-
 int
 _mock_BTGetPairedDeviceInfo4 (
     void*                   apBtConn,
@@ -3888,13 +3714,7 @@ _mock_BTGetPairedDeviceInfo4 (
     //stBTPairedDeviceInfo pairedDevices = {0};
 
     memset(pairedDevices, 0, sizeof(stBTPairedDeviceInfo));
-
-    
-
     pairedDevices->numberOfDevices = 1;
-
-    
-
     // Initialize first device
     strcpy(pairedDevices->devicePath[0], "/path/to/device1");
     pairedDevices->deviceInfo[0].bPaired = 1;
@@ -3925,42 +3745,39 @@ _mock_BTGetPairedDeviceInfo4 (
     pairedDevices->deviceInfo[0].saServices[0].len = 0;
 
     //hBTRCore->stKnownDevStInfoArr[0].eDeviceCurrState = enBTRCoreDevStConnected;
-   
-
+}
+enBTRCoreRet mock_BTRCore_StatusCb (stBTRCoreDevStatusCBInfo* apstDevStatusCbInfo, void* apvUserData)
+{
+    return enBTRCoreSuccess;
+}
+enBTRCoreRet mock_BTRCore_MediaStatusCb (stBTRCoreMediaStatusCBInfo* apstMediaStatusCbInfo, void* apvUserData)
+{
+    return enBTRCoreSuccess;
 }
 
-    void test_BTRCore_GetDeviceConnected_DeviceConnected(void) {
-        stBTRCoreHdl* hBTRCore = malloc(sizeof(stBTRCoreHdl));
+void test_BTRCore_GetDeviceConnected_DeviceConnected(void) {
+    stBTRCoreHdl* hBTRCore = malloc(sizeof(stBTRCoreHdl));
+    //stBTRCoreDevStateInfo devStateInfo = { .eDeviceCurrState = enBTRCoreDevStConnected };
+    memset(hBTRCore, 0, sizeof(stBTRCoreHdl));
+    
+    // Initialize the structure members
+    hBTRCore->connHdl = (void*)1; 
+    hBTRCore->curAdapterPath = "/test/path";
 
-        //stBTRCoreDevStateInfo devStateInfo = { .eDeviceCurrState = enBTRCoreDevStConnected };
-
-        memset(hBTRCore, 0, sizeof(stBTRCoreHdl));
-        
-        // Initialize the structure members
-        hBTRCore->connHdl = (void*)1; 
-        hBTRCore->curAdapterPath = "/test/path";
-  
-
-        // Sample details for 1st Known Device 
-        hBTRCore->stKnownDevicesArr[0].tDeviceId = 1;
-        hBTRCore->stKnownDevicesArr[0].bDeviceConnected = TRUE;  // Assuming this means connected
-        strncpy(hBTRCore->stKnownDevicesArr[0].pcDeviceName, "device0", sizeof(hBTRCore->stKnownDevicesArr[0].pcDeviceName));
-        strncpy(hBTRCore->stKnownDevicesArr[0].pcDeviceAddress, "address0", sizeof(hBTRCore->stKnownDevicesArr[0].pcDeviceAddress));
-        
-        strncpy(hBTRCore->stKnownDevicesArr[0].pcDevicePath, "/device/path", sizeof(hBTRCore->stKnownDevicesArr[0].pcDevicePath));  // Initialize device path
-        hBTRCore->stKnownDevStInfoArr[0].eDeviceCurrState = enBTRCoreDevStConnected;
-
-        hBTRCore->numOfPairedDevices = 1; 
-
-        // Mocking and stubbing
-        BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mock_BTGetPairedDeviceInfo4);
-
-        enBTRCoreRet ret = BTRCore_GetDeviceConnected(hBTRCore, 0, enBTRCore_DC_Unknown);
-        TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
-    }
-
-
-
+    // Sample details for 1st Known Device 
+    hBTRCore->stKnownDevicesArr[0].tDeviceId = 1;
+    hBTRCore->stKnownDevicesArr[0].bDeviceConnected = TRUE;  // Assuming this means connected
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDeviceName, "device0", sizeof(hBTRCore->stKnownDevicesArr[0].pcDeviceName));
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDeviceAddress, "address0", sizeof(hBTRCore->stKnownDevicesArr[0].pcDeviceAddress));
+    
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDevicePath, "/device/path", sizeof(hBTRCore->stKnownDevicesArr[0].pcDevicePath));  // Initialize device path
+    hBTRCore->stKnownDevStInfoArr[0].eDeviceCurrState = enBTRCoreDevStConnected;
+    hBTRCore->numOfPairedDevices = 1; 
+    // Mocking and stubbing
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mock_BTGetPairedDeviceInfo4);
+    enBTRCoreRet ret = BTRCore_GetDeviceConnected(hBTRCore, 0, enBTRCore_DC_Unknown);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+}
 
 void test_BTRCore_GetDeviceConnected_NotConnected(void) {
     stBTRCoreHdl mockHandle;
@@ -3997,27 +3814,23 @@ void test_BTRCore_GetDeviceDisconnected_NullHandle(void) {
     TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
 }
 
-
-
-
-
 void test_BTRCore_GetDeviceDisconnected_DeviceInfoSuccess_Disconnected(void) {
     stBTRCoreHdl* hBTRCore = malloc(sizeof(stBTRCoreHdl));
 
     memset(hBTRCore, 0, sizeof(stBTRCoreHdl));
 
     // Initialize the structure members
-        hBTRCore->connHdl = (void*)1; 
-        hBTRCore->curAdapterPath = "/test/path";
+    hBTRCore->connHdl = (void*)1; 
+    hBTRCore->curAdapterPath = "/test/path";
     
     // Sample details for 1st Known Device 
-        hBTRCore->stKnownDevicesArr[0].tDeviceId = 1;
-        hBTRCore->stKnownDevicesArr[0].bDeviceConnected = TRUE;  // Assuming this means connected
-        strncpy(hBTRCore->stKnownDevicesArr[0].pcDeviceName, "device0", sizeof(hBTRCore->stKnownDevicesArr[0].pcDeviceName));
-        strncpy(hBTRCore->stKnownDevicesArr[0].pcDeviceAddress, "address0", sizeof(hBTRCore->stKnownDevicesArr[0].pcDeviceAddress));
+    hBTRCore->stKnownDevicesArr[0].tDeviceId = 1;
+    hBTRCore->stKnownDevicesArr[0].bDeviceConnected = TRUE;  // Assuming this means connected
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDeviceName, "device0", sizeof(hBTRCore->stKnownDevicesArr[0].pcDeviceName));
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDeviceAddress, "address0", sizeof(hBTRCore->stKnownDevicesArr[0].pcDeviceAddress));
         
-        strncpy(hBTRCore->stKnownDevicesArr[0].pcDevicePath, "/device/path", sizeof(hBTRCore->stKnownDevicesArr[0].pcDevicePath));  // Initialize device path
-        hBTRCore->stKnownDevStInfoArr[0].eDeviceCurrState = enBTRCoreDevStDisconnected;
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDevicePath, "/device/path", sizeof(hBTRCore->stKnownDevicesArr[0].pcDevicePath));  // Initialize device path
+    hBTRCore->stKnownDevStInfoArr[0].eDeviceCurrState = enBTRCoreDevStDisconnected;
 
     hBTRCore->numOfPairedDevices = 1; 
 
@@ -4217,8 +4030,6 @@ void test_BTRCore_StopAdvertisement_NullInput(void) {
     TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
 }
 
-
-
 void test_BTRCore_StopAdvertisement_ValidInput(void) {
     tBTRCoreHandle hBTRCore = (tBTRCoreHandle)malloc(sizeof(stBTRCoreHdl));
     enBTRCoreRet ret;
@@ -4295,9 +4106,7 @@ void test_BTRCore_GetPropertyValue_ValidInputs(void) {
 
     //  There is no test function for Success case for the BTRCore_GetPropertyValue function
 }
-
-
-     
+    
 void test_BTRCore_GetPropertyValue_InvalidProperty(void) {
     tBTRCoreHandle handle = (tBTRCoreHandle)1;
     char uuid[] = "some-uuid";
@@ -4310,8 +4119,6 @@ void test_BTRCore_GetPropertyValue_InvalidProperty(void) {
     ret = BTRCore_GetPropertyValue(handle, uuid, value, enBTRCoreLePropUnknown);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
 }
-
-
 
 void test_BTRCore_SetAdvertisementInfo_ValidInputs(void) {
     // Allocate memory for the structure and initialize it
@@ -4332,9 +4139,6 @@ void test_BTRCore_SetAdvertisementInfo_ValidInputs(void) {
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
 }
 
-
-
-
 void test_BTRCore_SetAdvertisementInfo_NullHandle(void) {
     char advtType[] = "Type";
     char advtBeaconName[] = "BeaconName";
@@ -4343,8 +4147,6 @@ void test_BTRCore_SetAdvertisementInfo_NullHandle(void) {
 
     TEST_ASSERT_EQUAL(enBTRCoreFailure, result);
 }
-
-
 
 void test_BTRCore_SetAdvertisementInfo_NullAdvtType(void) {
     tBTRCoreHandle hBTRCore = (tBTRCoreHandle)1; // Mock handle
@@ -4355,8 +4157,6 @@ void test_BTRCore_SetAdvertisementInfo_NullAdvtType(void) {
     TEST_ASSERT_EQUAL(enBTRCoreFailure, result);
 }
 
-
-
 void test_BTRCore_SetAdvertisementInfo_NullAdvtBeaconName(void) {
     tBTRCoreHandle hBTRCore = (tBTRCoreHandle)1; // Mock handle
     char advtType[] = "Type";
@@ -4366,21 +4166,16 @@ void test_BTRCore_SetAdvertisementInfo_NullAdvtBeaconName(void) {
     TEST_ASSERT_EQUAL(enBTRCoreFailure, result);
 }
 
-
-
 void test_BTRCore_SetServiceUUIDs_NULL_hBTRCore(void) {
     enBTRCoreRet ret = BTRCore_SetServiceUUIDs(NULL, "someUUID");
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
 }
-
-
 
 void test_BTRCore_SetServiceUUIDs_NULL_aUUID(void) {
     stBTRCoreHdl hBTRCore;
     enBTRCoreRet ret = BTRCore_SetServiceUUIDs(&hBTRCore, NULL);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
 }
-
 
 void test_BTRCore_SetServiceUUIDs_ValidInputs(void) {
     stBTRCoreHdl hBTRCore;
@@ -4395,22 +4190,17 @@ void test_BTRCore_SetServiceUUIDs_ValidInputs(void) {
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
 }
 
-
-
 void test_BTRCore_SetManufacturerData_NullHandle(void) {
     unsigned char deviceDetails[] = {0x01, 0x02, 0x03};
     enBTRCoreRet ret = BTRCore_SetManufacturerData(NULL, 1234, deviceDetails, 3);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
 }
 
-
-
 void test_BTRCore_SetManufacturerData_NullDeviceDetails(void) {
     tBTRCoreHandle handle = (tBTRCoreHandle)1;
     enBTRCoreRet ret = BTRCore_SetManufacturerData(handle, 1234, NULL, 3);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
 }
-
 
 void test_BTRCore_SetManufacturerData_ValidInput(void) {
     stBTRCoreHdl stHandle = {0};  // Create a valid stBTRCoreHdl structure
@@ -4425,7 +4215,6 @@ void test_BTRCore_SetManufacturerData_ValidInput(void) {
     ret = BTRCore_SetManufacturerData(handle, 1234, deviceDetails, 3);
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
 }
-
 
 void test_BTRCore_SetManufacturerData_InvalidLength(void) {
     stBTRCoreHdl mockHandle;  // Create a mock stBTRCoreHdl structure
@@ -4443,14 +4232,10 @@ void test_BTRCore_SetManufacturerData_InvalidLength(void) {
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
 }
 
-
-
-
 void test_BTRCore_SetEnableTxPower_NullHandle(void) {
     enBTRCoreRet ret = BTRCore_SetEnableTxPower(NULL, TRUE);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
 }
-
 
 void test_BTRCore_SetEnableTxPower_ValidHandle_True(void) {
     stBTRCoreHdl mockHandle;
@@ -4464,7 +4249,6 @@ void test_BTRCore_SetEnableTxPower_ValidHandle_True(void) {
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
 }
 
-
 void test_BTRCore_SetEnableTxPower_ValidHandle_False(void) {
     stBTRCoreHdl mockHandle;
     enBTRCoreRet ret;
@@ -4475,8 +4259,6 @@ void test_BTRCore_SetEnableTxPower_ValidHandle_False(void) {
     ret = BTRCore_SetEnableTxPower(&mockHandle, FALSE);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
 }
-
-
 
 void test_BTRCore_SetServiceInfo_ValidInputs(void) {
     stBTRCoreHdl mockBTRCoreHdl = {0};  // Initialize the structure with zeros
@@ -4494,9 +4276,6 @@ void test_BTRCore_SetServiceInfo_ValidInputs(void) {
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
 }
 
-
-
-
 void test_BTRCore_SetServiceInfo_NullHandle(void) {
     char* aUUID = "1234";
     BOOLEAN aServiceType = TRUE;
@@ -4504,8 +4283,6 @@ void test_BTRCore_SetServiceInfo_NullHandle(void) {
     enBTRCoreRet result = BTRCore_SetServiceInfo(NULL, aUUID, aServiceType);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, result);
 }
-
-
 
 void test_BTRCore_SetServiceInfo_NullUUID(void) {
     tBTRCoreHandle hBTRCore = (tBTRCoreHandle)1; // Mock handle
@@ -4533,8 +4310,6 @@ void test_BTRCore_RemoveServiceInfo_NullUUID(void) {
     TEST_ASSERT_EQUAL(enBTRCoreFailure, result);
 }
 
-
-
 void test_BTRCore_RemoveServiceInfo_ValidInputs(void) {
     // Initialize a valid stBTRCoreHdl structure
     stBTRCoreHdl mockHdl;
@@ -4553,9 +4328,6 @@ void test_BTRCore_RemoveServiceInfo_ValidInputs(void) {
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
 }
 
-
-
-
 void test_BTRCore_SetGattInfo_ValidInputs(void) {
     // Create a mock BTRCoreHdl structure
     stBTRCoreHdl mockBTRCoreHdl = {0};
@@ -4569,8 +4341,6 @@ void test_BTRCore_SetGattInfo_ValidInputs(void) {
     unsigned short flags = 0;
     char value[] = "value";
     enBTRCoreLeProp element = enBTRCoreLePropGUUID;
-
-    
 
     // Mock the BTRCore_LE_SetPropertyValue function call if necessary
     BTRCore_LE_SetPropertyValue_ExpectAndReturn(hBTRCore, UUID, value, element, enBTRCoreSuccess);
@@ -4586,8 +4356,6 @@ void test_BTRCore_SetGattInfo_ValidInputs(void) {
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
 }
 
-
-
 void test_BTRCore_SetGattInfo_NullHandle(void) {
     char parentUUID[] = "parentUUID";
     char UUID[] = "UUID";
@@ -4598,7 +4366,6 @@ void test_BTRCore_SetGattInfo_NullHandle(void) {
     enBTRCoreRet result = BTRCore_SetGattInfo(NULL, parentUUID, UUID, flags, value, element);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, result);
 }
-
 
 void test_BTRCore_SetGattInfo_NullParentUUID(void) {
     tBTRCoreHandle hBTRCore = (tBTRCoreHandle)1;
@@ -4633,24 +4400,16 @@ void test_BTRCore_SetGattInfo_NullValue(void) {
     TEST_ASSERT_EQUAL(enBTRCoreFailure, result);
 }
 
-
-
-
 void test_BTRCore_SetPropertyValue_hBTRCore_NULL(void) {
     enBTRCoreRet ret = BTRCore_SetPropertyValue(NULL, "UUID", "Value", enBTRCoreLePropGValue);
     TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
 }
-
-
-
 
 void test_BTRCore_SetPropertyValue_aValue_NULL(void) {
     tBTRCoreHandle hBTRCore = (tBTRCoreHandle)1;
     enBTRCoreRet ret = BTRCore_SetPropertyValue(hBTRCore, "UUID", NULL, enBTRCoreLePropGValue);
     TEST_ASSERT_EQUAL(enBTRCoreInvalidArg, ret);
 }
-
-
 
 void test_BTRCore_SetPropertyValue_Success(void) {
     stBTRCoreHdl mockHdl = {0};  // Initialize mock handle
@@ -4673,10 +4432,6 @@ void test_BTRCore_SetPropertyValue_Success(void) {
     mock_btrCore_le_Verify();
     mock_btrCore_le_Destroy();
 }
-
-
-
-
 void test_BTRCore_SetPropertyValue_Failure(void) {
     stBTRCoreHdl stHandle;
     tBTRCoreHandle hBTRCore = &stHandle;  // Point to valid memory
@@ -4694,9 +4449,6 @@ void test_BTRCore_SetPropertyValue_Failure(void) {
     mock_btrCore_le_Verify();
     mock_btrCore_le_Destroy();
 }
-
-
-
 
 void test_BTRCore_RegisterDiscoveryCb_Success(void) {
     tBTRCoreHandle hBTRCore = (tBTRCoreHandle)malloc(sizeof(stBTRCoreHdl));
@@ -4722,8 +4474,6 @@ void test_BTRCore_RegisterDiscoveryCb_NullHandle(void) {
     TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, result);
 }
 
-
-
 void test_BTRCore_RegisterDiscoveryCb_NullCallback(void) {
     tBTRCoreHandle hBTRCore = (tBTRCoreHandle)malloc(sizeof(stBTRCoreHdl));
     void* apUserData = (void*)0x5678;
@@ -4736,7 +4486,6 @@ void test_BTRCore_RegisterDiscoveryCb_NullCallback(void) {
 
     free(hBTRCore);
 }
-
 
 void test_BTRCore_RegisterDiscoveryCb_AlreadySet(void) {
     tBTRCoreHandle hBTRCore = (tBTRCoreHandle)malloc(sizeof(stBTRCoreHdl));
@@ -4752,13 +4501,10 @@ void test_BTRCore_RegisterDiscoveryCb_AlreadySet(void) {
     free(hBTRCore);
 }
 
-
-
 void test_BTRCore_RegisterStatusCb_hBTRCore_NULL(void) {
     enBTRCoreRet result = BTRCore_RegisterStatusCb(NULL, NULL, NULL);
     TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, result);
 }
-
 
 void test_BTRCore_RegisterStatusCb_hBTRCore_Not_NULL_fpcBBTRCoreStatus_NULL(void) {
     stBTRCoreHdl* hBTRCore = malloc(sizeof(hBTRCore));
@@ -4767,11 +4513,6 @@ void test_BTRCore_RegisterStatusCb_hBTRCore_Not_NULL_fpcBBTRCoreStatus_NULL(void
     enBTRCoreRet result = BTRCore_RegisterStatusCb(hBTRCore, NULL, NULL);
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
     //TEST_ASSERT_NULL(hBTRCore->fpcBBTRCoreStatus);
-}
-
-enBTRCoreRet mock_BTRCore_StatusCb (stBTRCoreDevStatusCBInfo* apstDevStatusCbInfo, void* apvUserData)
-{
-    return enBTRCoreSuccess;
 }
 
 void test_BTRCore_RegisterStatusCb_hBTRCore_Not_NULL_fpcBBTRCoreStatus_Not_NULL(void) {
@@ -4785,18 +4526,11 @@ void test_BTRCore_RegisterStatusCb_hBTRCore_Not_NULL_fpcBBTRCoreStatus_Not_NULL(
     TEST_ASSERT_EQUAL(mockStatusCb, hBTRCore->fpcBBTRCoreStatus);
 }
 
-
 void test_BTRCore_RegisterMediaStatusCb_NullHandle(void) {
     enBTRCoreRet ret = BTRCore_RegisterMediaStatusCb(NULL, NULL, NULL);
     TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
 }
 
-
-
-enBTRCoreRet mock_BTRCore_MediaStatusCb (stBTRCoreMediaStatusCBInfo* apstMediaStatusCbInfo, void* apvUserData)
-{
-    return enBTRCoreSuccess;
-}
 void test_BTRCore_RegisterMediaStatusCb_ValidHandle_ValidCallback(void) {
     
     stBTRCoreHdl* hBTRCore = malloc (sizeof(stBTRCoreHdl));
@@ -4811,9 +4545,6 @@ void test_BTRCore_RegisterMediaStatusCb_ValidHandle_ValidCallback(void) {
     free (hBTRCore);
 
 }
-
-
-
 
 void test_BTRCore_RegisterConnectionIntimationCb_ValidInputs(void) {
     stBTRCoreHdl stBTRCoreHandle; // Declare an instance of stBTRCoreHdl
@@ -4835,8 +4566,6 @@ void test_BTRCore_RegisterConnectionIntimationCb_ValidInputs(void) {
     TEST_ASSERT_EQUAL_PTR(apUserData, stBTRCoreHandle.pvcBConnIntimUserData);
 }
 
-
-
 void test_BTRCore_RegisterConnectionIntimationCb_NullHandle(void) {
     fPtr_BTRCore_ConnIntimCb afpcBBTRCoreConnIntim = (fPtr_BTRCore_ConnIntimCb)0x5678;
     void* apUserData = (void*)0x9ABC;
@@ -4845,9 +4574,6 @@ void test_BTRCore_RegisterConnectionIntimationCb_NullHandle(void) {
 
     TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
 }
-
-
-
 
 void test_BTRCore_RegisterConnectionIntimationCb_NullCallback(void) {
     stBTRCoreHdl stBTRCoreHandle = {0};  // Allocate and zero-initialize the structure
@@ -4858,8 +4584,6 @@ void test_BTRCore_RegisterConnectionIntimationCb_NullCallback(void) {
 
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
 }
-
-
 
 void test_BTRCore_RegisterConnectionIntimationCb_NullUserData(void) {
     stBTRCoreHdl stBTRCore;
@@ -4874,8 +4598,6 @@ void test_BTRCore_RegisterConnectionIntimationCb_NullUserData(void) {
 
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
 }
-
-
 
 void test_BTRCore_RegisterConnectionIntimationCb_AlreadySet(void) {
     stBTRCoreHdl stBTRCoreHandle = {0};  // Initialize the structure to zero
@@ -4914,3 +4636,3798 @@ void test_BTRCore_RegisterConnectionAuthenticationCb_Success(void) {
     enBTRCoreRet ret = BTRCore_RegisterConnectionAuthenticationCb(&hBTRCore, callback, NULL);
     TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
 }
+///////////////////////////////////////////////////////////////
+int
+mock_BtrCore_BTSetProp (
+    void*               apstBtIfceHdl,
+    const char*         apcBtOpIfcePath,
+    enBTOpIfceType      aenBtOpIfceType,
+    unBTOpIfceProp      aunBtOpIfceProp,
+    void*               apvVal
+) {
+       
+    return 0;
+}
+int
+mock_BtrCore_BTSetProp_fail (
+    void*               apstBtIfceHdl,
+    const char*         apcBtOpIfcePath,
+    enBTOpIfceType      aenBtOpIfceType,
+    unBTOpIfceProp      aunBtOpIfceProp,
+    void*               apvVal
+) {
+       
+    return 1;
+}
+
+int
+mock_BtrCore_BTGetIfceNameVersion (
+    void* apstBtIfceHdl,
+    char* apBtOutIfceName,
+    char* apBtOutVersion
+) {
+   return 0;
+}
+
+int
+mock_BtrCore_BTPerformAdapterOp (
+    void*           apstBtIfceHdl,
+    const char*     apBtAdapter,
+    const char*     apBtAgentPath,
+    const char*     apcDevPath,
+    enBTAdapterOp   aenBTAdpOp
+) {
+
+    return 0;
+}
+int
+mock_BtrCore_BTPerformAdapterOp_fail (
+    void*           apstBtIfceHdl,
+    const char*     apBtAdapter,
+    const char*     apBtAgentPath,
+    const char*     apcDevPath,
+    enBTAdapterOp   aenBTAdpOp
+) {
+
+    return 0;
+}
+
+int
+mock_BtrCore_BTGetProp (
+    void*               apstBtIfceHdl,
+    const char*         apcBtOpIfcePath,
+    enBTOpIfceType      aenBtOpIfceType,
+    unBTOpIfceProp      aunBtOpIfceProp,
+    void*               apvVal
+) {
+       
+    return 0;
+}
+int
+mock_BtrCore_BTGetProp_fail (
+    void*               apstBtIfceHdl,
+    const char*         apcBtOpIfcePath,
+    enBTOpIfceType      aenBtOpIfceType,
+    unBTOpIfceProp      aunBtOpIfceProp,
+    void*               apvVal
+) {
+       
+    return 1;
+}
+int mock_BtrCore_BTGetPairedDeviceInfo_fail(void* apstBtIfceHdl, const char* apcDevPath, stBTRCoreBTDevice* apstFoundDevice) {
+
+    return -1;
+}
+int mock_btrCore_GetScannedDeviceAddress(stBTRCoreHdl* pstlhBTRCore, tBTRCoreDevId aBTRCoreDevId) {
+    return 1; // Simulate that the device is found in the scanned list
+}
+
+enBTRCoreRet mock_btrCore_RemoveDeviceFromScannedDevicesArr(stBTRCoreHdl* pstlhBTRCore, tBTRCoreDevId aBTRCoreDevId, stBTRCoreBTDevice* pstScannedDevice) {
+    pstScannedDevice->tDeviceId = aBTRCoreDevId; // Simulate successful removal
+    return enBTRCoreSuccess;
+}
+
+int mock_BtrCore_BTGetBatteryLevel(void* connHdl, const char* devicePath, unsigned char* batteryLevel) {
+    *batteryLevel = 75; // Simulate a battery level of 75%
+    return 0; // Simulate success
+}
+
+int mock_BtrCore_BTGetBatteryLevel_fail(void* connHdl, const char* devicePath, unsigned char* batteryLevel) {
+    return -1; // Simulate failure
+}
+
+
+void test_BTRCore_SetAdapterName_NotInitialized(void) {
+    enBTRCoreRet ret;
+
+    // Test case for uninitialized BTRCore handle
+    ret = BTRCore_SetAdapterName(NULL, "/org/bluez/hci0", "TestAdapter");
+    TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
+}
+
+void test_BTRCore_SetAdapterName_InvalidArguments(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Test case for null adapter path
+    ret = BTRCore_SetAdapterName(&btrCoreHdl, NULL, "TestAdapter");
+    TEST_ASSERT_EQUAL(enBTRCoreInvalidArg, ret);
+
+    // Test case for null adapter name
+    ret = BTRCore_SetAdapterName(&btrCoreHdl, "/org/bluez/hci0", NULL);
+    TEST_ASSERT_EQUAL(enBTRCoreInvalidArg, ret);
+}
+
+void test_BTRCore_SetAdapterName_SetPropFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    btrCoreHdl.curAdapterPath = "/org/bluez/hci0";
+
+    // Mock the BtrCore_BTSetProp function to return failure
+   
+    BtrCore_BTSetProp_StubWithCallback(mock_BtrCore_BTSetProp_fail);
+
+    // Test case for BtrCore_BTSetProp failure
+    ret = BTRCore_SetAdapterName(&btrCoreHdl, "/org/bluez/hci0", "TestAdapter");
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_SetAdapterName_Success(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    btrCoreHdl.curAdapterPath = "/org/bluez/hci0";
+
+    // Mock the BtrCore_BTSetProp function to return success
+   BtrCore_BTSetProp_StubWithCallback(mock_BtrCore_BTSetProp);
+
+    // Test case for successful adapter name set
+    ret = BTRCore_SetAdapterName(&btrCoreHdl, "/org/bluez/hci0", "TestAdapter");
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+}
+
+void test_BTRCore_GetAdapterName_NotInitialized(void) {
+    enBTRCoreRet ret;
+    char adapterName[BD_NAME_LEN + 1] = {'\0'};
+
+    // Test case for uninitialized BTRCore handle
+    ret = BTRCore_GetAdapterName(NULL, "/org/bluez/hci0", adapterName);
+    TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
+}
+
+void test_BTRCore_GetAdapterName_InvalidArguments(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    char adapterName[BD_NAME_LEN + 1] = {'\0'};
+
+    // Test case for null adapter path
+    ret = BTRCore_GetAdapterName(&btrCoreHdl, NULL, adapterName);
+    TEST_ASSERT_EQUAL(enBTRCoreInvalidArg, ret);
+
+    // Test case for null adapter name
+    ret = BTRCore_GetAdapterName(&btrCoreHdl, "/org/bluez/hci0", NULL);
+    TEST_ASSERT_EQUAL(enBTRCoreInvalidArg, ret);
+}
+
+void test_BTRCore_GetVersionInfo_Success(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    char btVersion[BTRCORE_STR_LEN] = {'\0'};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    // Mock the BtrCore_BTGetIfceNameVersion function to return success and provide interface name and version
+    BtrCore_BTGetIfceNameVersion_StubWithCallback( mock_BtrCore_BTGetIfceNameVersion);
+
+    // Call the function with valid parameters and expect success
+    ret = BTRCore_GetVersionInfo(&btrCoreHdl, btVersion);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+}
+
+void test_BTRCore_StartDiscovery_NotInitialized(void) {
+    enBTRCoreRet ret;
+
+    // Test case for uninitialized BTRCore handle
+    ret = BTRCore_StartDiscovery(NULL, "/org/bluez/hci0", enBTRCoreSpeakers, 10);
+    TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
+}
+
+void test_BTRCore_StartDiscovery_InvalidArguments(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Test case for null adapter path
+    ret = BTRCore_StartDiscovery(&btrCoreHdl, NULL, enBTRCoreSpeakers, 10);
+    TEST_ASSERT_EQUAL(enBTRCoreInvalidArg, ret);
+}
+
+void test_BTRCore_StartDiscovery_LEDiscoveryFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    // Mock the BtrCore_BTStartLEDiscovery function to return failure
+    BtrCore_BTStartLEDiscovery_ExpectAndReturn(btrCoreHdl.connHdl, "/org/bluez/hci0", btrCoreHdl.agentPath, 1);
+
+    // Test case for LE discovery failure
+    ret = BTRCore_StartDiscovery(&btrCoreHdl, "/org/bluez/hci0", enBTRCoreLE, 10);
+    TEST_ASSERT_EQUAL(enBTRCoreDiscoveryFailure, ret);
+}
+
+void test_BTRCore_StartDiscovery_LEStopDiscoveryFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    // Mock the BtrCore_BTStartLEDiscovery function to return success
+    BtrCore_BTStartLEDiscovery_ExpectAndReturn(btrCoreHdl.connHdl, "/org/bluez/hci0", btrCoreHdl.agentPath, 0);
+
+    // Mock the BtrCore_BTStopLEDiscovery function to return failure
+    BtrCore_BTStopLEDiscovery_ExpectAndReturn(btrCoreHdl.connHdl, "/org/bluez/hci0", btrCoreHdl.agentPath, 1);
+
+    // Test case for LE stop discovery failure
+    ret = BTRCore_StartDiscovery(&btrCoreHdl, "/org/bluez/hci0", enBTRCoreLE, 10);
+    TEST_ASSERT_EQUAL(enBTRCoreDiscoveryFailure, ret);
+}
+
+void test_BTRCore_StartDiscovery_ClassicDiscoveryFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    // Mock the BtrCore_BTStartClassicDiscovery function to return failure
+    BtrCore_BTStartClassicDiscovery_ExpectAndReturn(btrCoreHdl.connHdl, "/org/bluez/hci0", btrCoreHdl.agentPath, 1);
+
+    // Test case for Classic discovery failure
+    ret = BTRCore_StartDiscovery(&btrCoreHdl, "/org/bluez/hci0", enBTRCoreSpeakers, 10);
+    TEST_ASSERT_EQUAL(enBTRCoreDiscoveryFailure, ret);
+}
+
+void test_BTRCore_StartDiscovery_ClassicStopDiscoveryFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    // Mock the BtrCore_BTStartClassicDiscovery function to return success
+    BtrCore_BTStartClassicDiscovery_ExpectAndReturn(btrCoreHdl.connHdl, "/org/bluez/hci0", btrCoreHdl.agentPath, 0);
+
+    // Mock the BtrCore_BTStopClassicDiscovery function to return failure
+    BtrCore_BTStopClassicDiscovery_ExpectAndReturn(btrCoreHdl.connHdl, "/org/bluez/hci0", btrCoreHdl.agentPath, 1);
+
+    // Test case for Classic stop discovery failure
+    ret = BTRCore_StartDiscovery(&btrCoreHdl, "/org/bluez/hci0", enBTRCoreSpeakers, 10);
+    TEST_ASSERT_EQUAL(enBTRCoreDiscoveryFailure, ret);
+}
+
+void test_BTRCore_StartDiscovery_DiscoveryFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    // Mock the BtrCore_BTStartDiscovery function to return failure
+    BtrCore_BTStartDiscovery_ExpectAndReturn(btrCoreHdl.connHdl, "/org/bluez/hci0", btrCoreHdl.agentPath, 1);
+
+    // Test case for discovery failure
+    ret = BTRCore_StartDiscovery(&btrCoreHdl, "/org/bluez/hci0", enBTRCoreUnknown, 10);
+    TEST_ASSERT_EQUAL(enBTRCoreDiscoveryFailure, ret);
+}
+
+void test_BTRCore_StartDiscovery_StopDiscoveryFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    // Mock the BtrCore_BTStartDiscovery function to return success
+    BtrCore_BTStartDiscovery_ExpectAndReturn(btrCoreHdl.connHdl, "/org/bluez/hci0", btrCoreHdl.agentPath, 0);
+
+    // Mock the BtrCore_BTStopDiscovery function to return failure
+    BtrCore_BTStopDiscovery_ExpectAndReturn(btrCoreHdl.connHdl, "/org/bluez/hci0", btrCoreHdl.agentPath, 1);
+
+    // Test case for stop discovery failure
+    ret = BTRCore_StartDiscovery(&btrCoreHdl, "/org/bluez/hci0", enBTRCoreUnknown, 10);
+    TEST_ASSERT_EQUAL(enBTRCoreDiscoveryFailure, ret);
+}
+
+void test_BTRCore_StartDiscovery_Success(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    // Mock the BtrCore_BTStartDiscovery function to return success
+    BtrCore_BTStartDiscovery_ExpectAndReturn(btrCoreHdl.connHdl, "/org/bluez/hci0", btrCoreHdl.agentPath, 0);
+
+    // Mock the BtrCore_BTStopDiscovery function to return success
+    BtrCore_BTStopDiscovery_ExpectAndReturn(btrCoreHdl.connHdl, "/org/bluez/hci0", btrCoreHdl.agentPath, 0);
+
+    // Test case for successful discovery
+    ret = BTRCore_StartDiscovery(&btrCoreHdl, "/org/bluez/hci0", enBTRCoreUnknown, 10);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+}
+
+void test_BTRCore_StopDiscovery_LEDiscoveryFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    // Mock the BtrCore_BTStopLEDiscovery function to return failure
+    BtrCore_BTStopLEDiscovery_ExpectAndReturn(btrCoreHdl.connHdl, "/org/bluez/hci0", btrCoreHdl.agentPath, 1);
+
+    // Test case for LE stop discovery failure
+    ret = BTRCore_StopDiscovery(&btrCoreHdl, "/org/bluez/hci0", enBTRCoreLE);
+    TEST_ASSERT_EQUAL(enBTRCoreDiscoveryFailure, ret);
+}
+
+void test_BTRCore_StopDiscovery_ClassicDiscoveryFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    // Mock the BtrCore_BTStopClassicDiscovery function to return failure
+    BtrCore_BTStopClassicDiscovery_ExpectAndReturn(btrCoreHdl.connHdl, "/org/bluez/hci0", btrCoreHdl.agentPath, 1);
+
+    // Test case for Classic stop discovery failure
+    ret = BTRCore_StopDiscovery(&btrCoreHdl, "/org/bluez/hci0", enBTRCoreSpeakers);
+    TEST_ASSERT_EQUAL(enBTRCoreDiscoveryFailure, ret);
+}
+
+void test_BTRCore_StopDiscovery_DiscoveryFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    // Mock the BtrCore_BTStopDiscovery function to return failure
+    BtrCore_BTStopDiscovery_ExpectAndReturn(btrCoreHdl.connHdl, "/org/bluez/hci0", btrCoreHdl.agentPath, 1);
+
+    // Test case for stop discovery failure
+    ret = BTRCore_StopDiscovery(&btrCoreHdl, "/org/bluez/hci0", enBTRCoreUnknown);
+    TEST_ASSERT_EQUAL(enBTRCoreDiscoveryFailure, ret);
+}
+
+void test_BTRCore_StopDiscovery_Success(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    // Mock the BtrCore_BTStopDiscovery function to return success
+    BtrCore_BTStopDiscovery_ExpectAndReturn(btrCoreHdl.connHdl, "/org/bluez/hci0", btrCoreHdl.agentPath, 0);
+
+    // Test case for successful stop discovery
+    ret = BTRCore_StopDiscovery(&btrCoreHdl, "/org/bluez/hci0", enBTRCoreUnknown);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+}
+
+void test_BTRCore_PairDevice_NotInitialized(void) {
+    enBTRCoreRet ret;
+
+    // Test case for uninitialized BTRCore handle
+    ret = BTRCore_PairDevice(NULL, 0);
+    TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
+}
+
+void test_BTRCore_PairDevice_DeviceNotFound(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    // Test case for device not found
+    ret = BTRCore_PairDevice(&btrCoreHdl, BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES + 1);
+    TEST_ASSERT_EQUAL(enBTRCoreDeviceNotFound, ret);
+}
+
+void test_BTRCore_PairDevice_SetPropPairableModeFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    stBTRCoreBTDevice scannedDevice = {0};
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    btrCoreHdl.curAdapterPath = "/org/bluez/hci0";
+    btrCoreHdl.stScannedDevicesArr[0] = scannedDevice;
+    strcpy(btrCoreHdl.stScannedDevicesArr[0].pcDeviceAddress,"00:11:22:33:44:55");
+    btrCoreHdl.stScannedDevicesArr[0].enDeviceType = enBTRCore_DC_HID_Keyboard;
+
+    // Mock the BtrCore_BTSetProp function to return failure
+    BtrCore_BTSetProp_StubWithCallback(mock_BtrCore_BTSetProp_fail);
+
+    // Test case for setting adapter to pairable mode failure
+    ret = BTRCore_PairDevice(&btrCoreHdl, 0);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_PairDevice_GetPropPairableModeFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    stBTRCoreBTDevice scannedDevice = {0};
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    btrCoreHdl.curAdapterPath = "/org/bluez/hci0";
+    btrCoreHdl.stScannedDevicesArr[0] = scannedDevice;
+    strcpy(btrCoreHdl.stScannedDevicesArr[0].pcDeviceAddress,"00:11:22:33:44:55");
+    btrCoreHdl.stScannedDevicesArr[0].enDeviceType = enBTRCore_DC_Loudspeaker;
+
+    // Mock the BtrCore_BTGetProp function to return failure
+    BtrCore_BTGetProp_StubWithCallback(mock_BtrCore_BTGetProp_fail);
+
+    // Test case for getting adapter pairable mode failure
+    ret = BTRCore_PairDevice(&btrCoreHdl, 0);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_PairDevice_SetPropPairableModeSuccess(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    stBTRCoreBTDevice scannedDevice = {0};
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    btrCoreHdl.curAdapterPath = "/org/bluez/hci0";
+    btrCoreHdl.stScannedDevicesArr[0] = scannedDevice;
+    strcpy(btrCoreHdl.stScannedDevicesArr[0].pcDeviceAddress,"00:11:22:33:44:55");
+    btrCoreHdl.stScannedDevicesArr[0].enDeviceType = enBTRCore_DC_Loudspeaker;
+
+    // Mock the BtrCore_BTGetProp function to return success and PairableMode to 0
+    BtrCore_BTGetProp_StubWithCallback(mock_BtrCore_BTGetProp);
+    BtrCore_BTSetProp_StubWithCallback(mock_BtrCore_BTSetProp);
+    BtrCore_BTPerformAdapterOp_StubWithCallback(mock_BtrCore_BTPerformAdapterOp);
+
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo);
+
+    // Test case for setting adapter to pairable mode success
+    ret = BTRCore_PairDevice(&btrCoreHdl, 0);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+}
+
+void test_BTRCore_PairDevice_PerformAdapterOpFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    stBTRCoreBTDevice scannedDevice = {0};
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    btrCoreHdl.curAdapterPath = "/org/bluez/hci0";
+    btrCoreHdl.stScannedDevicesArr[0] = scannedDevice;
+    strcpy(btrCoreHdl.stScannedDevicesArr[0].pcDeviceAddress,"00:11:22:33:44:55");
+    btrCoreHdl.stScannedDevicesArr[0].enDeviceType = enBTRCore_DC_HID_Keyboard;
+
+    // Mock the BtrCore_BTSetProp function to return success
+    BtrCore_BTSetProp_StubWithCallback(mock_BtrCore_BTSetProp);
+
+    // Mock the BtrCore_BTPerformAdapterOp function to return failure
+    BtrCore_BTPerformAdapterOp_StubWithCallback(mock_BtrCore_BTPerformAdapterOp_fail);
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo_fail);
+
+    // Test case for performing adapter operation failure
+    ret = BTRCore_PairDevice(&btrCoreHdl, 0);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+}
+
+void test_BTRCore_PairDevice_Success(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    stBTRCoreBTDevice scannedDevice = {0};
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    btrCoreHdl.curAdapterPath = "/org/bluez/hci0";
+    btrCoreHdl.stScannedDevicesArr[0] = scannedDevice;
+    strcpy(btrCoreHdl.stScannedDevicesArr[0].pcDeviceAddress,"00:11:22:33:44:55");
+    btrCoreHdl.stScannedDevicesArr[0].enDeviceType = enBTRCore_DC_HID_Keyboard;
+
+    // Mock the BtrCore_BTSetProp function to return success
+    BtrCore_BTSetProp_StubWithCallback(mock_BtrCore_BTSetProp);
+
+    // Mock the BtrCore_BTPerformAdapterOp function to return success
+    BtrCore_BTPerformAdapterOp_StubWithCallback(mock_BtrCore_BTPerformAdapterOp);
+
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo);
+    // Test case for successful pairing
+    ret = BTRCore_PairDevice(&btrCoreHdl, 0);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+}
+
+void test_BTRCore_PairDevice_DeviceFoundInLoop(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    stBTRCoreBTDevice scannedDevice = {0};
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    btrCoreHdl.curAdapterPath = "/org/bluez/hci0";
+    btrCoreHdl.numOfScannedDevices = 1;
+    btrCoreHdl.stScannedDevicesArr[0] = scannedDevice;
+    btrCoreHdl.stScannedDevicesArr[0].tDeviceId = 1;
+    strcpy(btrCoreHdl.stScannedDevicesArr[0].pcDeviceAddress,"00:11:22:33:44:55");
+    btrCoreHdl.stScannedDevicesArr[0].enDeviceType = enBTRCore_DC_HID_Keyboard;
+
+    // Mock the BtrCore_BTSetProp function to return success
+    BtrCore_BTSetProp_StubWithCallback(mock_BtrCore_BTSetProp);
+
+    // Mock the BtrCore_BTPerformAdapterOp function to return success
+    BtrCore_BTPerformAdapterOp_StubWithCallback(mock_BtrCore_BTPerformAdapterOp);
+
+    // Test case for device found in loop
+    ret = BTRCore_PairDevice(&btrCoreHdl, 1);
+    TEST_ASSERT_EQUAL(enBTRCoreDeviceNotFound, ret);
+}
+
+void test_BTRCore_GetDeviceBatteryLevel_NotInitialized(void) {
+    enBTRCoreRet ret;
+    unsigned char batteryLevel;
+
+    // Test case for uninitialized BTRCore handle
+    ret = BTRCore_GetDeviceBatteryLevel(NULL, 0, enBTRCoreUnknown, &batteryLevel);
+    TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
+}
+
+void test_BTRCore_GetDeviceBatteryLevel_InvalidArg(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Test case for null battery level pointer
+    ret = BTRCore_GetDeviceBatteryLevel(&btrCoreHdl, 0, enBTRCoreUnknown, NULL);
+    TEST_ASSERT_EQUAL(enBTRCoreInvalidArg, ret);
+}
+
+void test_BTRCore_GetDeviceBatteryLevel_GetDeviceInfoFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    unsigned char batteryLevel;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo);
+    // Test case for getting device info failure
+    ret = BTRCore_GetDeviceBatteryLevel(&btrCoreHdl, 0, enBTRCoreUnknown, &batteryLevel);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_GetDeviceBatteryLevel_GetBatteryLevelFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    unsigned char batteryLevel;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    // Mock the BtrCore_BTGetBatteryLevel function to return failure
+    BtrCore_BTGetBatteryLevel_StubWithCallback(mock_BtrCore_BTGetBatteryLevel_fail);
+
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo);
+    // Test case for getting battery level failure
+    ret = BTRCore_GetDeviceBatteryLevel(&btrCoreHdl, 0, enBTRCoreUnknown, &batteryLevel);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_GetDeviceBatteryLevel_Success(void) {
+ 
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    unsigned char batteryLevel;
+    stBTRCoreBTDevice btDevice = {0};
+    stBTRCoreDevStateInfo devStateInfo = {0};
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    const char* deviceName = "Test Device";
+
+    btrCoreHdl.numOfPairedDevices=1;
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceAddress , "00:11:22:33:44:55");
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDevicePath , devicePath);
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName ,deviceName);
+    BtrCore_BTGetBatteryLevel_StubWithCallback(mock_BtrCore_BTGetBatteryLevel);
+
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo);
+
+    // Test case for successful battery level retrieval
+    ret = BTRCore_GetDeviceBatteryLevel(&btrCoreHdl, 0, enBTRCoreUnknown, &batteryLevel);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+}
+void test_BTRCore_GetDeviceBatteryLevel_GetBatteryLevel_fail(void) {
+ 
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    unsigned char batteryLevel;
+    stBTRCoreBTDevice btDevice = {0};
+    stBTRCoreDevStateInfo devStateInfo = {0};
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    const char* deviceName = "Test Device";
+
+    btrCoreHdl.numOfPairedDevices=1;
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceAddress , "00:11:22:33:44:55");
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDevicePath , devicePath);
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName ,deviceName);
+    BtrCore_BTGetBatteryLevel_StubWithCallback(mock_BtrCore_BTGetBatteryLevel_fail);
+
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo);
+
+    // Test case for successful battery level retrieval
+    ret = BTRCore_GetDeviceBatteryLevel(&btrCoreHdl, 0, enBTRCoreUnknown, &batteryLevel);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+int mock_BtrCore_BTConnectDevice(void* connHdl, const char* devicePath, enBTDeviceType deviceType) {
+    return 0; // Simulate success
+}
+
+int mock_BtrCore_BTConnectDevice_fail(void* connHdl, const char* devicePath, enBTDeviceType deviceType) {
+    return -1; // Simulate failure
+}
+
+int mock_BtrCore_BTDisableEnhancedRetransmissionMode(void* connHdl) {
+    return 0; // Simulate success
+}
+
+int mock_BtrCore_BTDisableEnhancedRetransmissionMode_fail(void* connHdl) {
+    return -1; // Simulate failure
+}
+
+int mock_BtrCore_BTDisconnectDevice(void* connHdl, const char* devicePath, enBTDeviceType deviceType) {
+    return 0; // Simulate success
+}
+
+int mock_BtrCore_BTDisconnectDevice_fail(void* connHdl, const char* devicePath, enBTDeviceType deviceType) {
+    return -1; // Simulate failure
+}
+
+int mock_BtrCore_BTEnableEnhancedRetransmissionMode(void* connHdl) {
+    return 0; // Simulate success
+}
+
+int mock_BtrCore_BTEnableEnhancedRetransmissionMode_fail(void* connHdl) {
+    return -1; // Simulate failure
+}
+
+void test_BTRCore_ConnectDevice_NotInitialized(void) {
+    enBTRCoreRet ret;
+
+    // Test case for uninitialized BTRCore handle
+    ret = BTRCore_ConnectDevice(NULL, 0, enBTRCoreUnknown);
+    TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
+}
+
+void test_BTRCore_ConnectDevice_GetDeviceInfoFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo_fail);
+    // Test case for getting device info failure
+    ret = BTRCore_ConnectDevice(&btrCoreHdl, 0, enBTRCoreUnknown);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+
+void test_BTRCore_ConnectDevice_ConnectDeviceFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    // Mock the BtrCore_BTDisableEnhancedRetransmissionMode function to return success
+    BtrCore_BTDisableEnhancedRetransmissionMode_StubWithCallback(mock_BtrCore_BTDisableEnhancedRetransmissionMode);
+
+    // Mock the BtrCore_BTConnectDevice function to return failure
+    BtrCore_BTConnectDevice_StubWithCallback(mock_BtrCore_BTConnectDevice_fail);
+
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo_fail);
+
+    // Test case for connect device failure
+    ret = BTRCore_ConnectDevice(&btrCoreHdl, 0, enBTRCoreUnknown);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+
+void test_BTRCore_ConnectDevice_DisableERTMFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    // Mock the BtrCore_BTDisableEnhancedRetransmissionMode function to return failure
+    BtrCore_BTDisableEnhancedRetransmissionMode_StubWithCallback(mock_BtrCore_BTDisableEnhancedRetransmissionMode_fail);
+
+    // Mock the BtrCore_BTConnectDevice function to return success
+    BtrCore_BTConnectDevice_StubWithCallback(mock_BtrCore_BTConnectDevice);
+
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo_fail);
+    // Test case for disabling ERTM failure
+    ret = BTRCore_ConnectDevice(&btrCoreHdl, 0, enBTRCoreUnknown);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_GetDeviceConnected_HIDDevice(void) {
+    stBTRCoreHdl hBTRCore;
+    stBTRCoreDevStateInfo devStateInfo;
+    stBTRCoreBTDevice knownDevice;
+    stBTPairedDeviceInfo pairedDeviceInfo;
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+
+    tBTRCoreDevId aBTRCoreDevId = 0;
+    char lcDevHdlArr[13] = {'\0'};
+    hBTRCore.numOfPairedDevices = 2;
+
+    lcDevHdlArr[0]  = deviceAddress[0];
+    lcDevHdlArr[1]  = deviceAddress[1];
+    lcDevHdlArr[2]  = deviceAddress[3];
+    lcDevHdlArr[3]  = deviceAddress[4];
+    lcDevHdlArr[4]  = deviceAddress[6];
+    lcDevHdlArr[5]  = deviceAddress[7];
+    lcDevHdlArr[6]  = deviceAddress[9];
+    lcDevHdlArr[7]  = deviceAddress[10];
+    lcDevHdlArr[8]  = deviceAddress[12];
+    lcDevHdlArr[9]  = deviceAddress[13];
+    lcDevHdlArr[10] = deviceAddress[15];
+    lcDevHdlArr[11] = deviceAddress[16];
+
+    aBTRCoreDevId = (tBTRCoreDevId) strtoll(lcDevHdlArr, NULL, 16);
+
+    enBTRCoreDeviceType aenBTRCoreDevType = enBTRCoreHID;
+
+    // Initialize the structures
+    memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+    memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&pairedDeviceInfo, 0, sizeof(stBTPairedDeviceInfo));
+
+    strncpy(knownDevice.pcDeviceAddress, deviceAddress, sizeof(knownDevice.pcDeviceAddress) - 1);
+    knownDevice.pcDeviceAddress[sizeof(knownDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(knownDevice.pcDevicePath, devicePath, sizeof(knownDevice.pcDevicePath) - 1);
+    knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
+
+    hBTRCore.stKnownDevicesArr[0] = knownDevice;
+    hBTRCore.numOfScannedDevices = 1;
+
+    // Set up the paired device info
+    pairedDeviceInfo.numberOfDevices = 1;
+    strncpy(pairedDeviceInfo.deviceInfo[0].pcAddress, deviceAddress, sizeof(pairedDeviceInfo.deviceInfo[0].pcAddress) - 1);
+    pairedDeviceInfo.deviceInfo[0].pcAddress[sizeof(pairedDeviceInfo.deviceInfo[0].pcAddress) - 1] = '\0';
+    pairedDeviceInfo.deviceInfo[0].bConnected = 1;
+
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mock_BTGetPairedDeviceInfo);
+    // Call the function under test
+    enBTRCoreRet ret = BTRCore_GetDeviceConnected(&hBTRCore, aBTRCoreDevId, aenBTRCoreDevType);
+
+    // Verify the result
+    TEST_ASSERT_EQUAL(enBTRCoreDeviceNotFound, ret);
+}
+void test_BTRCore_AcquireDeviceDataPath_NotInitialized(void) {
+    enBTRCoreRet ret;
+    int dataPath, dataReadMTU, dataWriteMTU;
+    unsigned int delay;
+
+    // Test case for uninitialized BTRCore handle
+    ret = BTRCore_AcquireDeviceDataPath(NULL, 0, enBTRCoreUnknown, &dataPath, &dataReadMTU, &dataWriteMTU, &delay);
+    TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
+}
+
+void test_BTRCore_AcquireDeviceDataPath_InvalidArg(void) {
+    stBTRCoreHdl btrCoreHdl;
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+
+    // Test case for invalid arguments
+    enBTRCoreRet ret = BTRCore_AcquireDeviceDataPath(&btrCoreHdl, 0, enBTRCoreUnknown, NULL, NULL, NULL, NULL);
+    TEST_ASSERT_EQUAL(enBTRCoreInvalidArg, ret);
+}
+
+void test_BTRCore_AcquireDeviceDataPath_GetDeviceInfoFailure(void) {
+    stBTRCoreHdl btrCoreHdl;
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    int dataPath, dataReadMTU, dataWriteMTU;
+    unsigned int delay;
+
+    // Initialize the BTRCore handle with invalid device info
+    btrCoreHdl.numOfPairedDevices = 0;
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo);
+    // Test case for getting device info failure
+    enBTRCoreRet ret = BTRCore_AcquireDeviceDataPath(&btrCoreHdl, 0, enBTRCoreUnknown, &dataPath, &dataReadMTU, &dataWriteMTU, &delay);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_ReleaseDeviceDataPath_NotInitialized(void) {
+    enBTRCoreRet ret;
+
+    // Test case for uninitialized BTRCore handle
+    ret = BTRCore_ReleaseDeviceDataPath(NULL, 0, enBTRCoreUnknown);
+    TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
+}
+
+void test_BTRCore_ReleaseDeviceDataPath_GetDeviceInfoFailure(void) {
+    stBTRCoreHdl btrCoreHdl;
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+
+    // Initialize the BTRCore handle with invalid device info
+    btrCoreHdl.numOfPairedDevices = 0;
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo);
+
+    // Test case for getting device info failure
+    enBTRCoreRet ret = BTRCore_ReleaseDeviceDataPath(&btrCoreHdl, 0, enBTRCoreUnknown);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_AcquireDeviceDataPath_Failure(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreBTDevice knownDevice;
+    stBTRCoreDevStateInfo devStateInfo;
+    int dataPath, dataReadMTU, dataWriteMTU;
+    unsigned int delay;
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+
+    // Set up the known device
+    knownDevice.tDeviceId = 0;
+    strncpy(knownDevice.pcDeviceAddress, deviceAddress, sizeof(knownDevice.pcDeviceAddress) - 1);
+    knownDevice.pcDeviceAddress[sizeof(knownDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(knownDevice.pcDevicePath, devicePath, sizeof(knownDevice.pcDevicePath) - 1);
+    knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
+    // knownDevice.stDevStateInfo = devStateInfo;
+
+    btrCoreHdl.stKnownDevicesArr[0] = knownDevice;
+    btrCoreHdl.numOfPairedDevices = 1;
+    BTRCore_AVMedia_AcquireDataPath_IgnoreAndReturn(enBTRCoreFailure);
+    // Call the function under test
+    enBTRCoreRet ret = BTRCore_AcquireDeviceDataPath(&btrCoreHdl, 0, enBTRCoreUnknown, &dataPath, &dataReadMTU, &dataWriteMTU, &delay);
+
+    // Verify the result
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+  
+}
+
+void test_BTRCore_AcquireDeviceDataPath_Success(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreBTDevice knownDevice;
+    stBTRCoreDevStateInfo devStateInfo;
+    int dataPath, dataReadMTU, dataWriteMTU;
+    unsigned int delay;
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+
+    // Set up the known device
+    knownDevice.tDeviceId = 0;
+    strncpy(knownDevice.pcDeviceAddress, deviceAddress, sizeof(knownDevice.pcDeviceAddress) - 1);
+    knownDevice.pcDeviceAddress[sizeof(knownDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(knownDevice.pcDevicePath, devicePath, sizeof(knownDevice.pcDevicePath) - 1);
+    knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
+
+    btrCoreHdl.stKnownDevicesArr[0] = knownDevice;
+    btrCoreHdl.numOfPairedDevices = 1;
+    BTRCore_AVMedia_AcquireDataPath_IgnoreAndReturn(enBTRCoreSuccess);
+    BTRCore_AVMedia_ReleaseDataPath_IgnoreAndReturn(enBTRCoreSuccess);
+    // Call the function under test
+    enBTRCoreRet ret = BTRCore_AcquireDeviceDataPath(&btrCoreHdl, 0, enBTRCoreUnknown, &dataPath, &dataReadMTU, &dataWriteMTU, &delay);
+
+    // Verify the result
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+  
+}
+void test_BTRCore_ReleaseDeviceDataPath_Failure(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreBTDevice knownDevice;
+    stBTRCoreDevStateInfo devStateInfo;
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+
+    // Set up the known device
+    knownDevice.tDeviceId = 0;
+    strncpy(knownDevice.pcDeviceAddress, deviceAddress, sizeof(knownDevice.pcDeviceAddress) - 1);
+    knownDevice.pcDeviceAddress[sizeof(knownDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(knownDevice.pcDevicePath, devicePath, sizeof(knownDevice.pcDevicePath) - 1);
+    knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
+
+    btrCoreHdl.stKnownDevicesArr[0] = knownDevice;
+    btrCoreHdl.numOfPairedDevices = 1;
+    BTRCore_AVMedia_AcquireDataPath_IgnoreAndReturn(enBTRCoreSuccess);
+
+    BTRCore_AVMedia_ReleaseDataPath_IgnoreAndReturn(enBTRCoreFailure);
+    // Call the function under test
+    enBTRCoreRet ret = BTRCore_ReleaseDeviceDataPath(&btrCoreHdl, 0, enBTRCoreUnknown);
+
+    // Verify the result
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_ReleaseDeviceDataPath_Success(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreBTDevice knownDevice;
+    stBTRCoreDevStateInfo devStateInfo;
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+
+    // Set up the known device
+    knownDevice.tDeviceId = 0;
+    strncpy(knownDevice.pcDeviceAddress, deviceAddress, sizeof(knownDevice.pcDeviceAddress) - 1);
+    knownDevice.pcDeviceAddress[sizeof(knownDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(knownDevice.pcDevicePath, devicePath, sizeof(knownDevice.pcDevicePath) - 1);
+    knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
+    // knownDevice.stDevStateInfo = devStateInfo;
+
+    btrCoreHdl.stKnownDevicesArr[0] = knownDevice;
+    btrCoreHdl.numOfPairedDevices = 1;
+    BTRCore_AVMedia_AcquireDataPath_IgnoreAndReturn(enBTRCoreSuccess);
+
+    BTRCore_AVMedia_ReleaseDataPath_IgnoreAndReturn(enBTRCoreSuccess);
+    // Call the function under test
+    enBTRCoreRet ret = BTRCore_ReleaseDeviceDataPath(&btrCoreHdl, 0, enBTRCoreUnknown);
+
+    // Verify the result
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+}
+
+void test_BTRCore_MediaControl_GetDeviceInfoFailure(void) {
+    stBTRCoreHdl btrCoreHdl;
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+
+    // Initialize the BTRCore handle with invalid device info
+    btrCoreHdl.numOfPairedDevices = 0;
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo_fail);
+    // Test case for getting device info failure
+    enBTRCoreRet ret = BTRCore_MediaControl(&btrCoreHdl, 0, enBTRCoreUnknown, enBTRCoreMediaCtrlPlay, NULL);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_MediaControl_DeviceNotConnected1(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreBTDevice knownDevice;
+    stBTRCoreDevStateInfo devStateInfo;
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+
+    // Set up the known device
+    knownDevice.tDeviceId = 0;
+    knownDevice.bDeviceConnected = FALSE;
+    strncpy(knownDevice.pcDeviceAddress, deviceAddress, sizeof(knownDevice.pcDeviceAddress) - 1);
+    knownDevice.pcDeviceAddress[sizeof(knownDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(knownDevice.pcDevicePath, devicePath, sizeof(knownDevice.pcDevicePath) - 1);
+    knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
+    
+
+    btrCoreHdl.stKnownDevicesArr[0] = knownDevice;
+    btrCoreHdl.numOfPairedDevices = 1;
+
+    // Test case for device not connected
+    enBTRCoreRet ret = BTRCore_MediaControl(&btrCoreHdl, 0, enBTRCoreUnknown, enBTRCoreMediaCtrlPlay, NULL);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_MediaControl_Success(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreBTDevice knownDevice;
+    stBTRCoreDevStateInfo devStateInfo;
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    const char* deviceName = "Test Device";
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+
+    // Set up the known device
+    knownDevice.tDeviceId = 0;
+    knownDevice.bDeviceConnected = TRUE;
+    strncpy(knownDevice.pcDeviceAddress, deviceAddress, sizeof(knownDevice.pcDeviceAddress) - 1);
+    knownDevice.pcDeviceAddress[sizeof(knownDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(knownDevice.pcDevicePath, devicePath, sizeof(knownDevice.pcDevicePath) - 1);
+    knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
+    strncpy(knownDevice.pcDeviceName, deviceName, sizeof(knownDevice.pcDeviceName) - 1);
+    knownDevice.pcDeviceName[sizeof(knownDevice.pcDeviceName) - 1] = '\0';
+
+
+    btrCoreHdl.stKnownDevicesArr[0] = knownDevice;
+    btrCoreHdl.numOfPairedDevices = 1;
+    BTRCore_AVMedia_MediaControl_IgnoreAndReturn(enBTRCoreSuccess);
+    // Test case for successful media control
+    enBTRCoreRet ret = BTRCore_MediaControl(&btrCoreHdl, 0, enBTRCoreUnknown, enBTRCoreMediaCtrlPlay, NULL);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+}
+
+void test_BTRCore_MediaControl_AllSwitchCases(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreBTDevice knownDevice;
+    stBTRCoreDevStateInfo devStateInfo;
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    const char* deviceName = "Test Device";
+    enBTRCoreDeviceType deviceType = enBTRCoreUnknown;
+    enBTRCoreMediaCtrl mediaCtrl;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+
+    // Set up the known device
+    knownDevice.tDeviceId = 0;
+    knownDevice.bDeviceConnected = TRUE;
+    strncpy(knownDevice.pcDeviceAddress, deviceAddress, sizeof(knownDevice.pcDeviceAddress) - 1);
+    knownDevice.pcDeviceAddress[sizeof(knownDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(knownDevice.pcDevicePath, devicePath, sizeof(knownDevice.pcDevicePath) - 1);
+    knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
+    strncpy(knownDevice.pcDeviceName, deviceName, sizeof(knownDevice.pcDeviceName) - 1);
+    knownDevice.pcDeviceName[sizeof(knownDevice.pcDeviceName) - 1] = '\0';
+   
+
+    btrCoreHdl.stKnownDevicesArr[0] = knownDevice;
+    btrCoreHdl.numOfPairedDevices = 1;
+    
+    BTRCore_AVMedia_MediaControl_IgnoreAndReturn(enBTRCoreSuccess);
+    // Test all switch cases for device type
+    for (deviceType = enBTDevAudioSink; deviceType <= enBTDevUnknown; deviceType++) {
+        enBTRCoreRet ret = BTRCore_MediaControl(&btrCoreHdl, 0, deviceType, enBTRCoreMediaCtrlPlay, NULL);
+        TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    }
+
+    // Test all switch cases for media control
+    for (mediaCtrl = enBTRCoreMediaCtrlPlay; mediaCtrl <= enBTRCoreMediaCtrlRptGroup; mediaCtrl++) {
+        enBTRCoreRet ret = BTRCore_MediaControl(&btrCoreHdl, 0, enBTRCoreUnknown, mediaCtrl, NULL);
+        TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    }
+}
+
+void test_BTRCore_GetMediaTrackInfo_GetDeviceInfoFailure(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreMediaTrackInfo mediaTrackInfo;
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+
+    // Initialize the BTRCore handle with invalid device info
+    btrCoreHdl.numOfPairedDevices = 0;
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo_fail);
+    // Test case for getting device info failure
+    enBTRCoreRet ret = BTRCore_GetMediaTrackInfo(&btrCoreHdl, 0, enBTRCoreUnknown, &mediaTrackInfo);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_GetMediaTrackInfo_DeviceNotConnected1(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreBTDevice knownDevice;
+    stBTRCoreDevStateInfo devStateInfo;
+    stBTRCoreMediaTrackInfo mediaTrackInfo;
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+
+    // Set up the known device
+    knownDevice.tDeviceId = 0;
+    knownDevice.bDeviceConnected = FALSE;
+    strncpy(knownDevice.pcDeviceAddress, deviceAddress, sizeof(knownDevice.pcDeviceAddress) - 1);
+    knownDevice.pcDeviceAddress[sizeof(knownDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(knownDevice.pcDevicePath, devicePath, sizeof(knownDevice.pcDevicePath) - 1);
+    knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
+    // knownDevice.stDevStateInfo = devStateInfo;
+
+    btrCoreHdl.stKnownDevicesArr[0] = knownDevice;
+    btrCoreHdl.numOfPairedDevices = 1;
+
+    // Test case for device not connected
+    enBTRCoreRet ret = BTRCore_GetMediaTrackInfo(&btrCoreHdl, 0, enBTRCoreUnknown, &mediaTrackInfo);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_GetMediaElementTrackInfo_GetDeviceInfoFailure(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreMediaTrackInfo mediaTrackInfo;
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+
+    // Initialize the BTRCore handle with invalid device info
+    btrCoreHdl.numOfPairedDevices = 0;
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo);
+
+    // Test case for getting device info failure
+    enBTRCoreRet ret = BTRCore_GetMediaElementTrackInfo(&btrCoreHdl, 0, enBTRCoreUnknown, 0, &mediaTrackInfo);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_GetMediaElementTrackInfo_DeviceNotConnected1(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreBTDevice knownDevice;
+    stBTRCoreDevStateInfo devStateInfo;
+    stBTRCoreMediaTrackInfo mediaTrackInfo;
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+
+    // Set up the known device
+    knownDevice.tDeviceId = 0;
+    knownDevice.bDeviceConnected = FALSE;
+    strncpy(knownDevice.pcDeviceAddress, deviceAddress, sizeof(knownDevice.pcDeviceAddress) - 1);
+    knownDevice.pcDeviceAddress[sizeof(knownDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(knownDevice.pcDevicePath, devicePath, sizeof(knownDevice.pcDevicePath) - 1);
+    knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
+    // knownDevice.stDevStateInfo = devStateInfo;
+
+    btrCoreHdl.stKnownDevicesArr[0] = knownDevice;
+    btrCoreHdl.numOfPairedDevices = 1;
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo_fail);
+
+    // Test case for device not connected
+    enBTRCoreRet ret = BTRCore_GetMediaElementTrackInfo(&btrCoreHdl, 0, enBTRCoreUnknown, 0, &mediaTrackInfo);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+void test_BTRCore_GetMediaProperty_DeviceNotConnected1(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreBTDevice knownDevice;
+    stBTRCoreDevStateInfo devStateInfo;
+    const char* mediaPropertyKey = "testKey";
+    char mediaPropertyValue[256];
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+
+    // Set up the known device
+    knownDevice.tDeviceId = 0;
+    knownDevice.bDeviceConnected = FALSE;
+    strncpy(knownDevice.pcDeviceAddress, deviceAddress, sizeof(knownDevice.pcDeviceAddress) - 1);
+    knownDevice.pcDeviceAddress[sizeof(knownDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(knownDevice.pcDevicePath, devicePath, sizeof(knownDevice.pcDevicePath) - 1);
+    knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
+
+
+    btrCoreHdl.stKnownDevicesArr[0] = knownDevice;
+    btrCoreHdl.numOfPairedDevices = 1;
+
+    // Test case for device not connected
+    enBTRCoreRet ret = BTRCore_GetMediaProperty(&btrCoreHdl, 0, enBTRCoreUnknown, mediaPropertyKey, mediaPropertyValue);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_GetMediaProperty_GetMediaPropertyFailure(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreBTDevice knownDevice;
+    stBTRCoreDevStateInfo devStateInfo;
+    const char* mediaPropertyKey = "testKey";
+    char mediaPropertyValue[256];
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+
+    // Set up the known device
+    knownDevice.tDeviceId = 0;
+    knownDevice.bDeviceConnected = TRUE;
+    strncpy(knownDevice.pcDeviceAddress, deviceAddress, sizeof(knownDevice.pcDeviceAddress) - 1);
+    knownDevice.pcDeviceAddress[sizeof(knownDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(knownDevice.pcDevicePath, devicePath, sizeof(knownDevice.pcDevicePath) - 1);
+    knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
+    
+    btrCoreHdl.stKnownDevicesArr[0] = knownDevice;
+    btrCoreHdl.numOfPairedDevices = 1;
+    BTRCore_AVMedia_GetMediaProperty_IgnoreAndReturn(enBTRCoreFailure);
+    // Test case for getting media property failure
+    enBTRCoreRet ret = BTRCore_GetMediaProperty(&btrCoreHdl, 0, enBTRCoreUnknown, mediaPropertyKey, mediaPropertyValue);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+void test_BTRCore_SelectMediaElement_PlayableState(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreBTDevice knownDevice;
+    stBTRCoreDevStateInfo devStateInfo;
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    const char* deviceName = "Test Device";
+    char isPlayable = 1;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+
+    // Set up the known device
+    knownDevice.tDeviceId = 0;
+    knownDevice.bDeviceConnected = TRUE;
+    strncpy(knownDevice.pcDeviceAddress, deviceAddress, sizeof(knownDevice.pcDeviceAddress) - 1);
+    knownDevice.pcDeviceAddress[sizeof(knownDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(knownDevice.pcDevicePath, devicePath, sizeof(knownDevice.pcDevicePath) - 1);
+    knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
+    strncpy(knownDevice.pcDeviceName, deviceName, sizeof(knownDevice.pcDeviceName) - 1);
+    knownDevice.pcDeviceName[sizeof(knownDevice.pcDeviceName) - 1] = '\0';
+    btrCoreHdl.stKnownDevicesArr[0] = knownDevice;
+    btrCoreHdl.numOfPairedDevices = 1;
+
+    BTRCore_AVMedia_IsMediaElementPlayable_IgnoreAndReturn(enBTRCoreFailure);
+
+    // Test case for media element being playable
+    enBTRCoreRet ret = BTRCore_SelectMediaElement(&btrCoreHdl, 0, 0, enBTRCoreUnknown, enBTRCoreMedETypeTrack);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_SelectMediaElement_NotPlayableState(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreBTDevice knownDevice;
+    stBTRCoreDevStateInfo devStateInfo;
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    const char* deviceName = "Test Device";
+    char isPlayable = 0;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+
+    // Set up the known device
+    knownDevice.tDeviceId = 0;
+    knownDevice.bDeviceConnected = TRUE;
+    strncpy(knownDevice.pcDeviceAddress, deviceAddress, sizeof(knownDevice.pcDeviceAddress) - 1);
+    knownDevice.pcDeviceAddress[sizeof(knownDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(knownDevice.pcDevicePath, devicePath, sizeof(knownDevice.pcDevicePath) - 1);
+    knownDevice.pcDevicePath[sizeof(knownDevice.pcDevicePath) - 1] = '\0';
+    strncpy(knownDevice.pcDeviceName, deviceName, sizeof(knownDevice.pcDeviceName) - 1);
+    knownDevice.pcDeviceName[sizeof(knownDevice.pcDeviceName) - 1] = '\0';
+   
+    btrCoreHdl.stKnownDevicesArr[0] = knownDevice;
+    btrCoreHdl.numOfPairedDevices = 1;
+
+    BTRCore_AVMedia_IsMediaElementPlayable_IgnoreAndReturn(enBTRCoreSuccess);
+    BTRCore_AVMedia_ChangeBrowserLocation_IgnoreAndReturn(enBTRCoreFailure);
+
+    // Test case for media element not being playable
+    enBTRCoreRet ret = BTRCore_SelectMediaElement(&btrCoreHdl, 0, 0, enBTRCoreUnknown, enBTRCoreMedETypeTrack);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_GetLEProperty_AllCases(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreBTDevice scannedDevice;
+    stBTRCoreDevStateInfo devStateInfo;
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    const char* deviceName = "Test Device";
+    char propValue[256];
+    enBTRCoreRet ret;
+    const char* uuid = "UUID";
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&scannedDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+
+    // Set up the scanned device
+    scannedDevice.tDeviceId = 0;
+    scannedDevice.bDeviceConnected = TRUE;
+    strncpy(scannedDevice.pcDeviceAddress, deviceAddress, sizeof(scannedDevice.pcDeviceAddress) - 1);
+    scannedDevice.pcDeviceAddress[sizeof(scannedDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(scannedDevice.pcDevicePath, devicePath, sizeof(scannedDevice.pcDevicePath) - 1);
+    scannedDevice.pcDevicePath[sizeof(scannedDevice.pcDevicePath) - 1] = '\0';
+    strncpy(scannedDevice.pcDeviceName, deviceName, sizeof(scannedDevice.pcDeviceName) - 1);
+    scannedDevice.pcDeviceName[sizeof(scannedDevice.pcDeviceName) - 1] = '\0';
+
+    btrCoreHdl.stScannedDevicesArr[0] = scannedDevice;
+    btrCoreHdl.numOfScannedDevices = 1;
+
+    // Mock the btrCore_GetDeviceInfo function to return success
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo);
+
+    // Iterate over all possible values of the aenBTRCoreLeProp enumeration
+    for (enBTRCoreLeProp prop = enBTRCoreLePropGUUID; prop <= enBTRCoreLePropGChar; prop++) {
+        ret = BTRCore_GetLEProperty(&btrCoreHdl, 0, uuid, prop, propValue);
+        TEST_ASSERT_EQUAL(enBTRCoreDeviceNotFound, ret);
+    }
+
+    // Test the default case where aenBTRCoreLeProp is enBTRCoreLePropUnknown
+    ret = BTRCore_GetLEProperty(&btrCoreHdl, 0, uuid, enBTRCoreLePropUnknown, propValue);
+    TEST_ASSERT_EQUAL(enBTRCoreDeviceNotFound, ret);
+}
+
+void test_btrCore_BTDeviceStatusUpdateCb_AllCases2(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    enBTDeviceType deviceType;
+    enBTDeviceState deviceState;
+    int ret;
+
+    // Initialize the structures
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    btrCoreHdl.numOfPairedDevices=2;
+    // Set up the device info
+    deviceInfo.ui32Class = 0x1F00; 
+
+//     // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer  
+//     // Test case for enBTDevStScanInProgress
+    deviceState = enBTDevStScanInProgress;
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, deviceState, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+
+    // Test case for enBTDevStPairingRequest
+    deviceState = enBTDevStPairingRequest;
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, deviceState, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    // Test case for enBTDevStPairingInProgress
+    deviceState = enBTDevStPairingInProgress;
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, deviceState, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    // Test case for enBTDevStPaired
+    deviceState = enBTDevStPaired;
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, deviceState, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    // Test case for enBTDevStUnPaired
+    deviceState = enBTDevStUnPaired;
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, deviceState, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    // Test case for enBTDevStConnectInProgress
+    deviceState = enBTDevStConnectInProgress;
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, deviceState, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    // Test case for enBTDevStConnected
+    deviceState = enBTDevStConnected;
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, deviceState, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    // Test case for enBTDevStDisconnected
+    deviceState = enBTDevStDisconnected;
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, deviceState, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    // Test case for enBTDevStUnknown
+    deviceState = enBTDevStUnknown;
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, deviceState, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+}
+void test_btrCore_BTDeviceStatusUpdateCb_InvalidArguments(void) {
+    int ret;
+
+    // Test case for invalid arguments
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStUnknown, NULL, NULL);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for invalid arguments passed!\n");
+}
+void test_btrCore_BTDeviceStatusUpdateCb_DeviceCreated(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x1F00; // Example class
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+
+    // Test case for enBTDevStCreated
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStCreated, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for device created passed!\n");
+}
+void test_btrCore_BTDeviceStatusUpdateCb_DeviceFound(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x1F00; // Example class
+     // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+
+    // Test case for enBTDevStFound
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStFound, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for device found passed!\n");
+}
+
+void test_btrCore_BTDeviceStatusUpdateCb_DeviceLost(void) {
+    stBTRCoreHdl* btrCoreHdl = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    stBTDeviceInfo* deviceInfo= (stBTDeviceInfo*)malloc(sizeof(stBTDeviceInfo));;
+    int ret;
+
+    // Set up the known device
+    btrCoreHdl->numOfPairedDevices = 1;
+    btrCoreHdl->stKnownDevicesArr[0].tDeviceId = 73588229205;
+    strncpy(btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress, "00:11:22:33:44:55", sizeof(btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress) - 1);
+    btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress[sizeof(btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress) - 1] = '\0';
+
+    // Set up the device info
+    deviceInfo->ui32Class = 0x1F00; // Example class
+    strcpy(deviceInfo->pcAddress, "00:11:22:33:44:55");
+    deviceInfo->pcAddress[sizeof(deviceInfo->pcAddress) - 1] = '\0';
+    strncpy(deviceInfo->pcName, "Test Device", sizeof(deviceInfo->pcName) - 1);
+    deviceInfo->pcName[sizeof(deviceInfo->pcName) - 1] = '\0';
+    strncpy(deviceInfo->pcDevicePath, "/org/bluez/hci0/dev_00_11_22_33_44_55", sizeof(deviceInfo->pcDevicePath) - 1);
+    deviceInfo->pcDevicePath[sizeof(deviceInfo->pcDevicePath) - 1] = '\0';
+
+    // Initialize the queue out task pointer
+    btrCoreHdl->pGAQueueOutTask = NULL; // Mock pointer
+    
+
+    // Test case for enBTDevStLost
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStLost, deviceInfo, btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for device lost passed!\n");
+    free(btrCoreHdl);
+    free(deviceInfo);
+}
+
+
+void test_btrCore_BTDeviceStatusUpdateCb_enBTDevStPropChanged(void) {
+    stBTRCoreHdl* btrCoreHdl = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    stBTDeviceInfo* deviceInfo= (stBTDeviceInfo*)malloc(sizeof(stBTDeviceInfo));;
+    int ret;
+
+    // Set up the known device
+    btrCoreHdl->numOfPairedDevices = 1;
+    btrCoreHdl->stKnownDevicesArr[0].tDeviceId = 73588229205;
+    strncpy(btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress, "00:11:22:33:44:55", sizeof(btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress) - 1);
+    btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress[sizeof(btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress) - 1] = '\0';
+
+    // Set up the device info
+    deviceInfo->ui32Class = 0x1F00; // Example class
+    strcpy(deviceInfo->pcAddress, "00:11:22:33:44:55");
+    deviceInfo->pcAddress[sizeof(deviceInfo->pcAddress) - 1] = '\0';
+    strncpy(deviceInfo->pcName, "Test Device", sizeof(deviceInfo->pcName) - 1);
+    deviceInfo->pcName[sizeof(deviceInfo->pcName) - 1] = '\0';
+    strncpy(deviceInfo->pcDevicePath, "/org/bluez/hci0/dev_00_11_22_33_44_55", sizeof(deviceInfo->pcDevicePath) - 1);
+    deviceInfo->pcDevicePath[sizeof(deviceInfo->pcDevicePath) - 1] = '\0';
+
+    // Initialize the queue out task pointer
+    btrCoreHdl->pGAQueueOutTask = NULL; // Mock pointer
+    
+
+    // Test case for enBTDevStLost
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStPropChanged, deviceInfo, btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for device lost passed!\n");
+    free(btrCoreHdl);
+    free(deviceInfo);
+}
+
+
+void test_btrCore_BTDeviceStatusUpdateCb_DeviceRSSIUpdate(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x1F00; // Example class
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+
+    // Test case for enBTDevStRSSIUpdate
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStRSSIUpdate, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for device RSSI update passed!\n");
+}
+
+void test_btrCore_BTDeviceConnectionIntimationCb_BasicInitialization(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x1F00; // Example class
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+
+    // Call the function
+    ret = btrCore_BTDeviceConnectionIntimationCb(enBTRCoreMobileAudioIn, &deviceInfo, 123456, 1, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for basic initialization passed!\n");
+}
+void test_btrCore_BTDeviceConnectionIntimationCb_Speakers(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the known device
+    btrCoreHdl.numOfPairedDevices = 1;
+    btrCoreHdl.stKnownDevicesArr[0].tDeviceId = 1;
+    strncpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName, "Known Device", sizeof(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName) - 1);
+    btrCoreHdl.stKnownDevicesArr[0].pcDeviceName[sizeof(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName) - 1] = '\0';
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x1F00; // Example class
+    strncpy(deviceInfo.pcAddress, "00:11:22:33:44:55", sizeof(deviceInfo.pcAddress) - 1);
+    deviceInfo.pcAddress[sizeof(deviceInfo.pcAddress) - 1] = '\0';
+    strncpy(deviceInfo.pcName, "Test Device", sizeof(deviceInfo.pcName) - 1);
+    deviceInfo.pcName[sizeof(deviceInfo.pcName) - 1] = '\0';
+    strncpy(deviceInfo.pcDevicePath, "/org/bluez/hci0/dev_00_11_22_33_44_55", sizeof(deviceInfo.pcDevicePath) - 1);
+    deviceInfo.pcDevicePath[sizeof(deviceInfo.pcDevicePath) - 1] = '\0';
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+
+    // Call the function with Speakers device type
+    ret = btrCore_BTDeviceConnectionIntimationCb(enBTDevAudioSink, &deviceInfo, 123456, 1, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for Speakers device type passed!\n");
+}
+void test_btrCore_BTDeviceConnectionIntimationCb_HID(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x1F00; // Example class
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+
+    // Call the function with HID device type
+    ret = btrCore_BTDeviceConnectionIntimationCb(enBTDevAudioSource, &deviceInfo, 123456, 1, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for HID device type passed!\n");
+}
+
+void test_btrCore_BTDeviceAuthenticationCb_BasicInitialization(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x400u; // Example class
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+
+    // Call the function
+    ret = btrCore_BTDeviceAuthenticationCb(enBTDevUnknown, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for basic initialization passed!\n");
+}
+enBTRCoreRet myConnAuthCallback(stBTRCoreConnCBInfo* apstConnCbInfo, int* api32ConnInAuthResp, void* apvUserData) {
+    // Implement your callback logic here
+    *api32ConnInAuthResp = 1; // Example response
+    return enBTRCoreSuccess;
+}
+void test_btrCore_BTDeviceAuthenticationCb_Speakers(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the known device
+    btrCoreHdl.numOfPairedDevices = 1;
+    btrCoreHdl.stKnownDevicesArr[0].tDeviceId = 1;
+   // strncpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName, "Known Device", sizeof(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName) - 1);
+    btrCoreHdl.stKnownDevicesArr[0].pcDeviceName[sizeof(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName) - 1] = '\0';
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x400000u; // Example class
+  //  strncpy(deviceInfo.pcAddress, "00:11:22:33:44:55", sizeof(deviceInfo.pcAddress) - 1);
+    deviceInfo.pcAddress[sizeof(deviceInfo.pcAddress) - 1] = '\0';
+  //  strncpy(deviceInfo.pcName, "Test Device", sizeof(deviceInfo.pcName) - 1);
+    deviceInfo.pcName[sizeof(deviceInfo.pcName) - 1] = '\0';
+   // strncpy(deviceInfo.pcDevicePath, "/org/bluez/hci0/dev_00_11_22_33_44_55", sizeof(deviceInfo.pcDevicePath) - 1);
+    deviceInfo.pcDevicePath[sizeof(deviceInfo.pcDevicePath) - 1] = '\0';
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+
+    // Call the function with Speakers device type
+    ret = btrCore_BTDeviceAuthenticationCb(enBTDevUnknown, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for Speakers device type passed!\n");
+}
+void test_btrCore_BTDeviceAuthenticationCb_HID(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x200000u; // Example class
+  //  strncpy(deviceInfo.pcName, "Xbox Controller", sizeof(deviceInfo.pcName) - 1);
+    deviceInfo.pcName[sizeof(deviceInfo.pcName) - 1] = '\0';
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+
+    // Call the function with HID device type
+    ret = btrCore_BTDeviceAuthenticationCb(enBTDevUnknown, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for HID device type passed!\n");
+}
+void test_btrCore_BTDeviceAuthenticationCb_MobileAudioIn(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x80000u; // Example class
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+    btrCoreHdl.fpcBBTRCoreConnAuth =myConnAuthCallback;
+    // Call the function with Mobile Audio In device type
+    ret = btrCore_BTDeviceAuthenticationCb(enBTDevAudioSource, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(1, ret);
+
+    printf("Test case for Mobile Audio In device type passed!\n");
+}
+
+void test_btrCore_BTDeviceAuthenticationCb_speakers(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x40000u; // Example class
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+    btrCoreHdl.fpcBBTRCoreConnAuth =myConnAuthCallback;
+    // Call the function with Mobile Audio In device type
+    ret = btrCore_BTDeviceAuthenticationCb(enBTDevHID, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(1, ret);
+
+    printf("Test case for Mobile Audio In device type passed!\n");
+}
+void test_btrCore_BTDeviceConnectionIntimationCb_Speakers1(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the known device
+    btrCoreHdl.numOfPairedDevices = 1;
+    btrCoreHdl.stKnownDevicesArr[0].tDeviceId = 1;
+    strncpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName, "Known Device", sizeof(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName) - 1);
+    btrCoreHdl.stKnownDevicesArr[0].pcDeviceName[sizeof(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName) - 1] = '\0';
+
+    // Set up the callback
+    btrCoreHdl.fpcBBTRCoreConnAuth = myConnAuthCallback;
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+
+    // Define a set of class IDs to test
+    unsigned int classIds[] = {
+        enBTRCore_DC_Tile,
+        enBTRCore_DC_HID_Keyboard,
+        enBTRCore_DC_HID_Mouse,
+        enBTRCore_DC_HID_MouseKeyBoard,
+        enBTRCore_DC_HID_AudioRemote,
+        enBTRCore_DC_HID_Joystick,
+        enBTRCore_DC_HID_GamePad,
+        // Add other class IDs as needed
+    };
+
+    // Iterate over the class IDs and test each one
+    for (size_t i = 0; i < sizeof(classIds) / sizeof(classIds[0]); i++) {
+        // Set up the device info with the current class ID
+        deviceInfo.ui32Class = classIds[i];
+        strncpy(deviceInfo.pcAddress, "00:11:22:33:44:55", sizeof(deviceInfo.pcAddress) - 1);
+        deviceInfo.pcAddress[sizeof(deviceInfo.pcAddress) - 1] = '\0';
+        strncpy(deviceInfo.pcName, "Test Device", sizeof(deviceInfo.pcName) - 1);
+        deviceInfo.pcName[sizeof(deviceInfo.pcName) - 1] = '\0';
+        strncpy(deviceInfo.pcDevicePath, "/org/bluez/hci0/dev_00_11_22_33_44_55", sizeof(deviceInfo.pcDevicePath) - 1);
+        deviceInfo.pcDevicePath[sizeof(deviceInfo.pcDevicePath) - 1] = '\0';
+
+        // Call the function with Speakers device type
+        ret = btrCore_BTDeviceConnectionIntimationCb(enBTDevAudioSink, &deviceInfo, 123456, 1, &btrCoreHdl);
+        TEST_ASSERT_EQUAL(0, ret);
+
+        printf("Test case for class ID 0x%x passed!\n", classIds[i]);
+    }
+}
+void test_BTRCore_DisconnectDevice_NotInitialized(void) {
+    enBTRCoreRet ret;
+
+    // Test case for uninitialized BTRCore handle
+    ret = BTRCore_DisconnectDevice(NULL, 0, enBTRCoreUnknown);
+    TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
+}
+
+void test_BTRCore_DisconnectDevice_GetDeviceInfoFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo);
+    // Test case for getting device info failure
+    ret = BTRCore_DisconnectDevice(&btrCoreHdl, 0, enBTRCoreUnknown);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_DisconnectDevice_DisconnectDeviceFailure(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    // Mock the BtrCore_BTDisconnectDevice function to return failure
+    BtrCore_BTDisconnectDevice_StubWithCallback(mock_BtrCore_BTDisconnectDevice_fail);
+    
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo);
+    // Test case for disconnect device failure
+    ret = BTRCore_DisconnectDevice(&btrCoreHdl, 0, enBTRCoreUnknown);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_DisconnectDevice_FAIL(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    const char* deviceName = "Xbox Controller";
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    btrCoreHdl.numOfPairedDevices = 1;
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceAddress, "00:11:22:33:44:55");
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDevicePath, devicePath);
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName, deviceName);
+
+    // Mock the BtrCore_BTDisconnectDevice function to return success
+    BtrCore_BTDisconnectDevice_StubWithCallback(mock_BtrCore_BTDisconnectDevice_fail);
+
+    ret = BTRCore_DisconnectDevice(&btrCoreHdl, 0, enBTRCoreUnknown);
+    
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+void test_BTRCore_DisconnectDevice_Success(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    const char* deviceName = "Xbox Controller";
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    btrCoreHdl.numOfPairedDevices = 1;
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceAddress, "00:11:22:33:44:55");
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDevicePath, devicePath);
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName, deviceName);
+
+    // Mock the BtrCore_BTDisconnectDevice function to return success
+    BtrCore_BTDisconnectDevice_StubWithCallback(mock_BtrCore_BTDisconnectDevice);
+
+    // Mock the BtrCore_BTEnableEnhancedRetransmissionMode function to return success
+    BtrCore_BTEnableEnhancedRetransmissionMode_StubWithCallback(mock_BtrCore_BTEnableEnhancedRetransmissionMode_fail);
+
+    // Test case for successful disconnection
+    ret = BTRCore_DisconnectDevice(&btrCoreHdl, 0, enBTDevHID);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+}
+
+void test_BTRCore_newBatteryLevelDevice_InvalidArg(void) {
+    enBTRCoreRet ret;
+
+    // Test case for invalid argument (NULL handle)
+    ret = BTRCore_newBatteryLevelDevice(NULL);
+    TEST_ASSERT_EQUAL(enBTRCoreInvalidArg, ret);
+}
+void test_btrCore_BTDeviceStatusUpdateCb_For_Loop(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+    unsigned int classIds[] = {
+        enBTRCore_DC_Tile,
+        enBTRCore_DC_HID_Keyboard,
+        enBTRCore_DC_HID_Mouse,
+        enBTRCore_DC_HID_MouseKeyBoard,
+        enBTRCore_DC_HID_AudioRemote,
+        enBTRCore_DC_HID_Joystick,
+        enBTRCore_DC_HID_GamePad,
+        // Add other class IDs as needed
+    };
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x1F00; // Example class
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+    for (size_t i = 0; i < sizeof(classIds) / sizeof(classIds[0]); i++) {
+        // Set up the device info with the current class ID
+        deviceInfo.ui32Class = classIds[i];
+      
+        // Call the function with Speakers device type
+        ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStPropChanged, &deviceInfo, &btrCoreHdl);
+        TEST_ASSERT_EQUAL(0, ret);
+
+    }
+}
+
+void test_btrCore_BTDeviceAuthenticationCb_BasicInitialization_loop1(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x400u; // Example class
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+
+    // Set up the callback
+    btrCoreHdl.fpcBBTRCoreConnAuth = myConnAuthCallback;
+
+    // Set up the paired devices
+    btrCoreHdl.numOfPairedDevices = 1;
+    btrCoreHdl.stKnownDevicesArr[0].tDeviceId = 1;
+    strncpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName, "Known Device", sizeof(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName) - 1);
+    btrCoreHdl.stKnownDevicesArr[0].pcDeviceName[sizeof(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName) - 1] = '\0';
+
+    // Call the function
+    ret = btrCore_BTDeviceAuthenticationCb(enBTDevAudioSource, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(1, ret);
+
+    printf("Test case for basic initialization passed!\n");
+}
+void test_btrCore_BTDeviceAuthenticationCb_BasicInitialization_loop2(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+
+    // Set up the callback
+    btrCoreHdl.fpcBBTRCoreConnAuth = myConnAuthCallback;
+
+    // Set up the paired devices
+    btrCoreHdl.numOfPairedDevices = 1;
+    btrCoreHdl.stKnownDevicesArr[0].tDeviceId = 1;
+    strncpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName, "Xbox", sizeof(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName) - 1);
+    btrCoreHdl.stKnownDevicesArr[0].pcDeviceName[sizeof(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName) - 1] = '\0';
+
+    // Define a set of class IDs to test
+    unsigned int classIds[] = {
+        0x40000u,  // Rendering Class of Service
+        0x80000u,  // Capturing Service
+        0x200000u, // Audio Class of Service
+        0x400000u  // Telephony Class of Service
+    };
+
+    // Loop through each class ID and call the function
+    for (int i = 0; i < sizeof(classIds) / sizeof(classIds[0]); i++) {
+        deviceInfo.ui32Class = classIds[i];
+        ret = btrCore_BTDeviceAuthenticationCb(enBTDevHFPHeadset, &deviceInfo, &btrCoreHdl);
+        TEST_ASSERT_EQUAL(1, ret);
+        printf("Test case for class ID 0x%x passed!\n", classIds[i]);
+    }
+}
+
+void test_btrCore_BTDeviceAuthenticationCb_BasicInitialization_loop3(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+
+    // Set up the callback
+    btrCoreHdl.fpcBBTRCoreConnAuth = myConnAuthCallback;
+
+    // Set up the paired devices
+    btrCoreHdl.numOfPairedDevices = 1;
+    btrCoreHdl.stKnownDevicesArr[0].tDeviceId = 1;
+    strncpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName, "Known Device", sizeof(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName) - 1);
+    btrCoreHdl.stKnownDevicesArr[0].pcDeviceName[sizeof(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName) - 1] = '\0';
+
+    // Define a set of class IDs to test
+    unsigned int classIds[] = {
+        0x400u,    // Tablet
+        0x200u,    // SmartPhone
+        0x100u,    // WearableHeadset
+        0x40000u,  // Rendering Class of Service
+        0x80000u,  // Capturing Service
+        0x200000u, // Audio Class of Service
+        0x400000u  // Telephony Class of Service
+    };
+
+    // Loop through each class ID and call the function
+    for (int i = 0; i < sizeof(classIds) / sizeof(classIds[0]); i++) {
+        deviceInfo.ui32Class = classIds[i];
+        ret = btrCore_BTDeviceAuthenticationCb(enBTDevAudioSink, &deviceInfo, &btrCoreHdl);
+        TEST_ASSERT_EQUAL(1, ret);
+        printf("Test case for class ID 0x%x passed!\n", classIds[i]);
+    }
+}
+
+void test_btrCore_BTMediaStatusUpdateCb(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreAVMediaStatusUpdate mediaStatusUpdate;
+    char* btdevAddr = "00:11:22:33:44:55";
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&mediaStatusUpdate, 0, sizeof(stBTRCoreAVMediaStatusUpdate));
+    btrCoreHdl.numOfPairedDevices=2;
+    btrCoreHdl.stKnownDevicesArr[0].tDeviceId=73588229205;
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask =g_async_queue_new();//(pGAQueueOutTask*)malloc(pGAQueueOutTask); // Mock pointer
+    mediaStatusUpdate.eAVMediaState = eBTRCoreAVMediaTrkStPaused;
+        // Call the function with the current media state
+    ret = btrCore_BTMediaStatusUpdateCb(&mediaStatusUpdate, btdevAddr, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+
+    // Define a set of media states to test
+    eBTRCoreAVMediaStatusUpdate mediaStates[] = {
+        eBTRCoreAVMediaTrkStStarted,
+        eBTRCoreAVMediaTrkStPlaying,
+        eBTRCoreAVMediaTrkStPaused,
+        eBTRCoreAVMediaTrkStStopped,
+        eBTRCoreAVMediaTrkStChanged,
+        eBTRCoreAVMediaTrkPosition,
+        eBTRCoreAVMediaPlaybackEnded,
+        eBTRCoreAVMediaPlyrName,
+        eBTRCoreAVMediaPlyrEqlzrStOff,
+        eBTRCoreAVMediaPlyrEqlzrStOn,
+        eBTRCoreAVMediaPlyrShflStOff,
+        eBTRCoreAVMediaPlyrShflStAllTracks,
+        eBTRCoreAVMediaPlyrShflStGroup,
+        eBTRCoreAVMediaPlyrRptStOff,
+        eBTRCoreAVMediaPlyrRptStSingleTrack,
+        eBTRCoreAVMediaPlyrRptStAllTracks,
+        eBTRCoreAVMediaPlyrRptStGroup,
+        eBTRCoreAVMediaPlyrVolume,
+        eBTRCoreAVMediaPlyrDelay,
+        eBTRCoreAVMediaElementAdded,
+        eBTRCoreAVMediaElementRemoved
+    };
+
+    // Iterate over the media states and test each one
+    for (size_t i = 0; i < sizeof(mediaStates) / sizeof(mediaStates[0]); i++) {
+        // Set up the media status update with the current media state
+        mediaStatusUpdate.eAVMediaState = mediaStates[i];
+        // Call the function with the current media state
+        ret = btrCore_BTMediaStatusUpdateCb(&mediaStatusUpdate, btdevAddr, &btrCoreHdl);
+        TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+
+        printf("Test case for media state %d passed!\n", mediaStates[i]);
+    }
+    // 73588229205
+}
+void test_btrCore_BTMediaStatusUpdateCb_NULL(void) {
+    enBTRCoreRet ret;
+    ret = btrCore_BTMediaStatusUpdateCb(NULL, NULL, NULL);
+    TEST_ASSERT_EQUAL(enBTRCoreInvalidArg, ret);
+}
+
+
+void test_btrCore_BTLeStatusUpdateCb(void) {
+    stBTRCoreHdl btrCoreHdl=btrCoreHdl;
+    stBTRCoreLeGattInfo leGattInfo;
+    char* btDevAddr = "00:11:22:33:44:55";
+    enBTRCoreRet ret;
+
+   
+    char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo);
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&leGattInfo, 0, sizeof(stBTRCoreLeGattInfo));
+
+    // Set up the LE GATT info
+    leGattInfo.enLeOper = enBTRCoreLEGOpReadValue;
+    // Set up the scanned device
+    btrCoreHdl.numOfScannedDevices = 1;
+    btrCoreHdl.numOfPairedDevices=2;
+    btrCoreHdl.stScannedDevicesArr[0].tDeviceId=73588229205;
+    btrCoreHdl.stScannedDevicesArr[0].ui32DevClassBtSpec = 0x40000;
+    btrCoreHdl.stScannedDevicesArr[0].ui16DevAppearanceBleSpec = 0x1234;
+    btrCoreHdl.stScannedDevicesArr[0].enDeviceType = enBTRCore_DC_XBB;
+    btrCoreHdl.stScannedDevicesArr[0].stDeviceProfile.numberOfService = 1;
+    btrCoreHdl.stScannedDevicesArr[0].stDeviceProfile.profile[0].uuid_value = strtol(BTR_CORE_GATT_XBB_1, NULL, 16);
+
+    // Initialize the scanned device state info array
+    btrCoreHdl.stScannedDevStInfoArr[0].eDeviceCurrState = enBTRCoreDevStOpReady;
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDevicePath,devicePath);
+    btrCoreHdl.fpcBBTRCoreStatus=myConnAuthCallback;
+
+    // Call the function
+    ret = btrCore_BTLeStatusUpdateCb(&leGattInfo, btDevAddr, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(enBTRCoreDeviceNotFound, ret);
+    //need to do proper Initializations
+
+    
+}
+void test_btrCore_BTDeviceStatusUpdateCb_DeviceLost_fail(void) {
+    stBTRCoreHdl* btrCoreHdl = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    stBTDeviceInfo* deviceInfo= (stBTDeviceInfo*)malloc(sizeof(stBTDeviceInfo));;
+    int ret;
+
+    // Set up the known device
+    // btrCoreHdl->numOfPairedDevices = 0;
+    btrCoreHdl->numOfScannedDevices=2;
+    btrCoreHdl->stScannedDevicesArr[0].tDeviceId=73588229205;
+    // btrCoreHdl->stKnownDevicesArr[0].tDeviceId = 73588229205;
+    strncpy(btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress, "00:11:22:33:44:55", sizeof(btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress) - 1);
+    btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress[sizeof(btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress) - 1] = '\0';
+
+    // Set up the device info
+    deviceInfo->ui32Class = 0x1F00; // Example class
+    strcpy(deviceInfo->pcAddress, "00:11:22:33:44:55");
+    deviceInfo->pcAddress[sizeof(deviceInfo->pcAddress) - 1] = '\0';
+    strncpy(deviceInfo->pcName, "Test Device", sizeof(deviceInfo->pcName) - 1);
+    deviceInfo->pcName[sizeof(deviceInfo->pcName) - 1] = '\0';
+    strncpy(deviceInfo->pcDevicePath, "/org/bluez/hci0/dev_00_11_22_33_44_55", sizeof(deviceInfo->pcDevicePath) - 1);
+    deviceInfo->pcDevicePath[sizeof(deviceInfo->pcDevicePath) - 1] = '\0';
+
+    // Initialize the queue out task pointer
+    btrCoreHdl->pGAQueueOutTask = NULL; // Mock pointer
+    // Test case for enBTDevStLost
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStLost, deviceInfo, btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for device lost passed!\n");
+    free(btrCoreHdl);
+    free(deviceInfo);
+}
+
+void test_btrCore_BTDeviceStatusUpdateCb_enBTDevStPropChanged1(void) {
+    stBTRCoreHdl* btrCoreHdl = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    stBTDeviceInfo* deviceInfo= (stBTDeviceInfo*)malloc(sizeof(stBTDeviceInfo));;
+    int ret;
+
+    // Set up the known device
+  //  btrCoreHdl->numOfPairedDevices = 1;
+
+    btrCoreHdl->numOfScannedDevices=2;
+    btrCoreHdl->stScannedDevicesArr[0].tDeviceId=73588229205;
+    strncpy(btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress, "00:11:22:33:44:55", sizeof(btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress) - 1);
+    btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress[sizeof(btrCoreHdl->stKnownDevicesArr[0].pcDeviceAddress) - 1] = '\0';
+
+    // Set up the device info
+    deviceInfo->ui32Class = 0x1F00; // Example class
+    strcpy(deviceInfo->pcAddress, "00:11:22:33:44:55");
+    deviceInfo->pcAddress[sizeof(deviceInfo->pcAddress) - 1] = '\0';
+    strncpy(deviceInfo->pcName, "Test Device", sizeof(deviceInfo->pcName) - 1);
+    deviceInfo->pcName[sizeof(deviceInfo->pcName) - 1] = '\0';
+    strncpy(deviceInfo->pcDevicePath, "/org/bluez/hci0/dev_00_11_22_33_44_55", sizeof(deviceInfo->pcDevicePath) - 1);
+    deviceInfo->pcDevicePath[sizeof(deviceInfo->pcDevicePath) - 1] = '\0';
+
+    // Initialize the queue out task pointer
+    btrCoreHdl->pGAQueueOutTask = NULL; // Mock pointer
+    
+
+    // Test case for enBTDevStLost
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStPropChanged, deviceInfo, btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for device lost passed!\n");
+    free(btrCoreHdl);
+    free(deviceInfo);
+}
+
+void test_btrCore_BTDeviceStatusUpdateCb_DeviceFound1(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x1F00; // Example class
+    // Test case for enBTDevStFound
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevAudioSink, enBTDevStFound, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for device found passed!\n");
+}
+void test_btrCore_BTLeStatusUpdateCb_InvalidArg(void){
+    int ret;
+    ret = btrCore_BTLeStatusUpdateCb(0, NULL, NULL);
+    TEST_ASSERT_EQUAL(7, ret);
+}
+void test_btrCore_BTAdapterStatusUpdateCb_InvalidArguments(void) {
+    int ret;
+
+    // Test case for invalid arguments
+    ret = btrCore_BTAdapterStatusUpdateCb(enBTAdPropUnknown, NULL, NULL);
+    TEST_ASSERT_EQUAL(-1, ret);
+
+    printf("Test case for invalid arguments passed!\n");
+}
+
+void test_btrCore_BTAdapterStatusUpdateCb_NonCurrentAdapterPath(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTAdapterInfo adapterInfo;
+    int ret;
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&adapterInfo, 0, sizeof(stBTAdapterInfo));
+    ret = btrCore_BTAdapterStatusUpdateCb(enBTAdPropUnknown, &adapterInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(-1, ret);
+
+}
+
+void test_BTRCore_newBatteryLevelDevice_break(void) {
+    stBTRCoreHdl* btrCoreHdl = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    memset(btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+
+    // Test case when batteryLevelThread is NULL
+    btrCoreHdl->batteryLevelThread = NULL;
+    btrCoreHdl->batteryLevelThreadExit=1;
+    enBTRCoreRet ret = BTRCore_newBatteryLevelDevice((tBTRCoreHandle)btrCoreHdl);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    TEST_ASSERT_NOT_NULL(btrCoreHdl->batteryLevelThread);
+    g_thread_unref(btrCoreHdl->batteryLevelThread);
+    free(btrCoreHdl);
+}
+void test_BTRCore_newBatteryLevelDevice(void) {
+    stBTRCoreHdl* btrCoreHdl = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    memset(btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+
+    // Test case when batteryLevelThread is NULL
+    btrCoreHdl->batteryLevelThread = NULL;
+    //btrCoreHdl->batteryLevelThreadExit=1;
+    enBTRCoreRet ret = BTRCore_newBatteryLevelDevice((tBTRCoreHandle)btrCoreHdl);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    TEST_ASSERT_NOT_NULL(btrCoreHdl->batteryLevelThread);
+
+    // Test case when batteryLevelThread is not NULL
+    ret = BTRCore_newBatteryLevelDevice((tBTRCoreHandle)btrCoreHdl);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+
+    // Clean up
+    g_thread_unref(btrCoreHdl->batteryLevelThread);
+    free(btrCoreHdl);
+}
+
+
+unsigned int sleep(unsigned int seconds) {
+    // Do nothing
+    return 0;
+}
+
+void test_BTRCore_newBatteryLevelDevice1(void) {
+    stBTRCoreHdl* btrCoreHdl = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    memset(btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    btrCoreHdl->batteryLevelThreadExit = 0;
+    g_mutex_init(&btrCoreHdl->batteryLevelMutex);
+    g_cond_init(&btrCoreHdl->batteryLevelCond);
+
+    // Mock the function to update battery levels
+   // btrCore_updateBatteryLevelsForConnectedDevices = mock_btrCore_updateBatteryLevelsForConnectedDevices;
+
+    // Test case when batteryLevelThread is NULL
+    btrCoreHdl->batteryLevelThread = NULL;
+    enBTRCoreRet ret = BTRCore_newBatteryLevelDevice((tBTRCoreHandle)btrCoreHdl);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    // Test case when batteryLevelThread is not NULL
+    ret = BTRCore_newBatteryLevelDevice((tBTRCoreHandle)btrCoreHdl);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+
+    // Clean up
+    // g_thread_unref(btrCoreHdl->batteryLevelThread);
+    g_mutex_clear(&btrCoreHdl->batteryLevelMutex);
+    g_cond_clear(&btrCoreHdl->batteryLevelCond);
+    free(btrCoreHdl);
+}
+
+int mock_BtrCore_BTGetPairedDeviceInfo1(void* apstBtIfceHdl, const char* apcDevPath, stBTPairedDeviceInfo* apstFoundDevice) {
+    apstFoundDevice->numberOfDevices=2;
+    
+    // strncpy(apstFoundDevice->stKnownDevicesArr[0].pcDevicePath, "/device/path", sizeof(apstFoundDevice->stKnownDevicesArr[0].pcDevicePath));  // Initialize device path
+   strncpy( apstFoundDevice->devicePath[0], "/device/path", sizeof(apstFoundDevice->devicePath[0]));  // Initialize device path
+   
+    return 0;
+}
+void test_BTRCore_GetDeviceMediaInfo_ValidInputs_Success(void) {
+    stBTRCoreDevMediaInfo mediaInfo;
+    stBTRCoreBTDevice knownDevice;
+    stBTRCoreAVMediaInfo avMediaInfo;
+    
+    stBTRCoreHdl* hBTRCore = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    if (!hBTRCore) {
+        BTRCORELOG_ERROR("Memory allocation failed for hBTRCore\n");
+        return;
+    }
+    memset(hBTRCore, 0, sizeof(stBTRCoreHdl));
+
+    // Initialize mediaInfo and allocate memory for the nested pstBtrCoreDevMCodecInfo
+    memset(&mediaInfo, 0, sizeof(stBTRCoreDevMediaInfo));
+    mediaInfo.pstBtrCoreDevMCodecInfo = malloc(sizeof(stBTRCoreDevMediaSbcInfo)); // Adjust size based on actual use case
+    
+    memset(mediaInfo.pstBtrCoreDevMCodecInfo, 0, sizeof(stBTRCoreDevMediaSbcInfo));
+    
+    // Initialize the structure members
+    hBTRCore->connHdl = (void*)1; 
+    hBTRCore->curAdapterPath = "/test/path";
+    
+    // Sample details for the 1st Known Device 
+    hBTRCore->stKnownDevicesArr[0].tDeviceId = 1;
+    hBTRCore->stKnownDevicesArr[0].bDeviceConnected = TRUE;  // Assuming this means connected
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDeviceName, "device0", sizeof(hBTRCore->stKnownDevicesArr[0].pcDeviceName));
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDeviceAddress, "address0", sizeof(hBTRCore->stKnownDevicesArr[0].pcDeviceAddress));
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDevicePath, "/device/path", sizeof(hBTRCore->stKnownDevicesArr[0].pcDevicePath));  // Initialize device path
+    hBTRCore->stKnownDevStInfoArr[0].eDeviceCurrState = enBTRCoreDevStConnected;
+
+    // hBTRCore->numOfPairedDevices = 1; 
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo1);
+
+    // Mocking BTRCore_AVMedia_GetCurMediaInfo
+    BTRCore_AVMedia_GetCurMediaInfo_IgnoreAndReturn(enBTRCoreSuccess);
+
+    enBTRCoreRet ret = BTRCore_GetDeviceMediaInfo(hBTRCore, 0, enBTRCoreUnknown, &mediaInfo);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+
+    // Clean up
+    free(mediaInfo.pstBtrCoreDevMCodecInfo);
+    free(hBTRCore);
+}
+void test_BTRCore_GetDeviceMediaInfo_ValidInputs_Success1(void) {
+    stBTRCoreDevMediaInfo mediaInfo;
+    stBTRCoreBTDevice knownDevice;
+    stBTRCoreAVMediaInfo avMediaInfo;
+    
+    stBTRCoreHdl* hBTRCore = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    if (!hBTRCore) {
+        BTRCORELOG_ERROR("Memory allocation failed for hBTRCore\n");
+        return;
+    }
+    memset(hBTRCore, 0, sizeof(stBTRCoreHdl));
+
+    // Initialize mediaInfo and allocate memory for the nested pstBtrCoreDevMCodecInfo
+    memset(&mediaInfo, 0, sizeof(stBTRCoreDevMediaInfo));
+    mediaInfo.pstBtrCoreDevMCodecInfo = malloc(sizeof(stBTRCoreDevMediaSbcInfo)); // Adjust size based on actual use case
+    
+    memset(mediaInfo.pstBtrCoreDevMCodecInfo, 0, sizeof(stBTRCoreDevMediaSbcInfo));
+    
+    // Initialize the structure members
+    hBTRCore->connHdl = (void*)1; 
+    hBTRCore->curAdapterPath = "/test/path";
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDevicePath, "/device/path", sizeof(hBTRCore->stKnownDevicesArr[0].pcDevicePath));  // Initialize device path
+    hBTRCore->stKnownDevStInfoArr[0].eDeviceCurrState = enBTRCoreDevStConnected;
+
+    hBTRCore->numOfPairedDevices = 1; 
+
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo1);
+
+    // Mocking BTRCore_AVMedia_GetCurMediaInfo
+    BTRCore_AVMedia_GetCurMediaInfo_IgnoreAndReturn(enBTRCoreFailure);
+    enBTDeviceType deviceTypes[] = {
+        enBTDevAudioSink,
+        enBTDevAudioSource,
+        enBTDevHFPHeadset,
+        enBTDevHFPAudioGateway,
+        enBTDevLE,
+        enBTDevUnknown
+    };
+    int numDeviceTypes = sizeof(deviceTypes) / sizeof(deviceTypes[0]);
+
+    enBTRCoreRet ret = BTRCore_GetDeviceMediaInfo(hBTRCore, 0, enBTRCoreUnknown, &mediaInfo);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+    
+    ret = BTRCore_GetDeviceMediaInfo(hBTRCore, 0, enBTRCoreHeadSet, &mediaInfo);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+
+
+    ret = BTRCore_GetDeviceMediaInfo(hBTRCore, 0, enBTRCoreHID, &mediaInfo);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+   
+    ret = BTRCore_GetDeviceMediaInfo(hBTRCore, 0, enBTRCorePCAudioIn, &mediaInfo);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret); 
+
+    ret = BTRCore_GetDeviceMediaInfo(hBTRCore, 0, enBTRCoreLE, &mediaInfo);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret); 
+
+    // Clean up
+    free(mediaInfo.pstBtrCoreDevMCodecInfo);
+    free(hBTRCore);
+}
+
+#define BT_MAX_ADAPTERS                      4
+#define BT_MAX_DEVICES                       64
+typedef struct _stBTMediaInfo {
+    unsigned char   ui8Codec;
+    char            pcState[BT_MAX_STR_LEN];
+    char            pcUUID[BT_MAX_STR_LEN];
+    unsigned short  ui16Delay;
+    unsigned short  ui16Volume;
+} stBTMediaInfo;
+
+typedef struct _stBtIfceHdl {
+    char *                                  pDBusConn;
+
+    char*                                   pcBTAgentPath;
+    char*                                   pcBTDAdapterPath;
+    char*                                   pcBTDAdapterAddr;
+    char*                                   pcBTAdapterPath;
+    char*                                   pcDevTransportPath;
+
+    char*                                   pcBTOutPassCode;
+
+    void*                                   pcBAdapterStatusUserData;
+    void*                                   pcBDevStatusUserData;
+    void*                                   pcBMediaStatusUserData;
+    void*                                   pcBNegMediaUserData;
+    void*                                   pcBTransPathMediaUserData;
+    void*                                   pcBMediaPlayerPathUserData;
+    void*                                   pcBMediaBrowserPathUserData;
+    void*                                   pcBConnIntimUserData;
+    void*                                   pcBConnAuthUserData;
+    void*                                   pcBLePathUserData;
+    void*                                   pcBLeAdvUserData;
+
+    int                                     i32DoReject;
+
+    unsigned int                            ui32cBConnAuthPassKey;
+    unsigned int                            ui32DevLost;
+
+    unsigned int                            ui32IsAdapterDiscovering;
+
+    char                                    pcBTVersion[BT_MAX_STR_LEN];
+    char                                    pcDeviceCurrState[BT_MAX_STR_LEN];
+    char                                    pcLeDeviceCurrState[BT_MAX_STR_LEN];
+    char                                    pcLeDeviceAddress[BT_MAX_STR_LEN];
+    char                                    pcMediaCurrState[BT_MAX_STR_LEN];
+    char                                    BatteryOTAControlPath[BT_MAX_STR_LEN];
+
+    stBTAdapterInfo                         lstBTAdapterInfo;
+    stBTDeviceInfo                          lstBTDeviceInfo;
+    stBTMediaInfo                           lstBTMediaInfo;
+
+    stBTLeGattInfo                          stBTLeGatt;
+    stBTLeCustomAdv                         stBTLeCustAdvt;
+    char                                    pcBTAdapterGattSrvEpPath[BT_MAX_DEV_PATH_LEN];
+
+    fPtr_BtrCore_BTAdapterStatusUpdateCb    fpcBAdapterStatusUpdate;
+    fPtr_BtrCore_BTDevStatusUpdateCb        fpcBDevStatusUpdate;
+    fPtr_BtrCore_BTMediaStatusUpdateCb      fpcBMediaStatusUpdate;
+    fPtr_BtrCore_BTNegotiateMediaCb         fpcBNegotiateMedia;
+    fPtr_BtrCore_BTTransportPathMediaCb     fpcBTransportPathMedia;
+    fPtr_BtrCore_BTMediaPlayerPathCb        fpcBTMediaPlayerPath;
+    fPtr_BtrCore_BTMediaBrowserPathCb       fpcBTMediaBrowserPath;
+    fPtr_BtrCore_BTConnIntimCb              fpcBConnectionIntimation;
+    fPtr_BtrCore_BTConnAuthCb               fpcBConnectionAuthentication;
+    fPtr_BtrCore_BTLeGattPathCb             fpcBTLeGattPath;
+    fPtr_BtrCore_BTLeAdvertisementCb        fpcBTLeAdvPath;
+
+    char                                    AdapPathInfo[BT_MAX_ADAPTERS][BT_MAX_DEV_PATH_LEN];
+    char                                    DevPathInfo[BT_MAX_DEVICES][BT_MAX_DEV_PATH_LEN];
+
+    char                                    GattCharDevPath[BT_MAX_NUM_GATT_CHAR][BT_MAX_STR_LEN];
+    char                                    GattSerDevPath[BT_MAX_NUM_GATT_SERVICE][BT_MAX_STR_LEN];
+    char                                    GattDesDevPath[BT_MAX_NUM_GATT_DESC][BT_MAX_STR_LEN];
+    char                                    GattCharNotifyPath[BT_MAX_NOTIFY_CHAR_PATH][BT_MAX_STR_LEN];
+
+    int                                     DevCount;
+    int                                     GattCharDevCount;
+    int                                     GattSerDevCount;
+    int                                     GattDesDevCount;
+    int                                     GattCharNotifyDevCount;
+    FILE                                    *BatteryFirmFilep;
+
+
+} stBtIfceHdl;
+
+void* mock_BtrCore_BTInitGetConnection(
+    void
+) {
+    stBtIfceHdl* pstlhBtIfce= NULL;
+    pstlhBtIfce = (stBtIfceHdl*)malloc(sizeof(stBtIfceHdl));
+    if (!pstlhBtIfce)
+        return NULL;
+
+    pstlhBtIfce->pcBTAgentPath                  = NULL;
+    pstlhBtIfce->pcBTDAdapterPath               = NULL;
+    pstlhBtIfce->pcBTDAdapterAddr               = NULL;
+    pstlhBtIfce->pcBTAdapterPath                = NULL;
+    pstlhBtIfce->pcDevTransportPath             = NULL;
+    pstlhBtIfce->pcBTOutPassCode                = NULL;
+    pstlhBtIfce->i32DoReject                    = 1;
+    pstlhBtIfce->ui32cBConnAuthPassKey          = 0;
+    pstlhBtIfce->ui32DevLost                    = 0;
+
+    pstlhBtIfce->ui32IsAdapterDiscovering       = 0;
+    strncpy(pstlhBtIfce->pcDeviceCurrState,   "disconnected", BT_MAX_STR_LEN - 1);
+    strncpy(pstlhBtIfce->pcLeDeviceCurrState, "disconnected", BT_MAX_STR_LEN - 1);
+    strncpy(pstlhBtIfce->pcLeDeviceAddress,   "none",         BT_MAX_STR_LEN - 1);
+    strncpy(pstlhBtIfce->pcMediaCurrState,    "none",         BT_MAX_STR_LEN - 1); 
+
+    pstlhBtIfce->pcBAdapterStatusUserData       = NULL;
+    pstlhBtIfce->pcBDevStatusUserData           = NULL;
+    pstlhBtIfce->pcBMediaStatusUserData         = NULL;
+    pstlhBtIfce->pcBNegMediaUserData            = NULL;
+    pstlhBtIfce->pcBTransPathMediaUserData      = NULL;
+    pstlhBtIfce->pcBMediaPlayerPathUserData     = NULL;
+    pstlhBtIfce->pcBConnIntimUserData           = NULL;
+    pstlhBtIfce->pcBConnAuthUserData            = NULL;
+    pstlhBtIfce->pcBLePathUserData              = NULL;
+
+    pstlhBtIfce->fpcBAdapterStatusUpdate        = NULL;
+    pstlhBtIfce->fpcBDevStatusUpdate            = NULL;
+    pstlhBtIfce->fpcBMediaStatusUpdate          = NULL;
+    pstlhBtIfce->fpcBNegotiateMedia             = NULL;
+    pstlhBtIfce->fpcBTransportPathMedia         = NULL;
+    pstlhBtIfce->fpcBTMediaPlayerPath           = NULL;
+    pstlhBtIfce->fpcBConnectionIntimation       = NULL;
+    pstlhBtIfce->fpcBConnectionAuthentication   = NULL;
+    pstlhBtIfce->fpcBTLeGattPath                = NULL;
+
+    return (void*)pstlhBtIfce;
+}
+
+char*
+mock_BtrCore_BTGetAgentPath (
+    void* apstBtIfceHdl
+) {
+    stBtIfceHdl*    pstlhBtIfce = (stBtIfceHdl*)apstBtIfceHdl;
+    char            lDefaultBTPath[BT_MAX_DEV_PATH_LEN] = {'\0'};
+
+    if (!apstBtIfceHdl)
+        return NULL;
+
+
+    snprintf(lDefaultBTPath, sizeof(lDefaultBTPath), "/org/bluez/agent_%d", getpid());
+
+    if (pstlhBtIfce->pcBTAgentPath) {
+        free(pstlhBtIfce->pcBTAgentPath);
+        pstlhBtIfce->pcBTAgentPath = NULL;
+    }
+
+    pstlhBtIfce->pcBTAgentPath = strdup(lDefaultBTPath);
+    BTRCORELOG_INFO ("Agent Path: %s\n", pstlhBtIfce->pcBTAgentPath);
+    return pstlhBtIfce->pcBTAgentPath;
+}
+
+char*
+mock_BtrCore_BTGetAgentPath_Fail (
+    void* apstBtIfceHdl
+) {
+   
+    return NULL;
+}
+
+void test_BTRCore_Init_should_ReturnFailure_when_InitializationFails2(void)
+{
+    tBTRCoreHandle hBTRCore;
+    stBTRCoreHdl handle_data;
+    enBTRCoreRet expected_result = enBTRCoreInitFailure;
+    enBTRCoreRet actual_result;
+    
+    BtrCore_BTInitGetConnection_StubWithCallback(mock_BtrCore_BTInitGetConnection);
+
+    BtrCore_BTGetAgentPath_IgnoreAndReturn(NULL);
+    BtrCore_BTDeInitReleaseConnection_IgnoreAndReturn(NULL);
+    actual_result = BTRCore_Init(&hBTRCore);
+
+    TEST_ASSERT_EQUAL(expected_result, actual_result);
+}
+
+void test_BTRCore_Init_should_ReturnFailure_when_InitializationFails3(void)
+{
+    tBTRCoreHandle hBTRCore;
+    stBTRCoreHdl handle_data;
+    enBTRCoreRet expected_result = enBTRCoreInitFailure;
+    enBTRCoreRet actual_result;
+    
+    BtrCore_BTInitGetConnection_StubWithCallback(mock_BtrCore_BTInitGetConnection);
+
+
+    BtrCore_BTGetAgentPath_IgnoreAndReturn("Agent Path");
+    BtrCore_BTGetAdapterPath_IgnoreAndReturn(NULL);
+    BtrCore_BTSendReceiveMessages_IgnoreAndReturn(NULL);
+    BtrCore_BTReleaseAgentPath_IgnoreAndReturn(NULL);
+    BtrCore_BTDeInitReleaseConnection_IgnoreAndReturn(NULL);
+    actual_result = BTRCore_Init(&hBTRCore);
+
+    TEST_ASSERT_EQUAL(enBTRCoreInitFailure, actual_result);
+  
+}
+
+void test_BTRCore_Init_ValidParameters4(void) {
+    // Arrange
+    tBTRCoreHandle hBTRCore = NULL;
+    stBTRCoreHdl* mockHandle = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+
+    BtrCore_BTInitGetConnection_IgnoreAndReturn((void *)mockHandle);
+    BtrCore_BTGetAgentPath_IgnoreAndReturn("Agent Path");
+    BtrCore_BTSendReceiveMessages_IgnoreAndReturn(0);
+    BtrCore_BTGetAdapterPath_IgnoreAndReturn("Adapter Path");
+
+    BtrCore_BTRegisterAdapterStatusUpdateCb_IgnoreAndReturn(-1);
+    BtrCore_BTGetProp_IgnoreAndReturn(0);
+    BTRCore_AVMedia_Init_IgnoreAndReturn(enBTRCoreFailure);
+    BtrCore_BTReleaseAdapterPath_IgnoreAndReturn(NULL);
+    BtrCore_BTReleaseAgentPath_IgnoreAndReturn(NULL);
+    BtrCore_BTDeInitReleaseConnection_IgnoreAndReturn(-1);
+    // Act
+    enBTRCoreRet result = BTRCore_Init(&hBTRCore);
+
+    // Assert
+    TEST_ASSERT_EQUAL(1, result);
+    // Cleanup
+    free(mockHandle);
+    BTRCore_DeInit(hBTRCore); // Ensure proper deinitialization
+}    
+
+int
+mock_BtrCore_BTRegisterConnIntimationCb (
+    void*                       apBtConn,
+    fPtr_BtrCore_BTConnIntimCb  afpcBConnIntim,
+    void*                       apUserData
+) {
+    return 0;
+}
+
+int
+mock_BtrCore_BTRegisterConnIntimationCb_fail (
+    void*                       apBtConn,
+    fPtr_BtrCore_BTConnIntimCb  afpcBConnIntim,
+    void*                       apUserData
+) {
+    
+    return -1;
+}
+
+
+void test_BTRCore_Init_ValidParameters5(void) {
+    // Arrange
+    tBTRCoreHandle hBTRCore = NULL;
+    stBTRCoreHdl* mockHandle = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+
+    BtrCore_BTInitGetConnection_IgnoreAndReturn((void *)mockHandle);
+    BtrCore_BTGetAgentPath_IgnoreAndReturn("Agent Path");
+    BtrCore_BTSendReceiveMessages_IgnoreAndReturn(0);
+    BtrCore_BTGetAdapterPath_IgnoreAndReturn("Adapter Path");
+    BtrCore_BTGetProp_StubWithCallback(mock_BtrCore_BTGetProp_fail);
+    BTRCore_AVMedia_Init_IgnoreAndReturn(enBTRCoreSuccess);
+
+    BTRCore_LE_Init_IgnoreAndReturn(enBTRCoreFailure);
+    BtrCore_BTReleaseAdapterPath_IgnoreAndReturn(1);
+    BtrCore_BTReleaseAgentPath_IgnoreAndReturn(1);
+    BtrCore_BTDeInitReleaseConnection_IgnoreAndReturn(1);
+    // Act
+    enBTRCoreRet result = BTRCore_Init(&hBTRCore);
+
+    // Assert
+    TEST_ASSERT_EQUAL(1, result);
+    // Cleanup
+    free(mockHandle);
+    BTRCore_DeInit(hBTRCore); // Ensure proper deinitialization
+}    
+
+int
+mock_BtrCore_BTRegisterAdapterStatusUpdateCb (
+    void*                                   apstBtIfceHdl,
+    fPtr_BtrCore_BTAdapterStatusUpdateCb    afpcBAdapterStatusUpdate,
+    void*                                   apUserData
+) {
+    return 0;
+}
+
+int
+mock_BtrCore_BTRegisterAdapterStatusUpdateCb_Fail (
+    void*                                   apstBtIfceHdl,
+    fPtr_BtrCore_BTAdapterStatusUpdateCb    afpcBAdapterStatusUpdate,
+    void*                                   apUserData
+) {
+    return 1;
+}
+
+int
+mock_BtrCore_BTReleaseAdapterPath (
+    void*       apstBtIfceHdl,
+    const char* apBtAdapter
+) {
+
+    return 0;
+}
+
+
+int
+mock_BtrCore_BTReleaseAdapterPath_fail (
+    void*       apstBtIfceHdl,
+    const char* apBtAdapter
+) {
+        return -1;
+}
+
+
+int
+mock_BtrCore_BTReleaseAgentPath (
+    void* apstBtIfceHdl
+) {
+    
+
+    return 0;
+}
+
+
+void test_BTRCore_Init_ValidParameters6(void) {
+    // Arrange
+    tBTRCoreHandle hBTRCore = NULL;
+    stBTRCoreHdl* mockHandle = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+
+    BtrCore_BTInitGetConnection_IgnoreAndReturn((void *)mockHandle);
+    BtrCore_BTGetAgentPath_IgnoreAndReturn("Agent Path");
+    BtrCore_BTSendReceiveMessages_IgnoreAndReturn(0);
+    BtrCore_BTGetAdapterPath_IgnoreAndReturn("Adapter Path");
+    BtrCore_BTGetProp_IgnoreAndReturn(0);
+    BTRCore_AVMedia_Init_IgnoreAndReturn(enBTRCoreSuccess);
+
+    BTRCore_LE_Init_IgnoreAndReturn(enBTRCoreSuccess);
+    BtrCore_BTRegisterAdapterStatusUpdateCb_StubWithCallback(mock_BtrCore_BTRegisterAdapterStatusUpdateCb_Fail);
+    BtrCore_BTRegisterDevStatusUpdateCb_StubWithCallback(mock_BtrCore_BTRegisterAdapterStatusUpdateCb_Fail);
+    BtrCore_BTReleaseAdapterPath_StubWithCallback(mock_BtrCore_BTReleaseAdapterPath);
+    BtrCore_BTReleaseAgentPath_StubWithCallback(mock_BtrCore_BTReleaseAgentPath);
+    BtrCore_BTDeInitReleaseConnection_IgnoreAndReturn(0);
+    enBTRCoreRet result = BTRCore_Init(&hBTRCore);
+
+    // Assert
+    TEST_ASSERT_EQUAL(1, result);
+    // Cleanup
+    free(mockHandle);
+    BTRCore_DeInit(hBTRCore); // Ensure proper deinitialization
+}
+
+void test_BTRCore_Init_ValidParameters7(void) {
+    // Arrange
+    tBTRCoreHandle hBTRCore = NULL;
+    stBTRCoreHdl* mockHandle = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+
+    BtrCore_BTInitGetConnection_IgnoreAndReturn((void *)mockHandle);
+    BtrCore_BTGetAgentPath_IgnoreAndReturn("Agent Path");
+    BtrCore_BTSendReceiveMessages_IgnoreAndReturn(0);
+    BtrCore_BTGetAdapterPath_IgnoreAndReturn("Adapter Path");
+    BtrCore_BTGetProp_IgnoreAndReturn(0);
+    BTRCore_AVMedia_Init_IgnoreAndReturn(enBTRCoreSuccess);
+
+    BTRCore_LE_Init_IgnoreAndReturn(enBTRCoreSuccess);
+    BtrCore_BTRegisterAdapterStatusUpdateCb_StubWithCallback(mock_BtrCore_BTRegisterAdapterStatusUpdateCb);
+    BtrCore_BTRegisterDevStatusUpdateCb_StubWithCallback(mock_BtrCore_BTRegisterAdapterStatusUpdateCb);
+
+    BtrCore_BTRegisterConnIntimationCb_StubWithCallback(mock_BtrCore_BTRegisterConnIntimationCb_fail);
+    BtrCore_BTReleaseAdapterPath_StubWithCallback(mock_BtrCore_BTReleaseAdapterPath);
+    BtrCore_BTReleaseAgentPath_StubWithCallback(mock_BtrCore_BTReleaseAgentPath);
+    BtrCore_BTDeInitReleaseConnection_IgnoreAndReturn(0);
+    enBTRCoreRet result = BTRCore_Init(&hBTRCore);
+
+    // Assert
+    TEST_ASSERT_EQUAL(1, result);
+    // Cleanup
+    free(mockHandle);
+    BTRCore_DeInit(hBTRCore); // Ensure proper deinitialization
+}
+
+int
+mock_BtrCore_BTRegisterConnAuthCb (
+    void*                       apBtConn,
+    fPtr_BtrCore_BTConnAuthCb   afpcBConnAuth,
+    void*                       apUserData
+) {
+    
+    return 0;
+}
+int
+mock_BtrCore_BTRegisterConnAuthCb_fail (
+    void*                       apBtConn,
+    fPtr_BtrCore_BTConnAuthCb   afpcBConnAuth,
+    void*                       apUserData
+) {
+    
+    return -1;
+}
+void test_BTRCore_Init_ValidParameters8(void) {
+    // Arrange
+    tBTRCoreHandle hBTRCore = NULL;
+    stBTRCoreHdl* mockHandle = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+
+    BtrCore_BTInitGetConnection_IgnoreAndReturn((void *)mockHandle);
+    BtrCore_BTGetAgentPath_IgnoreAndReturn("Agent Path");
+    BtrCore_BTSendReceiveMessages_IgnoreAndReturn(0);
+    BtrCore_BTGetAdapterPath_IgnoreAndReturn("Adapter Path");
+    BtrCore_BTGetProp_IgnoreAndReturn(0);
+    BTRCore_AVMedia_Init_IgnoreAndReturn(enBTRCoreSuccess);
+
+    BTRCore_LE_Init_IgnoreAndReturn(enBTRCoreSuccess);
+    BtrCore_BTRegisterAdapterStatusUpdateCb_StubWithCallback(mock_BtrCore_BTRegisterAdapterStatusUpdateCb);
+    BtrCore_BTRegisterDevStatusUpdateCb_StubWithCallback(mock_BtrCore_BTRegisterAdapterStatusUpdateCb);
+
+    BtrCore_BTRegisterConnIntimationCb_StubWithCallback(mock_BtrCore_BTRegisterConnIntimationCb);
+    BtrCore_BTRegisterConnAuthCb_StubWithCallback(mock_BtrCore_BTRegisterConnAuthCb_fail);
+    BtrCore_BTReleaseAdapterPath_StubWithCallback(mock_BtrCore_BTReleaseAdapterPath);
+    BtrCore_BTReleaseAgentPath_StubWithCallback(mock_BtrCore_BTReleaseAgentPath);
+    BtrCore_BTDeInitReleaseConnection_IgnoreAndReturn(0);
+    enBTRCoreRet result = BTRCore_Init(&hBTRCore);
+
+    // Assert
+    TEST_ASSERT_EQUAL(1, result);
+    // Cleanup
+    free(mockHandle);
+    BTRCore_DeInit(hBTRCore); // Ensure proper deinitialization
+}
+
+void test_BTRCore_Init_ValidParameters9(void) {
+    // Arrange
+    tBTRCoreHandle hBTRCore = NULL;
+    stBTRCoreHdl* mockHandle = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+
+    BtrCore_BTInitGetConnection_IgnoreAndReturn((void *)mockHandle);
+    BtrCore_BTGetAgentPath_IgnoreAndReturn("Agent Path");
+    BtrCore_BTSendReceiveMessages_IgnoreAndReturn(0);
+    BtrCore_BTGetAdapterPath_IgnoreAndReturn("Adapter Path");
+    BtrCore_BTGetProp_IgnoreAndReturn(0);
+    BTRCore_AVMedia_Init_IgnoreAndReturn(enBTRCoreSuccess);
+
+    BTRCore_LE_Init_IgnoreAndReturn(enBTRCoreSuccess);
+    BtrCore_BTRegisterAdapterStatusUpdateCb_StubWithCallback(mock_BtrCore_BTRegisterAdapterStatusUpdateCb);
+    BtrCore_BTRegisterDevStatusUpdateCb_StubWithCallback(mock_BtrCore_BTRegisterAdapterStatusUpdateCb);
+
+    BtrCore_BTRegisterConnIntimationCb_StubWithCallback(mock_BtrCore_BTRegisterConnIntimationCb);
+    BtrCore_BTRegisterConnAuthCb_StubWithCallback(mock_BtrCore_BTRegisterConnAuthCb);
+    BTRCore_AVMedia_RegisterMediaStatusUpdateCb_IgnoreAndReturn(1);
+    BtrCore_BTReleaseAdapterPath_StubWithCallback(mock_BtrCore_BTReleaseAdapterPath);
+    BtrCore_BTReleaseAgentPath_StubWithCallback(mock_BtrCore_BTReleaseAgentPath);
+    BtrCore_BTDeInitReleaseConnection_IgnoreAndReturn(0);
+    enBTRCoreRet result = BTRCore_Init(&hBTRCore);
+
+    // Assert
+    TEST_ASSERT_EQUAL(1, result);
+    // Cleanup
+    free(mockHandle);
+    BTRCore_DeInit(hBTRCore); // Ensure proper deinitialization
+}
+
+enBTRCoreRet
+mock_BTRCore_LE_RegisterStatusUpdateCb_Fail (
+    tBTRCoreLeHdl                       hBTRCoreLe,
+    fPtr_BTRCore_LeStatusUpdateCb       afpcBTRCoreLeStatusUpdate,
+    void*                               apvBtLeStatusUserData
+) {
+    
+
+    return enBTRCoreFailure;
+}
+
+void test_BTRCore_Init_ValidParameters10(void) {
+    // Arrange
+    tBTRCoreHandle hBTRCore = NULL;
+    stBTRCoreHdl* mockHandle = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+
+    BtrCore_BTInitGetConnection_IgnoreAndReturn((void *)mockHandle);
+    BtrCore_BTGetAgentPath_IgnoreAndReturn("Agent Path");
+    BtrCore_BTSendReceiveMessages_IgnoreAndReturn(0);
+    BtrCore_BTGetAdapterPath_IgnoreAndReturn("Adapter Path");
+    BtrCore_BTGetProp_IgnoreAndReturn(0);
+    BTRCore_AVMedia_Init_IgnoreAndReturn(enBTRCoreSuccess);
+
+    BTRCore_LE_Init_IgnoreAndReturn(enBTRCoreSuccess);
+    BtrCore_BTRegisterAdapterStatusUpdateCb_StubWithCallback(mock_BtrCore_BTRegisterAdapterStatusUpdateCb);
+    BtrCore_BTRegisterDevStatusUpdateCb_StubWithCallback(mock_BtrCore_BTRegisterAdapterStatusUpdateCb);
+
+    BtrCore_BTRegisterConnIntimationCb_StubWithCallback(mock_BtrCore_BTRegisterConnIntimationCb);
+    BtrCore_BTRegisterConnAuthCb_StubWithCallback(mock_BtrCore_BTRegisterConnAuthCb);
+    BTRCore_AVMedia_RegisterMediaStatusUpdateCb_IgnoreAndReturn(enBTRCoreSuccess);
+    BTRCore_LE_RegisterStatusUpdateCb_StubWithCallback(mock_BTRCore_LE_RegisterStatusUpdateCb_Fail);
+    BtrCore_BTReleaseAdapterPath_StubWithCallback(mock_BtrCore_BTReleaseAdapterPath);
+    BtrCore_BTReleaseAgentPath_StubWithCallback(mock_BtrCore_BTReleaseAgentPath);
+    BtrCore_BTDeInitReleaseConnection_IgnoreAndReturn(0);
+    enBTRCoreRet result = BTRCore_Init(&hBTRCore);
+
+    // Assert
+    TEST_ASSERT_EQUAL(1, result);
+    // Cleanup
+    free(mockHandle);
+    BTRCore_DeInit(hBTRCore); // Ensure proper deinitialization
+}
+
+int
+mock_BtrCore_BTRegisterAgent (
+    void*       apstBtIfceHdl,
+    const char* apBtAdapter,
+    const char* apBtAgentPath,
+    const char* capabilities
+) {
+    
+
+    return 0;
+}
+
+void test_BTRCore_RegisterAgent(void) {
+    stBTRCoreHdl btrCoreHdl;
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+    BtrCore_BTRegisterAgent_StubWithCallback(mock_BtrCore_BTRegisterAgent);
+
+    enBTRCoreRet ret = BTRCore_RegisterAgent((tBTRCoreHandle)&btrCoreHdl, 0);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    ret = BTRCore_RegisterAgent((tBTRCoreHandle)&btrCoreHdl, 2);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    ret = BTRCore_RegisterAgent((tBTRCoreHandle)&btrCoreHdl, 3);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    ret = BTRCore_RegisterAgent((tBTRCoreHandle)&btrCoreHdl, 4);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+        
+    // Test case for invalid handle
+    ret = BTRCore_RegisterAgent(NULL, 0);
+    TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
+}
+// Mock function for BTRCore_SetAdapter
+void test_BTRCore_SetAdapter_should_UpdateAdapterNumberSuccessfully1(void) {
+    stBTRCoreHdl* hBTRCore = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl)); 
+    if (!hBTRCore) {
+        BTRCORELOG_ERROR("Memory allocation failed for hBTRCore\n");
+        return;
+    }
+    memset(hBTRCore, 0, sizeof(stBTRCoreHdl));
+
+    // Allocate memory for curAdapterPath
+    hBTRCore->curAdapterPath = (char*)malloc(32);
+    if (!hBTRCore->curAdapterPath) {
+        BTRCORELOG_ERROR("Memory allocation failed for curAdapterPath\n");
+        free(hBTRCore);
+        return;
+    }
+
+    // Initialize the adapter path
+    strcpy(hBTRCore->curAdapterPath, "/path/to/adapter0");
+
+    // Test case for adapter number 0
+    enBTRCoreRet ret = BTRCore_SetAdapter((tBTRCoreHandle)hBTRCore, 0);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    TEST_ASSERT_EQUAL_STRING("/path/to/adapter0", hBTRCore->curAdapterPath);
+
+    // Test case for adapter number 1
+    ret = BTRCore_SetAdapter((tBTRCoreHandle)hBTRCore, 1);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    TEST_ASSERT_EQUAL_STRING("/path/to/adapter1", hBTRCore->curAdapterPath);
+
+    // Test case for adapter number 2
+    ret = BTRCore_SetAdapter((tBTRCoreHandle)hBTRCore, 2);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    TEST_ASSERT_EQUAL_STRING("/path/to/adapter2", hBTRCore->curAdapterPath);
+
+    // Test case for adapter number 3
+    ret = BTRCore_SetAdapter((tBTRCoreHandle)hBTRCore, 3);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    TEST_ASSERT_EQUAL_STRING("/path/to/adapter3", hBTRCore->curAdapterPath);
+
+    // Test case for adapter number 4
+    ret = BTRCore_SetAdapter((tBTRCoreHandle)hBTRCore, 4);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    TEST_ASSERT_EQUAL_STRING("/path/to/adapter4", hBTRCore->curAdapterPath);
+
+    // Test case for adapter number 5
+    ret = BTRCore_SetAdapter((tBTRCoreHandle)hBTRCore, 5);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    TEST_ASSERT_EQUAL_STRING("/path/to/adapter5", hBTRCore->curAdapterPath);
+
+    // Test case for adapter number 6 (default case)
+    ret = BTRCore_SetAdapter((tBTRCoreHandle)hBTRCore, 6);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    TEST_ASSERT_EQUAL_STRING("/path/to/adapter0", hBTRCore->curAdapterPath);
+
+    // Test case for invalid handle
+    ret = BTRCore_SetAdapter(NULL, 0);
+    TEST_ASSERT_EQUAL(enBTRCoreNotInitialized, ret);
+
+    // Clean up
+    free(hBTRCore->curAdapterPath);
+    free(hBTRCore);
+}
+
+void test_BTRCore_UNPAIR_Success(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    const char* deviceName = "Xbox Controller";
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    btrCoreHdl.numOfPairedDevices = 1;
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceAddress, "00:11:22:33:44:55");
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDevicePath, devicePath);
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName, deviceName);
+
+    // Mock the BtrCore_BTDisconnectDevice function to return success
+    BtrCore_BTDisconnectDevice_StubWithCallback(mock_BtrCore_BTDisconnectDevice);
+
+    // Mock the BtrCore_BTEnableEnhancedRetransmissionMode function to return success
+    BtrCore_BTEnableEnhancedRetransmissionMode_StubWithCallback(mock_BtrCore_BTEnableEnhancedRetransmissionMode_fail);
+    // BtrCore_BTPerformAdapterOp_SttubWithCallback(mock_BtrCore_BTPerformAdapterOp);
+    BtrCore_BTPerformAdapterOp_IgnoreAndReturn(0);
+    BtrCore_BTGetPairedDeviceInfo_IgnoreAndReturn(0);
+    // Test case for successful disconnection
+    ret = BTRCore_UnPairDevice(&btrCoreHdl, 0);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+}
+
+
+
+void test_BTRCore_UNPAIR_Fail(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    const char* deviceName = "Xbox Controller";
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    btrCoreHdl.numOfPairedDevices = 1;
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceAddress, "00:11:22:33:44:55");
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDevicePath, devicePath);
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName, deviceName);
+
+    // Mock the BtrCore_BTDisconnectDevice function to return success
+    BtrCore_BTDisconnectDevice_StubWithCallback(mock_BtrCore_BTDisconnectDevice);
+
+    // Mock the BtrCore_BTEnableEnhancedRetransmissionMode function to return success
+    BtrCore_BTEnableEnhancedRetransmissionMode_StubWithCallback(mock_BtrCore_BTEnableEnhancedRetransmissionMode_fail);
+    // BtrCore_BTPerformAdapterOp_SttubWithCallback(mock_BtrCore_BTPerformAdapterOp);
+    BtrCore_BTPerformAdapterOp_IgnoreAndReturn(1);
+    BtrCore_BTGetPairedDeviceInfo_IgnoreAndReturn(1);
+    // Test case for successful disconnection
+    ret = BTRCore_UnPairDevice(&btrCoreHdl, 0);
+    TEST_ASSERT_EQUAL(enBTRCorePairingFailed, ret);
+}
+
+void test_BTRCore_ConnectDevice_Success(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    const char* deviceName = "Xbox";
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    btrCoreHdl.numOfPairedDevices = 1;
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceAddress, "00:11:22:33:44:55");
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDevicePath, devicePath);
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName, deviceName);
+
+    // Mock the BtrCore_BTDisconnectDevice function to return success
+    BtrCore_BTDisconnectDevice_StubWithCallback(mock_BtrCore_BTDisconnectDevice);
+
+    // Mock the BtrCore_BTEnableEnhancedRetransmissionMode function to return success
+    BtrCore_BTEnableEnhancedRetransmissionMode_StubWithCallback(mock_BtrCore_BTEnableEnhancedRetransmissionMode_fail);
+    // BtrCore_BTPerformAdapterOp_SttubWithCallback(mock_BtrCore_BTPerformAdapterOp);
+    BtrCore_BTPerformAdapterOp_IgnoreAndReturn(0);
+    BtrCore_BTGetPairedDeviceInfo_IgnoreAndReturn(0);
+    BtrCore_BTDisableEnhancedRetransmissionMode_IgnoreAndReturn(1);
+
+
+    BtrCore_BTConnectDevice_StubWithCallback(mock_BtrCore_BTConnectDevice);
+    // Test case for successful disconnection
+    ret = BTRCore_ConnectDevice(&btrCoreHdl, 0,enBTDevHID);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+}
+
+
+void test_BTRCore_GetDeviceConnected_DeviceConnected1(void) {
+    stBTRCoreHdl* hBTRCore = malloc(sizeof(stBTRCoreHdl));
+    //stBTRCoreDevStateInfo devStateInfo = { .eDeviceCurrState = enBTRCoreDevStConnected };
+    memset(hBTRCore, 0, sizeof(stBTRCoreHdl));
+    
+    // Initialize the structure members
+    hBTRCore->connHdl = (void*)1; 
+    hBTRCore->curAdapterPath = "/test/path";
+
+    // Sample details for 1st Known Device 
+    hBTRCore->stKnownDevicesArr[0].tDeviceId = 1;
+    hBTRCore->stKnownDevicesArr[0].bDeviceConnected = TRUE;  // Assuming this means connected
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDeviceName, "device0", sizeof(hBTRCore->stKnownDevicesArr[0].pcDeviceName));
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDeviceAddress, "address0", sizeof(hBTRCore->stKnownDevicesArr[0].pcDeviceAddress));
+    
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDevicePath, "/device/path", sizeof(hBTRCore->stKnownDevicesArr[0].pcDevicePath));  // Initialize device path
+    hBTRCore->stKnownDevStInfoArr[0].eDeviceCurrState = enBTRCoreDevStUnknown;
+    hBTRCore->numOfPairedDevices = 1; 
+    // Mocking and stubbing
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mock_BTGetPairedDeviceInfo4);
+    enBTRCoreRet ret = BTRCore_GetDeviceConnected(hBTRCore, 0, enBTRCoreHID);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+int
+_mock_BTGetPairedDeviceInfo_Success (
+    void*                   apBtConn,
+    const char*             apBtAdapter,
+    stBTPairedDeviceInfo*   pairedDevices
+){
+    //stBTPairedDeviceInfo pairedDevices = {0};
+    pairedDevices->numberOfDevices=2;
+    pairedDevices->deviceInfo[0].bConnected = 1;
+    return 0;
+}
+void test_BTRCore_GetDeviceConnected_DeviceConnected2(void) {
+    stBTRCoreHdl* hBTRCore = malloc(sizeof(stBTRCoreHdl));
+    //stBTRCoreDevStateInfo devStateInfo = { .eDeviceCurrState = enBTRCoreDevStConnected };
+    memset(hBTRCore, 0, sizeof(stBTRCoreHdl));
+    
+    // Initialize the structure members
+    hBTRCore->connHdl = (void*)1; 
+    hBTRCore->curAdapterPath = "/test/path";
+
+    // Sample details for 1st Known Device 
+    hBTRCore->stKnownDevicesArr[0].tDeviceId = 1;
+    hBTRCore->stKnownDevicesArr[0].bDeviceConnected = TRUE;  // Assuming this means connected
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDeviceName, "device0", sizeof(hBTRCore->stKnownDevicesArr[0].pcDeviceName));
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDeviceAddress, "address0", sizeof(hBTRCore->stKnownDevicesArr[0].pcDeviceAddress));
+    
+    strncpy(hBTRCore->stKnownDevicesArr[0].pcDevicePath, "/device/path", sizeof(hBTRCore->stKnownDevicesArr[0].pcDevicePath));  // Initialize device path
+    hBTRCore->stKnownDevStInfoArr[0].eDeviceCurrState = enBTRCoreDevStUnknown;
+    hBTRCore->numOfPairedDevices = 1; 
+    // Mocking and stubbing
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(_mock_BTGetPairedDeviceInfo_Success);
+    enBTRCoreRet ret = BTRCore_GetDeviceConnected(hBTRCore, 0, enBTRCoreHID);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess ,ret);
+}
+
+void test_BTRCore_GetDeviceTypeClass_PairedDevice1(void) {
+    stBTRCoreHdl hBTRCore;
+    stBTRCoreBTDevice knownDevice;
+    enBTRCoreDeviceType deviceType;
+    enBTRCoreDeviceClass deviceClass;
+    const char* deviceAddress = "00:11:22:33:44:55";
+    tBTRCoreDevId aBTRCoreDevId = 0;
+
+    aBTRCoreDevId = 0;
+    // Initialize the structures
+    memset(&hBTRCore, 0, sizeof(stBTRCoreHdl));
+    memset(&knownDevice, 0, sizeof(stBTRCoreBTDevice));
+
+    // Set up the known device
+    knownDevice.tDeviceId = aBTRCoreDevId;
+    strncpy(knownDevice.pcDeviceAddress, deviceAddress, sizeof(knownDevice.pcDeviceAddress) - 1);
+    knownDevice.pcDeviceAddress[sizeof(knownDevice.pcDeviceAddress) - 1] = '\0';
+    knownDevice.enDeviceType = enBTRCore_DC_Unknown;
+
+    hBTRCore.stKnownDevicesArr[0] = knownDevice;
+    hBTRCore.numOfPairedDevices = 1;
+    hBTRCore.numOfScannedDevices=2;
+    hBTRCore.stKnownDevicesArr[0].tDeviceId=0;;
+    // Call the function under test
+    enBTRCoreRet ret = BTRCore_GetDeviceTypeClass(&hBTRCore, aBTRCoreDevId, &deviceType, &deviceClass);
+
+    // Verify the result
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    TEST_ASSERT_EQUAL(enBTRCore_DC_Unknown, deviceClass);
+    TEST_ASSERT_EQUAL(enBTRCoreUnknown, deviceType);
+}
+
+void test_BTRCore_GetLEProperty_AllCases2(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreBTDevice scannedDevice;
+    stBTRCoreDevStateInfo devStateInfo;
+    const char* deviceAddress = "00:11:22:33:44:55";
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    const char* deviceName = "Test Device";
+    char propValue[256];
+    enBTRCoreRet ret;
+    const char* uuid = "UUID";
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&scannedDevice, 0, sizeof(stBTRCoreBTDevice));
+    memset(&devStateInfo, 0, sizeof(stBTRCoreDevStateInfo));
+
+    btrCoreHdl.stScannedDevicesArr[0] = scannedDevice;
+    // Set up the scanned device
+    scannedDevice.tDeviceId = 0;
+    scannedDevice.bDeviceConnected = TRUE;
+    strncpy(scannedDevice.pcDeviceAddress, deviceAddress, sizeof(scannedDevice.pcDeviceAddress) - 1);
+    scannedDevice.pcDeviceAddress[sizeof(scannedDevice.pcDeviceAddress) - 1] = '\0';
+    strncpy(scannedDevice.pcDevicePath, devicePath, sizeof(scannedDevice.pcDevicePath) - 1);
+    scannedDevice.pcDevicePath[sizeof(scannedDevice.pcDevicePath) - 1] = '\0';
+    strncpy(scannedDevice.pcDeviceName, deviceName, sizeof(scannedDevice.pcDeviceName) - 1);
+    scannedDevice.pcDeviceName[sizeof(scannedDevice.pcDeviceName) - 1] = '\0';
+
+    btrCoreHdl.numOfScannedDevices = 1;
+
+    btrCoreHdl.stScannedDevicesArr[0].tDeviceId=1;
+
+
+    // Mock the btrCore_GetDeviceInfo function to return success
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo);
+    BTRCore_LE_GetGattProperty_IgnoreAndReturn(0);
+
+   // Iterate over all possible values of the aenBTRCoreLeProp enumeration
+    for (enBTRCoreLeProp prop = enBTRCoreLePropGUUID; prop <= enBTRCoreLePropGChar; prop++) {
+        ret = BTRCore_GetLEProperty(&btrCoreHdl, 0, uuid, prop, propValue);
+        TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+    }
+    ret = BTRCore_GetLEProperty(&btrCoreHdl, 0, uuid, enBTRCoreLePropUnknown, propValue);
+    TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
+}
+
+
+void*
+mock_BtrCore_BTInitGetConnection1 (
+    void
+) 
+{
+
+    stBtIfceHdl* pstlhBtIfce = (stBtIfceHdl*)malloc(sizeof(stBtIfceHdl));
+    if (!pstlhBtIfce)
+        return NULL;
+
+   // pstlhBtIfce->pGAQueueOutTask->enBTRCoreTskOp=enBTRCoreTaskOpStop;
+    pstlhBtIfce->pDBusConn                      = 1;
+    strncpy(pstlhBtIfce->pcDeviceCurrState,   "disconnected", BT_MAX_STR_LEN - 1);
+    strncpy(pstlhBtIfce->pcLeDeviceCurrState, "disconnected", BT_MAX_STR_LEN - 1);
+    strncpy(pstlhBtIfce->pcLeDeviceAddress,   "none",         BT_MAX_STR_LEN - 1);
+    strncpy(pstlhBtIfce->pcMediaCurrState,    "none",         BT_MAX_STR_LEN - 1); 
+
+ 
+    BtrCore_BTDeInitReleaseConnection((void*)pstlhBtIfce);
+    
+    return (void*)pstlhBtIfce;
+}
+
+int
+mock_BtrCore_BTDeInitReleaseConnection (
+    void* apstBtIfceHdl
+) {
+    stBtIfceHdl*    pstlhBtIfce = (stBtIfceHdl*)apstBtIfceHdl;
+
+    if (!apstBtIfceHdl)
+        return -1;
+
+   
+    if (pstlhBtIfce->pcBTAgentPath) {
+        free(pstlhBtIfce->pcBTAgentPath);
+        pstlhBtIfce->pcBTAgentPath = NULL;
+    }
+
+    if (pstlhBtIfce->pcBTDAdapterAddr) {
+        free(pstlhBtIfce->pcBTDAdapterAddr);
+        pstlhBtIfce->pcBTDAdapterAddr = NULL;
+    }
+
+    if (pstlhBtIfce->pcBTDAdapterPath) {
+        free(pstlhBtIfce->pcBTDAdapterPath);
+        pstlhBtIfce->pcBTDAdapterPath = NULL;
+    }
+
+    if (pstlhBtIfce->pcBTAdapterPath) {
+        free(pstlhBtIfce->pcBTAdapterPath);
+        pstlhBtIfce->pcBTAdapterPath = NULL;
+    }
+
+
+    pstlhBtIfce->pcBLePathUserData              = NULL;
+    pstlhBtIfce->pcBConnAuthUserData            = NULL;
+    pstlhBtIfce->pcBConnIntimUserData           = NULL;
+    pstlhBtIfce->pcBMediaPlayerPathUserData     = NULL;
+    pstlhBtIfce->pcBTransPathMediaUserData      = NULL;
+    pstlhBtIfce->pcBNegMediaUserData            = NULL;
+    pstlhBtIfce->pcBMediaStatusUserData         = NULL;
+    pstlhBtIfce->pcBDevStatusUserData           = NULL;
+    pstlhBtIfce->pcBAdapterStatusUserData       = NULL;
+
+
+    pstlhBtIfce->fpcBTLeGattPath                = NULL;
+    pstlhBtIfce->fpcBConnectionAuthentication   = NULL;
+    pstlhBtIfce->fpcBConnectionIntimation       = NULL;
+    pstlhBtIfce->fpcBTMediaPlayerPath           = NULL;
+    pstlhBtIfce->fpcBTransportPathMedia         = NULL;
+    pstlhBtIfce->fpcBNegotiateMedia             = NULL;
+    pstlhBtIfce->fpcBMediaStatusUpdate          = NULL;
+    pstlhBtIfce->fpcBDevStatusUpdate            = NULL;
+    pstlhBtIfce->fpcBAdapterStatusUpdate        = NULL;
+
+
+    pstlhBtIfce->ui32IsAdapterDiscovering       = 0;
+    pstlhBtIfce->ui32DevLost                    = 0;
+    pstlhBtIfce->ui32cBConnAuthPassKey          = 0;
+    pstlhBtIfce->i32DoReject                    = 0;
+
+
+    pstlhBtIfce->pDBusConn = NULL;
+
+    free(pstlhBtIfce);
+    pstlhBtIfce = NULL;
+
+
+    return 0;
+}
+
+
+
+void test_BTRCore_Init_ValidParameters11(void) {
+    // Arrange
+    tBTRCoreHandle hBTRCore = NULL;
+    stBTRCoreHdl* mockHandle = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+
+    BtrCore_BTInitGetConnection_StubWithCallback(mock_BtrCore_BTInitGetConnection1);
+    BtrCore_BTDeInitReleaseConnection_StubWithCallback(mock_BtrCore_BTDeInitReleaseConnection);
+    BtrCore_BTGetAgentPath_IgnoreAndReturn("Agent Path");
+    BtrCore_BTSendReceiveMessages_IgnoreAndReturn(0);
+    BtrCore_BTGetAdapterPath_IgnoreAndReturn("Adapter Path");
+    BtrCore_BTGetProp_IgnoreAndReturn(0);
+    BTRCore_AVMedia_Init_IgnoreAndReturn(enBTRCoreSuccess);
+
+    BTRCore_LE_Init_IgnoreAndReturn(enBTRCoreSuccess);
+    BtrCore_BTRegisterAdapterStatusUpdateCb_StubWithCallback(mock_BtrCore_BTRegisterAdapterStatusUpdateCb);
+    BtrCore_BTRegisterDevStatusUpdateCb_StubWithCallback(mock_BtrCore_BTRegisterAdapterStatusUpdateCb);
+
+    BtrCore_BTRegisterConnIntimationCb_StubWithCallback(mock_BtrCore_BTRegisterConnIntimationCb);
+    BtrCore_BTRegisterConnAuthCb_StubWithCallback(mock_BtrCore_BTRegisterConnAuthCb);
+    BTRCore_AVMedia_RegisterMediaStatusUpdateCb_IgnoreAndReturn(enBTRCoreSuccess);
+    BTRCore_LE_RegisterStatusUpdateCb_StubWithCallback(mock_BTRCore_LE_RegisterStatusUpdateCb_Fail);
+    BtrCore_BTReleaseAdapterPath_StubWithCallback(mock_BtrCore_BTReleaseAdapterPath);
+    BtrCore_BTReleaseAgentPath_StubWithCallback(mock_BtrCore_BTReleaseAgentPath);
+    BtrCore_BTDeInitReleaseConnection_IgnoreAndReturn(0);
+
+
+    enBTRCoreRet result = BTRCore_Init(&hBTRCore);
+
+    // Assert
+    TEST_ASSERT_EQUAL(1, result);
+    // Cleanup
+    free(mockHandle);
+    BTRCore_DeInit(hBTRCore); // Ensure proper deinitialization
+}
+
+
+void test_btrCore_BTMediaStatusUpdateCb1(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTRCoreAVMediaStatusUpdate mediaStatusUpdate;
+    char* btdevAddr = "00:11:22:33:44:55";
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&mediaStatusUpdate, 0, sizeof(stBTRCoreAVMediaStatusUpdate));
+    btrCoreHdl.numOfPairedDevices=2;
+    btrCoreHdl.stKnownDevicesArr[0].tDeviceId=73588229205;
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask =g_async_queue_new();//(pGAQueueOutTask*)malloc(pGAQueueOutTask); // Mock pointer
+    mediaStatusUpdate.eAVMediaState = eBTRCoreAVMediaTrkStPaused;
+        // Call the function with the current media state
+    ret = btrCore_BTMediaStatusUpdateCb(&mediaStatusUpdate, btdevAddr, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+
+    // Define a set of media states to test
+    eBTRCoreAVMElementType mediaStates[] ={
+        eBTRCoreAVMETypeUnknown,
+        eBTRCoreAVMETypeAlbum,
+        eBTRCoreAVMETypeArtist,
+        eBTRCoreAVMETypeGenre,
+        eBTRCoreAVMETypeCompilation,
+        eBTRCoreAVMETypePlayList,
+        eBTRCoreAVMETypeTrackList,
+        eBTRCoreAVMETypeTrack
+    } ;
+
+    // Iterate over the media states and test each one
+    for (size_t i = 0; i < sizeof(mediaStates) / sizeof(mediaStates[0]); i++) {
+        // Set up the media status update with the current media state
+        mediaStatusUpdate.eAVMediaState = eBTRCoreAVMediaElementAdded;
+        mediaStatusUpdate.m_mediaElementInfo.eAVMElementType=mediaStates[i];
+        // Call the function with the current media state
+        ret = btrCore_BTMediaStatusUpdateCb(&mediaStatusUpdate, btdevAddr, &btrCoreHdl);
+        TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+
+    }
+    // 73588229205
+}
+void test_btrCore_BTDeviceAuthenticationCb_speakers1(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x40000u; // Example class
+    strcpy(deviceInfo.aUUIDs[0], "0000110d-0000-1000-8000-00805f9b34fb"); // A2DP Sink UUID
+    strcpy(deviceInfo.aUUIDs[1], "");
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+    btrCoreHdl.fpcBBTRCoreConnAuth =myConnAuthCallback;
+    // Call the function with Mobile Audio In device type
+    ret = btrCore_BTDeviceAuthenticationCb(enBTDevHID, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(1, ret);
+
+}
+
+void test_btrCore_BTDeviceAuthenticationCb_speakers2(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the device info
+    const char* uuids[] = {
+        "0000110d-0000-1000-8000-00805f9b34fb", // A2DP Sink UUID
+        "0000110a-0000-1000-8000-00805f9b34fb", // A2DP Source UUID
+        "00001803-0000-1000-8000-00805f9b34fb", // GATT Tile 1 UUID
+        "00001804-0000-1000-8000-00805f9b34fb", // GATT Tile 2 UUID
+        "00001805-0000-1000-8000-00805f9b34fb", // GATT Tile 3 UUID
+        "00001124-0000-1000-8000-00805f9b34fb", // HID 1 UUID
+        "00001125-0000-1000-8000-00805f9b34fb", // HID 2 UUID
+        "0000180f-0000-1000-8000-00805f9b34fb", // GATT XBB 1 UUID
+        "0000180e-0000-1000-8000-00805f9b34fb", // Battery Service XBB 1 UUID
+        "0000180d-0000-1000-8000-00805f9b34fb"  // Battery Service XBB 3 UUID
+    };
+    const enBTRCoreDeviceClass expectedDeviceTypes[] = {
+        enBTRCore_DC_Loudspeaker,
+        enBTRCore_DC_SmartPhone,
+        enBTRCore_DC_Tile,
+        enBTRCore_DC_Tile,
+        enBTRCore_DC_Tile,
+        enBTRCore_DC_HID_Keyboard,
+        enBTRCore_DC_HID_Keyboard,
+        enBTRCore_DC_XBB,
+        enBTRCore_DC_XBB,
+        enBTRCore_DC_XBB
+    };
+
+    for (int i = 0; i < sizeof(uuids) / sizeof(uuids[0]); i++) {
+        // Reset the device info and found device
+        memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+        memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+
+        // Set the UUID
+        strcpy(deviceInfo.aUUIDs[0], uuids[i]);
+        strcpy(deviceInfo.aUUIDs[1], "");
+
+        // Initialize the queue out task pointer
+        btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+        btrCoreHdl.fpcBBTRCoreConnAuth = myConnAuthCallback;
+        deviceInfo.saServices[0].len=1;
+
+        // Call the function with Mobile Audio In device type
+        ret = btrCore_BTDeviceAuthenticationCb(enBTRCoreAudioAndHID, &deviceInfo, &btrCoreHdl);
+        TEST_ASSERT_EQUAL(1, ret);
+
+        // Check the device type
+    }
+}
+void test_BTRCore_UNPAIR_Success1(void) {
+    stBTRCoreHdl btrCoreHdl = {0};
+    enBTRCoreRet ret;
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    const char* deviceName = "Xbox Controller";
+
+    // Initialize the BTRCore handle
+    btrCoreHdl.connHdl = (void*)1; // Mock connection handle
+
+    btrCoreHdl.numOfPairedDevices = 1;
+    btrCoreHdl.numOfScannedDevices=1;
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceAddress, "00:11:22:33:44:55");
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDevicePath, devicePath);
+    strcpy(btrCoreHdl.stKnownDevicesArr[0].pcDeviceName, deviceName);
+
+    // Mock the BtrCore_BTDisconnectDevice function to return success
+    BtrCore_BTDisconnectDevice_StubWithCallback(mock_BtrCore_BTDisconnectDevice);
+
+    // Mock the BtrCore_BTEnableEnhancedRetransmissionMode function to return success
+    BtrCore_BTEnableEnhancedRetransmissionMode_StubWithCallback(mock_BtrCore_BTEnableEnhancedRetransmissionMode_fail);
+    // BtrCore_BTPerformAdapterOp_SttubWithCallback(mock_BtrCore_BTPerformAdapterOp);
+    BtrCore_BTPerformAdapterOp_IgnoreAndReturn(0);
+    BtrCore_BTGetPairedDeviceInfo_IgnoreAndReturn(0);
+    // Test case for successful disconnection
+    ret = BTRCore_UnPairDevice(&btrCoreHdl, 0);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+}
+int mock_BtrCore_BTGetPairedDeviceInfo3(
+    void*                   apstBtIfceHdl,
+    const char*             apBtAdapter,
+    stBTPairedDeviceInfo*   pPairedDeviceInfo)
+{   pPairedDeviceInfo->numberOfDevices=1;
+    return 0;
+}
+void test_BTRCore_PairDevice_should_PairBluetoothCoreDeviceSuccessfully1(void) {
+    // Allocate and initialize the BTRCore handle
+    tBTRCoreHandle hBTRCore = (tBTRCoreHandle)malloc(sizeof(stBTRCoreHdl));
+    TEST_ASSERT_NOT_NULL(hBTRCore); // Ensure allocation was successful
+
+    tBTRCoreDevId aBTRCoreDevId = 0;   // Assuming this is the device ID to pair
+    enBTRCoreRet ret;
+
+    // Initialize the scanned device details
+    stBTRCoreBTDevice* scannedDevice = &(((stBTRCoreHdl*)hBTRCore)->stScannedDevicesArr[0]);
+    scannedDevice->bFound = TRUE;
+    scannedDevice->tDeviceId = aBTRCoreDevId;
+    
+    strcpy(scannedDevice->pcDeviceAddress, "address");  // Set the device address correctly
+    
+  
+    // Mock the necessary function call with the correct number of arguments
+    BtrCore_BTPerformAdapterOp_ExpectAndReturn(
+        ((stBTRCoreHdl*)hBTRCore)->connHdl,           // connHdl
+        ((stBTRCoreHdl*)hBTRCore)->curAdapterPath,    // adapterPath
+        ((stBTRCoreHdl*)hBTRCore)->agentPath,         // agentPath
+        "address",                                    // devAddress
+        enBTAdpOpCreatePairedDev,                     // operation
+        0                                             // return value (success)
+    );
+    
+    stBTRCoreHdl vvd;
+    ((stBTRCoreHdl*)hBTRCore)->numOfPairedDevices=2;
+
+    BtrCore_BTGetPairedDeviceInfo_StubWithCallback(mock_BtrCore_BTGetPairedDeviceInfo3);
+    
+
+    // Call the function under test
+    ret = BTRCore_PairDevice(hBTRCore, aBTRCoreDevId);
+
+    // Verify the result
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+
+    // Clean up
+    free(hBTRCore);
+}
+void test_btrCore_BTDeviceStatusUpdateCb_DeviceFound2(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+    unsigned int classIds[] = {
+    (enBTRCore_DC_WearableHeadset| 0x400),  
+    (enBTRCore_DC_HIFIAudioDevice| 0x400), 
+    (enBTRCore_DC_Headphones| 0x400),
+    (enBTRCore_DC_Tablet| 0x400),           
+    (enBTRCore_DC_SmartPhone| 0x400)
+    };
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x1F00; // Example class
+     // Initialize the queue out task pointer
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevHFPAudioGateway, enBTDevStFound, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+     // Test case for enBTDevStFound
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevLE, enBTDevStFound, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+    for(int i=0;i<4;i++){
+     
+    
+    deviceInfo.ui32Class = classIds[i]; 
+    // Test case for enBTDevStFound
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevAudioSink, enBTDevStFound, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    }
+    for(int i=4;i<6;i++){
+     
+    
+    deviceInfo.ui32Class = classIds[i]; 
+    // Test case for enBTDevStFound
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevAudioSource, enBTDevStFound, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    }
+
+    printf("Test case for device found passed!\n");
+}
+
+void test_BTRCore_newBatteryLevelDevice2(void) {
+    tBTRCoreHandle btrCoreHdl=(tBTRCoreHandle)malloc(sizeof(stBTRCoreHdl));
+    memset(btrCoreHdl, 0, sizeof(tBTRCoreHandle));
+    ((stBTRCoreHdl*)btrCoreHdl)->batteryLevelThreadExit = 0;
+    const char* devicePath = "/org/bluez/hci0/dev_00_11_22_33_44_55";
+    const char* deviceName = "Xbox Controller";
+
+    // Initialize the BTRCore handle
+    ((stBTRCoreHdl*)btrCoreHdl)->connHdl = (void*)1; // Mock connection handle
+
+    // ((stBTRCoreHdl*)btrCoreHdl)->numOfPairedDevices = 1;
+    ((stBTRCoreHdl*)btrCoreHdl)->numOfScannedDevices=1;
+    strcpy(((stBTRCoreHdl*)btrCoreHdl)->stKnownDevicesArr[0].pcDeviceAddress, "00:11:22:33:44:55");
+    strcpy(((stBTRCoreHdl*)btrCoreHdl)->stKnownDevicesArr[0].pcDevicePath, devicePath);
+    strcpy(((stBTRCoreHdl*)btrCoreHdl)->stKnownDevicesArr[0].pcDeviceName, deviceName);
+    
+    ((stBTRCoreHdl*)btrCoreHdl)->stKnownDevicesArr[0].tDeviceId=1;
+  
+    ((stBTRCoreHdl*)btrCoreHdl)->stKnownDevicesArr[0].bDeviceConnected = 1;
+    ((stBTRCoreHdl*)btrCoreHdl)->stKnownDevicesArr[0].enDeviceType=enBTRCore_DC_HID_Keyboard;
+    ((stBTRCoreHdl*)btrCoreHdl)->batteryLevelThread = NULL;
+    enBTRCoreRet ret = BTRCore_newBatteryLevelDevice(btrCoreHdl);
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, ret);
+    free(btrCoreHdl);
+}
+
+
+
+void test_btrCore_BTDeviceConnectionIntimationCb_HID1(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    // Initialize the structures
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    // Set up the device info
+    deviceInfo.ui32Class = 0x1F00; // Example class
+
+    // Initialize the queue out task pointer
+    btrCoreHdl.pGAQueueOutTask = (void*)1; // Mock pointer
+
+    strcpy(deviceInfo.pcAddress,"20:44:41");
+    deviceInfo.ui16Appearance=0x0180;
+
+    // Call the function with HID device type
+    ret = btrCore_BTDeviceConnectionIntimationCb(enBTDevAudioSource, &deviceInfo, 123456, 1, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    printf("Test case for HID device type passed!\n");
+}
+
+void test_btrCore_BTAdapterStatusUpdateCb(void) {
+    // Arrange
+    stBTRCoreHdl* mockHandle = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    memset(mockHandle, 0, sizeof(stBTRCoreHdl));
+    mockHandle->curAdapterPath = "/org/bluez/hci0";
+
+    // Mock data for the test
+    stBTAdapterInfo mockAdapterInfo;
+    memset(&mockAdapterInfo, 0, sizeof(stBTAdapterInfo));
+    strcpy(mockAdapterInfo.pcPath, mockHandle->curAdapterPath);
+    mockAdapterInfo.bDiscoverable = TRUE;
+    mockAdapterInfo.bDiscovering = TRUE;
+
+    // Act
+    int result = btrCore_BTAdapterStatusUpdateCb(enBTAdPropDiscoveryStatus, &mockAdapterInfo, mockHandle);
+
+    // Assert
+    TEST_ASSERT_EQUAL(0, result);
+
+    result = btrCore_BTAdapterStatusUpdateCb(enBTAdPropAdvTimeout, &mockAdapterInfo, mockHandle);
+
+    // Assert
+    TEST_ASSERT_EQUAL(0, result);
+
+    result = btrCore_BTAdapterStatusUpdateCb(enBTAdPropUnknown, &mockAdapterInfo, mockHandle);
+
+    // Assert
+    TEST_ASSERT_EQUAL(0, result);
+
+    // Cleanup
+    free(mockHandle);
+}
+void test_BTRCore_GetDeviceTypeClass(void) {
+    // Arrange
+    stBTRCoreHdl* btrCoreHdl = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    memset(btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+
+    btrCoreHdl->numOfScannedDevices = 1;
+    btrCoreHdl->stScannedDevicesArr[0].tDeviceId = 0;
+    btrCoreHdl->stScannedDevicesArr[0].enDeviceType = enBTRCore_DC_Tile;
+
+    tBTRCoreDevId devId = 0; // This should be less than BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES
+    enBTRCoreDeviceType devType;
+    enBTRCoreDeviceClass devClass;
+
+    // Act
+    enBTRCoreRet result = BTRCore_GetDeviceTypeClass((tBTRCoreHandle)btrCoreHdl, devId, &devType, &devClass);
+
+    // Assert
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
+
+    // Cleanup
+    free(btrCoreHdl);
+}
+void test_BTRCore_GetDeviceTypeClass_GreaterThanOrEqualToMaxDiscoveredDevices(void) {
+    // Arrange
+    stBTRCoreHdl* btrCoreHdl = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    memset(btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+
+    btrCoreHdl->numOfScannedDevices = 1;
+    btrCoreHdl->stScannedDevicesArr[0].tDeviceId = 123456789; // Some unique ID
+    btrCoreHdl->stScannedDevicesArr[0].enDeviceType = enBTRCore_DC_Tile;
+
+    tBTRCoreDevId devId = 123456789; // This should be greater than or equal to BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES
+    enBTRCoreDeviceType devType;
+    enBTRCoreDeviceClass devClass;
+
+    // Act
+    enBTRCoreRet result = BTRCore_GetDeviceTypeClass((tBTRCoreHandle)btrCoreHdl, devId, &devType, &devClass);
+
+    // Assert
+    TEST_ASSERT_EQUAL(enBTRCoreSuccess, result);
+
+    // Cleanup
+    free(btrCoreHdl);
+}
+void test_btrCore_BTDeviceAuthenticationCb1(void) {
+    // Arrange
+    stBTRCoreHdl* btrCoreHdl = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
+    memset(btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    btrCoreHdl->aenDeviceDiscoveryType = enBTRCoreAudioAndHID;
+
+    stBTDeviceInfo btDeviceInfo;
+    memset(&btDeviceInfo, 0, sizeof(stBTDeviceInfo));
+    btDeviceInfo.ui32Class = 0x00250; // Some class ID
+    strncpy(btDeviceInfo.pcName, "Mock Device", BD_NAME_LEN);
+    strncpy(btDeviceInfo.pcAddress, "00:11:22:33:44:55", BD_NAME_LEN);
+    strncpy(btDeviceInfo.pcDevicePath, "/org/bluez/hci0/dev_00_11_22_33_44_55", BD_NAME_LEN);
+
+    // // Initialize UUIDs to cover all cases
+    strcpy(btDeviceInfo.aUUIDs[0],"00001101-0000-1000-8000-00805f9b34fb");
+    strcpy(btDeviceInfo.aUUIDs[1],"00001108-0000-1000-8000-00805f9b34fb");
+    strcpy(btDeviceInfo.aUUIDs[0], "00001101-0000-1000-8000-00805f9b34fb"); // Serial Port
+    strcpy(btDeviceInfo.aUUIDs[1], "00001108-0000-1000-8000-00805f9b34fb"); // Headset
+    strcpy(btDeviceInfo.aUUIDs[2], "0000110a-0000-1000-8000-00805f9b34fb"); // Audio Source
+    strcpy(btDeviceInfo.aUUIDs[3], "0000110b-0000-1000-8000-00805f9b34fb"); // Audio Sink
+    strcpy(btDeviceInfo.aUUIDs[4], "0000110e-0000-1000-8000-00805f9b34fb"); // AV Remote Target
+    strcpy(btDeviceInfo.aUUIDs[5], "0000110c-0000-1000-8000-00805f9b34fb"); // Advanced Audio Distribution
+    strcpy(btDeviceInfo.aUUIDs[6], "0000110f-0000-1000-8000-00805f9b34fb"); // AV Remote Control
+    strcpy(btDeviceInfo.aUUIDs[7], "0000110d-0000-1000-8000-00805f9b34fb"); // AV Remote
+    strcpy(btDeviceInfo.aUUIDs[8], "00001112-0000-1000-8000-00805f9b34fb"); // Headset Audio Gateway
+    strcpy(btDeviceInfo.aUUIDs[9], "0000111e-0000-1000-8000-00805f9b34fb"); // Handsfree
+    strcpy(btDeviceInfo.aUUIDs[10], "0000111f-0000-1000-8000-00805f9b34fb"); // Handsfree Audio Gateway
+    strcpy(btDeviceInfo.aUUIDs[11], "00001124-0000-1000-8000-00805f9b34fb"); // Headset 2
+    strcpy(btDeviceInfo.aUUIDs[12], "00001203-0000-1000-8000-00805f9b34fb"); // Generic Audio
+    strcpy(btDeviceInfo.aUUIDs[13], "00001200-0000-1000-8000-00805f9b34fb"); // PnP Information
+    strcpy(btDeviceInfo.aUUIDs[14], "00001204-0000-1000-8000-00805f9b34fb"); // Generic Attribute
+    strcpy(btDeviceInfo.aUUIDs[15], "0000180f-0000-1000-8000-00805f9b34fb"); // Tile
+    strcpy(btDeviceInfo.aUUIDs[16], "00001810-0000-1000-8000-00805f9b34fb"); // Tile
+    strcpy(btDeviceInfo.aUUIDs[17], "00001811-0000-1000-8000-00805f9b34fb"); // Tile
+    strcpy(btDeviceInfo.aUUIDs[18], "00001800-0000-1000-8000-00805f9b34fb"); // Generic Access
+    strcpy(btDeviceInfo.aUUIDs[19], "00001801-0000-1000-8000-00805f9b34fb"); // Generic Attribute
+    strcpy(btDeviceInfo.aUUIDs[20], "0000180a-0000-1000-8000-00805f9b34fb"); // Device Information
+    strcpy(btDeviceInfo.aUUIDs[21], "0000180f-0000-1000-8000-00805f9b34fb"); // Battery Service
+    strcpy(btDeviceInfo.aUUIDs[22], "00001124-0000-1000-8000-00805f9b34fb"); // HID
+    strcpy(btDeviceInfo.aUUIDs[23], "00001125-0000-1000-8000-00805f9b34fb"); // HID
+    strcpy(btDeviceInfo.aUUIDs[24], "0000180d-0000-1000-8000-00805f9b34fb"); // XBB
+    strcpy(btDeviceInfo.aUUIDs[25], "0000180e-0000-1000-8000-00805f9b34fb"); // XBB
+    strcpy(btDeviceInfo.aUUIDs[26], "0000180f-0000-1000-8000-00805f9b34fb"); // XBB
+    strcpy(btDeviceInfo.aUUIDs[27], "00000000-0000-1000-8000-00805f9b34fb"); // Not Identified
+    strcpy(btDeviceInfo.aUUIDs[28],"0x1812");
+    
+    
+    // Act
+    int result = btrCore_BTDeviceAuthenticationCb(enBTDevUnknown, &btDeviceInfo, btrCoreHdl);
+
+    // Assert
+    TEST_ASSERT_EQUAL(0, result);
+
+    // Cleanup
+    free(btrCoreHdl);
+}
+
