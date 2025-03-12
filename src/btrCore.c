@@ -53,7 +53,6 @@
 
 #include "btrCore_bt_ifce.h"
 
-
 #ifdef RDK_LOGGER_ENABLED
 int b_rdk_logger_enabled = 0;
 #endif
