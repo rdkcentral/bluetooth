@@ -98,6 +98,7 @@
 
 #define MAC_ADDRESS_LENGTH 18
 #define MAX_NINTENDO_PATH_LEN 200
+
 typedef struct _stBTMediaInfo {
     unsigned char   ui8Codec;
     char            pcState[BT_MAX_STR_LEN];
@@ -7672,6 +7673,60 @@ BtrCore_BTSendReceiveMessages (
     return 0;
 }
 
+int
+BtrCore_BTGetBluetoothVersion (
+    char* version
+) {
+    char output[BT_MAX_HCICONFIG_OUTPUT_SIZE] = {0};
+    static char sBluetoothVersion[BT_MAX_BLUETOOTH_VERSION] = {0}; // Bluetooth version will be 4.9, 5.0, 5.1, 5.2, 5.3
+    FILE* fp;
+
+    int length = 0;
+
+    if (version == NULL) {
+        BTRCORELOG_ERROR("Invalid version pointer\n");
+        return -1;
+    }
+
+    length = strlen(sBluetoothVersion);
+
+    if (!length) {
+        const char* version_start;
+        size_t output_length;
+
+        // Execute hciconfig -a command and capture its output
+        fp = popen("hciconfig -a", "r");
+        if (fp == NULL) {
+            BTRCORELOG_ERROR("Failed to execute hciconfig\n");
+            return -1;
+        }
+
+        output_length = fread(output, sizeof(char), BT_MAX_HCICONFIG_OUTPUT_SIZE - 1, fp);
+        output[output_length] = '\0';
+        pclose(fp);
+
+        version_start = strstr(output, "HCI Version: ");
+
+        if (version_start != NULL) {
+            version_start += strlen("HCI Version: ");
+            strncpy(sBluetoothVersion, version_start, BT_MAX_BLUETOOTH_VERSION - 1);
+            BTRCORELOG_DEBUG("Parsed bluetooth version:%s\n",sBluetoothVersion);
+        }
+        else {
+            BTRCORELOG_ERROR("Failed to get the Bluetooth version\n");
+            return -1;
+        }
+    } else {
+        BTRCORELOG_DEBUG("Already retrieved the BT version:%s, lenghth:%d\n",sBluetoothVersion,length);
+    }
+
+    length = strlen(sBluetoothVersion);
+    strncpy(version, sBluetoothVersion, length);
+
+    BTRCORELOG_INFO("Bluetooth HCI version:%s\n",version);
+
+    return 0;
+}
 
 // Outgoing callbacks Registration Interfaces
 int
@@ -8024,9 +8079,11 @@ btrCore_BTDBusConnectionFilterCb (
                     int bConnected = 0;
                     int bRssiEvent = 0; //TODO: Bad way to do this. Live with it for now
                     int bClassOrAppearanceEvent = 0;
+                    int bModaliasUpdate = 0;
                     short i16RSSI = 0;
                     unsigned short ui16Appearance = 0;
                     unsigned int ui32Class = 0;
+                    const char *modalias;
 
                     i32OpRet = btrCore_BTGetDeviceInfo(apDBusConn, pstBTDeviceInfo, pui8DevPath);
 
@@ -8108,6 +8165,21 @@ btrCore_BTDBusConnectionFilterCb (
                                         BTRCORELOG_ERROR ("Services; Not an Array\n");
                                     }
                                 }
+                                else if (strcmp (pNameOfProperty, "Modalias") == 0) {
+                                    DBusMessageIter variant_i;
+                                    int dbus_type;
+
+                                    dbus_message_iter_next(&lDBusMsgParse);
+                                    dbus_message_iter_recurse(&lDBusMsgParse, &variant_i);
+                                    dbus_type = dbus_message_iter_get_arg_type (&variant_i);
+
+                                    if (dbus_type == DBUS_TYPE_STRING) {
+                                        dbus_message_iter_get_basic(&variant_i, &modalias);
+                                        bModaliasUpdate = 1;
+                                        strncpy(pstBTDeviceInfo->pcModalias, modalias, BT_MAX_STR_LEN-1);
+                                        BTRCORELOG_INFO("Modalias: %s\n", modalias);
+                                    }
+                                }
                                 //added update of appearance and class as a method to handle dual mode audio devices
                                 //if appearance and 
                                 else if (strcmp (pNameOfProperty, "Appearance") == 0)
@@ -8156,6 +8228,10 @@ btrCore_BTDBusConnectionFilterCb (
 
                         if (lenBTDevType == enBTDevUnknown && !strncmp(pstBTDeviceInfo->pcIcon,"input-gaming",strlen("input-gaming"))) {
                             lenBTDevType = enBTDevHID;
+                        }
+
+                        if (bModaliasUpdate) {
+                            pstlhBtIfce->fpcBDevStatusUpdate(lenBTDevType, enBTDevStModaliasChanged, pstBTDeviceInfo, pstlhBtIfce->pcBDevStatusUserData);
                         }
 
                         if (bPairingEvent) {
