@@ -215,6 +215,7 @@ static int btrCore_BTUnRegisterGattService (DBusConnection* apDBusConn, const ch
 static int btrCore_BTRegisterLeAdvGetProp (DBusConnection* apDBusConn, DBusMessage* apDBusMsg, stBtIfceHdl* apstlhBtIfce);
 static DBusMessage* btrCore_BTLEGattOps (DBusMessage* apDBusMsg, stBtIfceHdl* apstlhBtIfce, enBTOpIfceType  aenIfceType, enBTLeGattOp aenGattOp);
 static int btrCore_BTReleaseLEGattObjPath(char* apstObjPath, void* apvUserData);
+static bool btrCore_IsPathValid (char *path);
 /* Incoming Callbacks Prototypes */
 static DBusHandlerResult btrCore_BTDBusConnectionFilterCb (DBusConnection* apDBusConn, DBusMessage* apDBusMsg, void* apvUserData);
 static DBusHandlerResult btrCore_BTMediaEndpointHandlerCb (DBusConnection* apDBusConn, DBusMessage* apDBusMsg, void* apvUserData);
@@ -5061,6 +5062,16 @@ BtrCore_BTFindServiceSupported (
     return match;
 }
 
+static bool btrCore_IsPathValid(char *path) {
+    if(!path) {
+        BTRCORELOG_ERROR ("path is NULL\n");
+        return false;
+    }
+
+    BTRCORELOG_INFO ("path value is: %s\n", path);
+
+    return strncmp(path, "/", strlen("/")) == 0;
+}
 
 int
 BtrCore_BTPerformAdapterOp (
@@ -5352,7 +5363,14 @@ BtrCore_BTPerformAdapterOp (
             dbus_message_unref(lpDBusReply);
         }
 
+        // deviceObjectPath is an array. No need to check for NULL.
+        BTRCORELOG_INFO ("deviceObjectPath: %s\n", deviceObjectPath);
 
+        if(!btrCore_IsPathValid(deviceObjectPath)) {
+                BTRCORELOG_ERROR ("Invalid deviceObjectPath:(%s)\n",
+                                deviceObjectPath);
+                return -1;
+        }
 
         lpDBusMsg = dbus_message_new_method_call(BT_DBUS_BLUEZ_PATH,
                                                  deviceObjectPath,
