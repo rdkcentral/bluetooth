@@ -4186,6 +4186,61 @@ BtrCore_BTSendReceiveMessages (
     return 0;
 }
 
+int
+BtrCore_BTGetBluetoothVersion (
+    char* version
+) {
+    char output[BT_MAX_HCICONFIG_OUTPUT_SIZE] = {0};
+    static char sBluetoothVersion[BT_MAX_BLUETOOTH_VERSION] = {0}; // Bluetooth version will be 4.9, 5.0, 5.1, 5.2, 5.3
+    FILE* fp;
+
+    int length = 0;
+
+    if (version == NULL) {
+        BTRCORELOG_ERROR("Invalid version pointer\n");
+        return -1;
+    }
+
+    length = strlen(sBluetoothVersion);
+
+    if (!length) {
+        const char* version_start;
+        size_t output_length;
+
+        // Execute hciconfig -a command and capture its output
+        fp = popen("hciconfig -a", "r");
+        if (fp == NULL) {
+            BTRCORELOG_ERROR("Failed to execute hciconfig\n");
+            return -1;
+        }
+
+        output_length = fread(output, sizeof(char), BT_MAX_HCICONFIG_OUTPUT_SIZE - 1, fp);
+        output[output_length] = '\0';
+        pclose(fp);
+
+        version_start = strstr(output, "HCI Version: ");
+
+        if (version_start != NULL) {
+            version_start += strlen("HCI Version: ");
+            strncpy(sBluetoothVersion, version_start, BT_MAX_BLUETOOTH_VERSION - 1);
+            BTRCORELOG_DEBUG("Parsed bluetooth version:%s\n",sBluetoothVersion);
+        }
+        else {
+            BTRCORELOG_ERROR("Failed to get the Bluetooth version\n");
+            return -1;
+        }
+    } else {
+        BTRCORELOG_DEBUG("Already retrieved the BT version:%s, lenghth:%d\n",sBluetoothVersion,length);
+    }
+
+    length = strlen(sBluetoothVersion);
+    strncpy(version, sBluetoothVersion, length);
+
+    BTRCORELOG_INFO("Bluetooth HCI version:%s\n",version);
+
+    return 0;
+}
+
 // Outgoing callbacks Registration Interfaces
 int
 BtrCore_BTRegisterAdapterStatusUpdateCb (
