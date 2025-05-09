@@ -70,6 +70,13 @@ extern "C" {
 #define BTRCORE_MAX_SERVICE_DATA_LEN  32
 #define BTRCORE_MAX_FIRMWARE_STRING_LEN 32
 
+#define BTRCORE_XBOX_VENDOR_ID                0x045E
+#define BTRCORE_XBOX_GEN4_PRODUCT_ID          0x0B13
+#define BTRCORE_XBOX_GEN4_DEF_FIRMWARE        0x0509
+
+#define BTRCORE_MAX_BT_VERSION_SIZE           4
+#define BTCORE_BLUETOOTH_VERSION_5P2          "5.2"
+
 typedef unsigned long long int tBTRCoreMediaElementId;
 
 typedef enum _enBTRCoreOpType {
@@ -136,6 +143,7 @@ typedef enum _enBTRCoreDeviceState {
     enBTRCoreDevStOpReady,
     enBTRCoreDevStOpInfo,
     enBTRCoreDevStSuspended,
+    enBTRCoreDevStUnsupported,
     enBTRCoreDevStUnknown
 } enBTRCoreDeviceState;
 
@@ -292,6 +300,9 @@ typedef struct _stBTRCoreDevStatusCBInfo {
     char                    devOpResponse[BTRCORE_MAX_DEV_OP_DATA_LEN];
     enBTRCoreLeProp         eCoreLeProp;
     enBTRCoreLeOp           eCoreLeOper;
+    unsigned int            ui32VendorId;
+    unsigned int            ui32ProductId;
+    unsigned int            ui32DeviceId;
 } stBTRCoreDevStatusCBInfo;
 
 typedef struct _stBTRCoreSupportedService {
@@ -1288,6 +1299,16 @@ enBTRCoreRet BTRCore_SetGattInfo(tBTRCoreHandle hBTRCore, char *aParentUUID, cha
  * @retval  Returns enBTRCoreSuccess on success, appropriate error code otherwise.
  */
 enBTRCoreRet BTRCore_SetPropertyValue(tBTRCoreHandle hBTRCore, char *aUUID, char *aValue, enBTRCoreLeProp aElement);
+
+/**
+  * @brief  This API is used to Get Bluetooth version
+  *
+  * @param[out]  version Bluetooth version
+  *
+  * @return  Returns the status of the operation.
+  * @retval  Returns enBTRCoreSuccess on success, appropriate error code otherwise.
+  */
+enBTRCoreRet BTRCore_GetBluetoothVersion(char *version);
 
 // Outgoing callbacks Registration Interfaces
 /* BTRCore_RegisterDiscoveryCb - Callback to notify the application every time when a new device is found and added to discovery list */

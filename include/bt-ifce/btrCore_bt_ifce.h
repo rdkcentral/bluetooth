@@ -158,7 +158,8 @@
  */
 #define BT_PS4_HID_PRODUCT_ID_2        0x09cc
 
-
+#define BT_MAX_HCICONFIG_OUTPUT_SIZE    1024
+#define BT_MAX_BLUETOOTH_VERSION        4
 #define BT_MAX_NUM_GATT_SERVICE     6
 #define BT_MAX_NUM_GATT_CHAR        28
 #define BT_MAX_NUM_GATT_DESC        6
@@ -279,6 +280,7 @@ typedef enum _enBTDeviceState {
     enBTDevStPropChanged,
     enBTDevStRSSIUpdate,
     enBTDevStClassAppUpdate,
+    enBTDevStModaliasChanged,
     enBTDevStUnknown
 } enBTDeviceState;
 
@@ -1517,6 +1519,16 @@ int   BtrCore_BTPerformLeGattOp (void* apBtConn, const char* apBtLePath, enBTOpI
  * @retval Returns 0 on success, appropriate error code otherwise.
  */
 int   BtrCore_BTSendReceiveMessages (void* apBtConn);
+
+/**
+  * @brief  This API is used to get the Bluetooth version
+  *
+  * @param[out] version              need to fill the Bluetooth version (4.9, 5.0. 5.1, etc..)
+  *
+  * @return Returns the status of the operation.
+  * @retval Returns 0 on success, appropriate error code otherwise.
+  */
+int   BtrCore_BTGetBluetoothVersion (char* version);
 
 // Outgoing callbacks Registration Interfaces
 int   BtrCore_BTRegisterAdapterStatusUpdateCb (void* apBtConn, fPtr_BtrCore_BTAdapterStatusUpdateCb afpcBAdapterStatusUpdate, void* apUserData);
