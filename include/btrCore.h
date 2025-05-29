@@ -1027,6 +1027,27 @@ enBTRCoreRet BTRCore_ReleaseDeviceDataPath(tBTRCoreHandle hBTRCore, tBTRCoreDevI
 enBTRCoreRet BTRCore_SetDeviceDataAckTimeout(tBTRCoreHandle hBTRCore, unsigned int aui32AckTOutms);
 
 /**
+ * @brief  This api adds all LE gamepads back to the action list in case they have been disconnected.
+ *
+ * @param[in]  hBTRCore           Bluetooth core handle.
+ *
+ * @return  Returns the status of the operation.
+ * @retval  Returns enBTRCoreSuccess on success, appropriate error code otherwise.
+ */
+
+enBTRCoreRet BTRCore_refreshLEActionListForGamepads(tBTRCoreHandle hBTRCore);
+
+/**
+ * @brief  This api removes all LE gamepads from the action list so they can not connect.
+ *
+ * @param[in]  hBTRCore           Bluetooth core handle.
+ *
+ * @return  Returns the status of the operation.
+ * @retval  Returns enBTRCoreSuccess on success, appropriate error code otherwise.
+ */
+enBTRCoreRet BTRCore_clearLEActionListForGamepads(tBTRCoreHandle hBTRCore);
+
+/**
  * @brief  This API starts the battery level thread to start querying battery levels for a newly connected device.
  *
  * @param[in]  hBTRCore           Bluetooth core handle.

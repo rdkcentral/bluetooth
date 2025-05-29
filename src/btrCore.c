@@ -4996,6 +4996,106 @@ BTRCore_GetDeviceTypeClass (
     return enBTRCoreSuccess;
 }
 
+enBTRCoreRet BTRCore_refreshLEActionListForGamepads(tBTRCoreHandle hBTRCore)
+{
+    char lcpAddDeviceCmd[BT_MAX_STR_LEN/2] = {'\0'};
+    char lcBtmgmtResponse[BT_MAX_STR_LEN/2] = {'\0'};
+    FILE*           lpcBtmgmtCmd = NULL;
+    int             i32DevIdx = 0;
+    stBTRCoreHdl*   pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
+    if (!pstlhBTRCore)
+    {
+        BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
+        return enBTRCoreNotInitialized;
+    }
+
+    if (btrCore_PopulateListOfPairedDevices(pstlhBTRCore, pstlhBTRCore->curAdapterPath) == enBTRCoreSuccess) {
+        for (i32DevIdx = 0; i32DevIdx < pstlhBTRCore->numOfPairedDevices; i32DevIdx++) {
+            //only refresh action list for LE gamepads
+            if (((pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_Keyboard)      ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_Mouse)         ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_MouseKeyBoard) ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_Joystick)      ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_GamePad)) && 
+            !btrCore_IsDeviceRdkRcu(pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceAddress, pstlhBTRCore->stKnownDevicesArr[i32DevIdx].ui16DevAppearanceBleSpec) &&
+            pstlhBTRCore->stKnownDevicesArr[i32DevIdx].ui32DevClassBtSpec == 0 ) {
+
+                //if the state is disconnected, refreshing the action list will not change anything as upper layers may not allow the autoconnection - reset the device to paired here
+                if (pstlhBTRCore->stKnownDevStInfoArr[i32DevIdx].eDeviceCurrState == enBTRCoreDevStDisconnected)
+                {
+                    pstlhBTRCore->stKnownDevStInfoArr[i32DevIdx].eDevicePrevState = enBTRCoreDevStInitialized;
+                    pstlhBTRCore->stKnownDevStInfoArr[i32DevIdx].eDeviceCurrState = enBTRCoreDevStPaired;
+                }
+
+                snprintf(lcpAddDeviceCmd, BT_MAX_STR_LEN/2, "btmgmt add-device -t 1 -a 2 %s", pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceAddress);
+                BTRCORELOG_INFO ("lcpAddDeviceCmd: %s\n", lcpAddDeviceCmd);
+
+                lpcBtmgmtCmd = popen(lcpAddDeviceCmd, "r");
+                if ((lpcBtmgmtCmd == NULL)) {
+                    BTRCORELOG_ERROR ("Failed to run lcpAddDeviceCmd command\n");
+                }
+                else {
+                    if (fgets(lcBtmgmtResponse, sizeof(lcBtmgmtResponse)-1, lpcBtmgmtCmd) == NULL) {
+                        BTRCORELOG_ERROR ("Failed to Output of lcpAddDeviceCmd\n");
+                    }
+                    else {
+                        BTRCORELOG_WARN ("Output of lcpAddDeviceCmd =  %s\n", lcBtmgmtResponse);
+                    }
+
+                    pclose(lpcBtmgmtCmd);
+                }
+            }
+        }
+    }
+    return enBTRCoreSuccess;
+}
+
+enBTRCoreRet BTRCore_clearLEActionListForGamepads(tBTRCoreHandle hBTRCore)
+{
+    char lcpAddDeviceCmd[BT_MAX_STR_LEN/2] = {'\0'};
+    char lcBtmgmtResponse[BT_MAX_STR_LEN/2] = {'\0'};
+    FILE*           lpcBtmgmtCmd = NULL;
+    int             i32DevIdx = 0;
+    stBTRCoreHdl*   pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
+    if (!pstlhBTRCore)
+    {
+        BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
+        return enBTRCoreNotInitialized;
+    }
+
+    if (btrCore_PopulateListOfPairedDevices(pstlhBTRCore, pstlhBTRCore->curAdapterPath) == enBTRCoreSuccess) {
+        for (i32DevIdx = 0; i32DevIdx < pstlhBTRCore->numOfPairedDevices; i32DevIdx++) {
+            //only refresh action list for LE gamepads
+            if (((pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_Keyboard)      ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_Mouse)         ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_MouseKeyBoard) ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_Joystick)      ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_GamePad)) && 
+            !btrCore_IsDeviceRdkRcu(pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceAddress, pstlhBTRCore->stKnownDevicesArr[i32DevIdx].ui16DevAppearanceBleSpec) &&
+            pstlhBTRCore->stKnownDevicesArr[i32DevIdx].ui32DevClassBtSpec == 0 ) {
+                snprintf(lcpAddDeviceCmd, BT_MAX_STR_LEN/2, "btmgmt add-device -t 1 -a 0 %s", pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceAddress);
+                BTRCORELOG_INFO ("lcpAddDeviceCmd: %s\n", lcpAddDeviceCmd);
+
+                lpcBtmgmtCmd = popen(lcpAddDeviceCmd, "r");
+                if ((lpcBtmgmtCmd == NULL)) {
+                    BTRCORELOG_ERROR ("Failed to run lcpAddDeviceCmd command\n");
+                }
+                else {
+                    if (fgets(lcBtmgmtResponse, sizeof(lcBtmgmtResponse)-1, lpcBtmgmtCmd) == NULL) {
+                        BTRCORELOG_ERROR ("Failed to Output of lcpAddDeviceCmd\n");
+                    }
+                    else {
+                        BTRCORELOG_WARN ("Output of lcpAddDeviceCmd =  %s\n", lcBtmgmtResponse);
+                    }
+
+                    pclose(lpcBtmgmtCmd);
+                }
+            }
+        }
+    }
+    return enBTRCoreSuccess;
+}
+
 enBTRCoreRet BTRCore_newBatteryLevelDevice (tBTRCoreHandle hBTRCore)
 {
 
