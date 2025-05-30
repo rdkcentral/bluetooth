@@ -109,6 +109,11 @@ includes information for query of available services
 #define BTR_CORE_BATTERY_SERVICE_XBB_2 "0xe3bd"
 #define BTR_CORE_BATTERY_SERVICE_XBB_3 "0xd41d"
 
+#define BTR_CORE_REMOTE_SERVICE_TEXT "Remote Device"
+#define BTR_CORE_REMOTE_SERVICE_1 "0xf800"
+#define BTR_CORE_REMOTE_SERVICE_2 "0xf801"
+#define BTR_CORE_REMOTE_SERVICE_3 "0xf802"
+#define BTR_CORE_REMOTE_SERVICE_4 "0xf803"
 
 /* @} */ // End of group BLUETOOTH_TYPES
 
