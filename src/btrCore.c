@@ -1732,6 +1732,12 @@ btrCore_BTParseUUIDValue (
                  !strcasecmp(aUUID, BTR_CORE_BATTERY_SERVICE_XBB_3)) {
             STRCPY_S(pServiceNameOut, BTRCORE_STR_LEN, BTR_CORE_GATT_XBB_TEXT);
         }
+        else if (!strcasecmp(aUUID, BTR_CORE_REMOTE_SERVICE_1) ||
+                 !strcasecmp(aUUID, BTR_CORE_REMOTE_SERVICE_2) ||
+                 !strcasecmp(aUUID, BTR_CORE_REMOTE_SERVICE_3) ||
+                 !strcasecmp(aUUID, BTR_CORE_REMOTE_SERVICE_4)) {
+            STRCPY_S(pServiceNameOut, BTRCORE_STR_LEN, BTR_CORE_REMOTE_SERVICE_TEXT);
+        }
         else {
             STRCPY_S(pServiceNameOut, BTRCORE_STR_LEN, "Not Identified");
         }
