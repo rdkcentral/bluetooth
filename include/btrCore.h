@@ -1310,6 +1310,18 @@ enBTRCoreRet BTRCore_SetPropertyValue(tBTRCoreHandle hBTRCore, char *aUUID, char
   */
 enBTRCoreRet BTRCore_GetBluetoothVersion(char *version);
 
+/**
+  * @brief  This API is used to Get unsupport gamepad support status
+  *
+  * @param[in]  ui32Vendor
+  * @param[in]  ui32Product
+  * @param[in]  ui32DeviceId
+  *
+  * @return  Returns the status of the operation.
+  * @retval  Returns true if gamepad unsupported, otherwise return false.
+  */
+BOOLEAN BTRCore_IsUnsupportedGamepad(unsigned int ui32Vendor, unsigned int ui32Product, unsigned int ui32DeviceId);
+
 // Outgoing callbacks Registration Interfaces
 /* BTRCore_RegisterDiscoveryCb - Callback to notify the application every time when a new device is found and added to discovery list */
 enBTRCoreRet BTRCore_RegisterDiscoveryCb (tBTRCoreHandle  hBTRCore, fPtr_BTRCore_DeviceDiscCb afpcBBTRCoreDeviceDiscovery, void* apUserData);
