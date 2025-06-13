@@ -2721,6 +2721,21 @@ btrCore_OutTask (
                                     BTRCORELOG_TRACE ("lpstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDevicePrevState = %d\n", pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDevicePrevState);
                                     pstlhBTRCore->stKnownDevStInfoArr[i32ScannedDevIdx].eDevicePrevState = enBTRCoreDevStPaired;
                                     pstlhBTRCore->stKnownDevStInfoArr[i32ScannedDevIdx].eDeviceCurrState = enBTRCoreDevStConnected;
+
+                                    /* Before send paired event, device state is changed as paired when we have received characteristic events.
+                                     * so paired event is not send to UI*/
+                                    if((leBTDevState == enBTRCoreDevStPaired) && (enBTRCoreHID == lenBTRCoreMapDevType)) {
+                                        pstlhBTRCore->stDevStatusCbInfo.isPaired = lpstBTDeviceInfo->bPaired;
+
+                                        lpstBTRCoreBTDevice = &pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx];
+                                        lpstBTRCoreDevStateInfo = &pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx];
+
+                                        pstlhBTRCore->stDevStatusCbInfo.ui32VendorId  = pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasVendorId;
+                                        pstlhBTRCore->stDevStatusCbInfo.ui32ProductId = pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasProductId;
+                                        pstlhBTRCore->stDevStatusCbInfo.ui32DeviceId  = pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasDeviceId;
+
+                                        bTriggerDevStatusChangeCb = TRUE;
+                                    }
                                 }
                                 else if ((pstlhBTRCore->stScannedDevStInfoArr[i32ScannedDevIdx].eDeviceCurrState != leBTDevState) &&
                                     (pstlhBTRCore->stScannedDevStInfoArr[i32ScannedDevIdx].eDeviceCurrState != enBTRCoreDevStInitialized) &&
