@@ -4370,6 +4370,19 @@ BTRCore_UnPairDevice (
         return lenBTRCoreRet;
     }
 
+    BTRCORELOG_INFO("Product - %u Vendor - %u Firmware - %u \n",pstKnownDevice->ui32ModaliasProductId,pstKnownDevice->ui32ModaliasVendorId,pstKnownDevice->ui32ModaliasDeviceId);
+    if (pstKnownDevice->ui32ModaliasProductId == BTRCORE_XBOX_ELITE_PRODUCT_ID &&
+        pstKnownDevice->ui32ModaliasVendorId == BTRCORE_XBOX_VENDOR_ID &&
+        pstKnownDevice->ui32ModaliasDeviceId == BTRCORE_XBOX_ELITE_DEF_FIRMWARE) {
+        unBTOpIfceProp lunBtOpDevProp;
+        lunBtOpDevProp.enBtDeviceProp = enBTDevPropBlocked;
+        BTRCORELOG_INFO("Identified xbox elite with basic firmware , so blocking the incoming connection before unpairing ...\n");
+        int BlockDevice = 1;
+        if (BtrCore_BTSetProp(pstlhBTRCore->connHdl, pDeviceAddress, enBTDevice, lunBtOpDevProp, &BlockDevice)) {
+	    BTRCORELOG_ERROR ("Set Device Property enBTDevPropBlocked - FAILED\n");
+        }
+        sleep(2);
+    }
 
     if (BtrCore_BTPerformAdapterOp( pstlhBTRCore->connHdl,
                                     pstlhBTRCore->curAdapterPath,

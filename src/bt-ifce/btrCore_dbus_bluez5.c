@@ -4127,6 +4127,10 @@ BtrCore_BTSetProp (
             lDBusType = DBUS_TYPE_UINT16;
             lDBusKey  = "Vendor";
             break;
+        case enBTDevPropBlocked:
+            lDBusType = DBUS_TYPE_BOOLEAN;
+            lDBusKey  = "Blocked";
+            break;
         case enBTDevPropUnknown:
         default:
             BTRCORELOG_ERROR ("Invalid Device Property\n");
