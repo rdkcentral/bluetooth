@@ -2114,13 +2114,9 @@ btrCore_RunTask (
                 break;
             }
             case enBTRCoreTaskOpStop: {
-                g_thread_yield();
-
                 break;
             }
             case enBTRCoreTaskOpIdle: {
-                g_thread_yield();
-
                 break;
             }
             case enBTRCoreTaskOpProcess: {
@@ -2138,12 +2134,9 @@ btrCore_RunTask (
                 break;
             }
             case enBTRCoreTaskOpUnknown: {
-                g_thread_yield();
-
                 break;
             }
             default:
-                g_thread_yield();
                 break;
             }
             
@@ -2267,13 +2260,9 @@ btrCore_OutTask (
                 break;
             }
             case enBTRCoreTaskOpStop: {
-                g_thread_yield();
-
                 break;
             }
             case enBTRCoreTaskOpIdle: {
-                g_thread_yield();
-
                 break;
             }
             case enBTRCoreTaskOpProcess: {
@@ -3021,10 +3010,8 @@ btrCore_OutTask (
                     }
                 }
                 else if (lenOutTskPTCur == enBTRCoreTaskPTUnknown) {
-                    g_thread_yield();
                 }
                 else {
-                    g_thread_yield();
                 }
 
                 break;
@@ -3034,12 +3021,10 @@ btrCore_OutTask (
                 break;
             }
             case enBTRCoreTaskOpUnknown: {
-                g_thread_yield();
 
                 break;
             }
             default:
-                g_thread_yield();
                 break;
             }
 
@@ -3208,7 +3193,6 @@ BTRCore_Init (
 
     g_mutex_init(&pstlhBTRCore->batteryLevelMutex);
     g_cond_init(&pstlhBTRCore->batteryLevelCond);
-    sched_yield();
 
 
     pstlhBTRCore->curAdapterPath = BtrCore_BTGetAdapterPath(pstlhBTRCore->connHdl, NULL); //mikek hard code to default adapter for now
