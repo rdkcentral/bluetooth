@@ -1272,7 +1272,6 @@ BTRCore_AVMedia_GetCurMediaInfo (
         /* Max 4 sec timeout - Polled at 200ms second interval */
         unsigned int ui32sleepIdx = 20;
         do {
-            sched_yield();
             usleep(200000);
         } while ((!pstlhBTRCoreAVM->pcAVMediaTransportPathOut) && (--ui32sleepIdx));
 
@@ -1283,7 +1282,6 @@ BTRCore_AVMedia_GetCurMediaInfo (
         /* Max 4 sec timeout - Polled at 200ms second interval */
         unsigned int ui32sleepIdx = 20;
         do {
-            sched_yield();
             usleep(200000);
         } while ((!pstlhBTRCoreAVM->pcAVMediaTransportPathIn) && (--ui32sleepIdx));
 
