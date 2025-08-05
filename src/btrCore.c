@@ -900,32 +900,6 @@ btrCore_AddDeviceToScannedDevicesArr (
             }
         }
     }
-    if (apsthBTRCore->aenDeviceDiscoveryType == enBTRCoreAudioAndHID) {
-        if ((lstFoundDevice.enDeviceType != enBTRCore_DC_HID_Keyboard)      &&
-            (lstFoundDevice.enDeviceType != enBTRCore_DC_HID_Mouse)         &&
-            (lstFoundDevice.enDeviceType != enBTRCore_DC_HID_AudioRemote)   &&
-            (lstFoundDevice.enDeviceType != enBTRCore_DC_HID_Joystick)      &&
-            (lstFoundDevice.enDeviceType != enBTRCore_DC_HID_GamePad)       &&
-            (lstFoundDevice.enDeviceType != enBTRCore_DC_HID_MouseKeyBoard) ){
-            if (!lstFoundDevice.ui32DevClassBtSpec && !lstFoundDevice.ui16DevAppearanceBleSpec)
-            {
-                BTRCORELOG_INFO("Skipping device %s (%s) as there is no valid class or appearance and scan is for audio or HID devices\n", lstFoundDevice.pcDeviceName, lstFoundDevice.pcDeviceAddress);
-                return -1;
-            }
-            
-        }
-    }
-    if (apsthBTRCore->aenDeviceDiscoveryType == enBTRCoreHID) {
-        if ((lstFoundDevice.enDeviceType != enBTRCore_DC_HID_Keyboard)      &&
-            (lstFoundDevice.enDeviceType != enBTRCore_DC_HID_Mouse)         &&
-            (lstFoundDevice.enDeviceType != enBTRCore_DC_HID_AudioRemote)   &&
-            (lstFoundDevice.enDeviceType != enBTRCore_DC_HID_Joystick)      &&
-            (lstFoundDevice.enDeviceType != enBTRCore_DC_HID_GamePad)       &&
-            (lstFoundDevice.enDeviceType != enBTRCore_DC_HID_MouseKeyBoard) ){
-            BTRCORELOG_ERROR("Skipped the device %s DevID = %lld as the it is not interested device\n", lstFoundDevice.pcDeviceAddress, lstFoundDevice.tDeviceId);
-            return -1;
-        }
-    }
 
     for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
         if (((lstFoundDevice.tDeviceId == apsthBTRCore->stScannedDevicesArr[i].tDeviceId) && (lstFoundDevice.ui32DevClassBtSpec == apsthBTRCore->stScannedDevicesArr[i].ui32DevClassBtSpec) ) || (apsthBTRCore->stScannedDevicesArr[i].bFound == FALSE)) {
@@ -1218,8 +1192,16 @@ btrCore_PopulateListOfPairedDevices (
 
         for (i_idx = 0; i_idx < pstBTPairedDeviceInfo->numberOfDevices; i_idx++) {
             MEMCPY_S(&apsthBTRCore->stKnownDevicesArr[i_idx],sizeof(apsthBTRCore->stKnownDevicesArr[0]), &knownDevicesArr[i_idx], sizeof(stBTRCoreBTDevice));
-            apsthBTRCore->stKnownDevStInfoArr[i_idx].eDevicePrevState = enBTRCoreDevStInitialized;
-            apsthBTRCore->stKnownDevStInfoArr[i_idx].eDeviceCurrState = enBTRCoreDevStPaired;
+            if ((knownDevicesArr[i_idx].bDeviceConnected == TRUE) &&
+                (knownDevicesArr[i_idx].enDeviceType == enBTRCore_DC_HID_GamePad ||
+                 knownDevicesArr[i_idx].enDeviceType == enBTRCore_DC_HID_Keyboard)) {
+                BTRCORELOG_INFO("Updaing the current state of the device as connected ...\n");
+                apsthBTRCore->stKnownDevStInfoArr[i_idx].eDevicePrevState = enBTRCoreDevStPaired;
+                apsthBTRCore->stKnownDevStInfoArr[i_idx].eDeviceCurrState = enBTRCoreDevStConnected;
+            } else {
+                apsthBTRCore->stKnownDevStInfoArr[i_idx].eDevicePrevState = enBTRCoreDevStInitialized;
+                apsthBTRCore->stKnownDevStInfoArr[i_idx].eDeviceCurrState = enBTRCoreDevStPaired;
+            }
         }
     } 
     else {
@@ -2049,7 +2031,8 @@ btrCore_RunTask (
         /* Process incoming task-ops */
         {
             li64usTimeout = lui16msTimeout * G_TIME_SPAN_MILLISECOND;
-            if ((lpstRunTaskGAqData = g_async_queue_timeout_pop(pstlhBTRCore->pGAQueueRunTask, li64usTimeout))) {
+            if ((pstlhBTRCore->pGAQueueRunTask) &&
+                (lpstRunTaskGAqData = g_async_queue_timeout_pop(pstlhBTRCore->pGAQueueRunTask, li64usTimeout))) {
                 lenRunTskOpCur = lpstRunTaskGAqData->enBTRCoreTskOp;
                 lenRunTskPTCur = lpstRunTaskGAqData->enBTRCoreTskPT;
                 lpvRunTskInData= lpstRunTaskGAqData->pvBTRCoreTskInData;
@@ -2191,7 +2174,8 @@ btrCore_OutTask (
         /* Process incoming task-ops */
         {
             li64usTimeout = lui16msTimeout * G_TIME_SPAN_MILLISECOND;
-            if ((lpstOutTaskGAqData = (stBTRCoreTaskGAqData*)(g_async_queue_timeout_pop(pstlhBTRCore->pGAQueueOutTask, li64usTimeout)))) {
+            if ((pstlhBTRCore->pGAQueueOutTask) &&
+                (lpstOutTaskGAqData = (stBTRCoreTaskGAqData*)(g_async_queue_timeout_pop(pstlhBTRCore->pGAQueueOutTask, li64usTimeout)))) {
                 lenOutTskOpCur  = lpstOutTaskGAqData->enBTRCoreTskOp;
                 lenOutTskPTCur  = lpstOutTaskGAqData->enBTRCoreTskPT;
                 lpstOutTskInData= lpstOutTaskGAqData->pvBTRCoreTskInData;
@@ -2395,8 +2379,10 @@ btrCore_OutTask (
                                 pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].bDeviceConnected = FALSE;
                                 postEvent = TRUE;
                             }
-                            else if ((pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceCurrState == enBTRCoreDevStSuspended) &&
-                                    (pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDevicePrevState == enBTRCoreDevStDisconnecting) &&
+                            else if (((pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceCurrState == enBTRCoreDevStSuspended &&
+                                     pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDevicePrevState == enBTRCoreDevStDisconnecting) ||
+                                   (pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceCurrState == enBTRCoreDevStDisconnecting &&
+                                     pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDevicePrevState == enBTRCoreDevStSuspended)) &&
                                     (pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].bDeviceConnected == FALSE)) {
                                 pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDevicePrevState = pstlhBTRCore->stKnownDevStInfoArr[i32LoopIdx].eDeviceCurrState;
                                 pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceCurrState = enBTRCoreDevStDisconnected;
@@ -2426,27 +2412,30 @@ btrCore_OutTask (
                                 }
                             }
 
-                            /* We usually remove the devices when we do the unpair. But xbox gen4 f/w 5.9 device immediately removed
-                               from bluez except Bluetooth 5.2. So we are remove the device from known and scanned list */
-                            lenBTRCoreDevType = btrCore_MapDevClassToDevType(pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].enDeviceType);
-                            BTRCORELOG_INFO ("Device type %d Modalias v%04Xp%04Xd%04X\n",
-                                    btrCore_MapDevClassToDevType(pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].enDeviceType),
-                                    pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasVendorId,
-                                    pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasProductId,
-                                    pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasDeviceId);
-                            if ((lenBTRCoreDevType == enBTRCoreHID) &&
-                                (pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasVendorId == BTRCORE_XBOX_VENDOR_ID) &&
-                                (pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasProductId == BTRCORE_XBOX_GEN4_PRODUCT_ID) &&
-                                (pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasDeviceId == BTRCORE_XBOX_GEN4_DEF_FIRMWARE)) {
-                                if((BTRCore_GetBluetoothVersion(version) == enBTRCoreSuccess) && (strcmp(version,BTCORE_BLUETOOTH_VERSION_5P2))) {
+                            /* We usually remove the devices when we do the unpair. But xbox gen4 f/w 5.0.9 device immediately removed
+                             * from bluez except Bluetooth 5.2, 5.3 and above. So we are remove the device from known and scanned list.
+                             * If Bluetooth version is 5.2, 5.3 or above, || privacy is enabled, we need to add the disable_unsupported_gamepad DISTRO feature in the builds.
+                             * We have enabled BT_UNSUPPORTED_GAMEPAD_ENABLED macro based on this distro feature */
+                            if(BTRCore_IsUnsupportedGamepad(pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasVendorId,
+                                                pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasProductId,
+                                                pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasDeviceId)) {
+                                lenBTRCoreDevType = btrCore_MapDevClassToDevType(pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].enDeviceType);
+                                BTRCORELOG_INFO ("Device type %d Modalias v%04Xp%04Xd%04X\n",
+                                        btrCore_MapDevClassToDevType(pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].enDeviceType),
+                                        pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasVendorId,
+                                        pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasProductId,
+                                        pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasDeviceId);
+                                if (lenBTRCoreDevType == enBTRCoreHID) {
                                     BTRCORELOG_INFO ("Remove the device from known list %llu\n",pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].tDeviceId);
                                     btrCore_RemoveDeviceFromKnownDevicesArr(pstlhBTRCore, pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].tDeviceId);
                                 }
                             }
                         }
 
-                        /* We usually remove the devices when we do the unpair. But xbox gen4 f/w 5.9 device immediately removed 
-                           from bluez except Bluetooth 5.2. So we are remove the device from known and scanned list */
+                        /* We usually remove the devices when we do the unpair. But xbox gen4 f/w 5.0.9 device immediately removed
+                         * from bluez except Bluetooth 5.2, 5.3 and above. So we are remove the device from known and scanned list.
+                         * If Bluetooth version is 5.2, 5.3 or above, || privacy is enabled, we need to add the disable_unsupported_gamepad DISTRO feature in the builds.
+                         * We have enabled BT_UNSUPPORTED_GAMEPAD_ENABLED macro based on this distro feature */
                         if (pstlhBTRCore->numOfScannedDevices) {
                             for (i32LoopIdx = 0; i32LoopIdx < pstlhBTRCore->numOfScannedDevices; i32LoopIdx++) {
                                 if (lBTRCoreDevId == pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].tDeviceId) {
@@ -2457,20 +2446,19 @@ btrCore_OutTask (
                         }
 
                         if (i32ScannedDevIdx != -1) {
-                            BTRCORELOG_DEBUG ("device available in scanned list\n");
-                            lenBTRCoreDevType = btrCore_MapDevClassToDevType(pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].enDeviceType);
+                            if (BTRCore_IsUnsupportedGamepad(pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].ui32ModaliasVendorId,
+                                                pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].ui32ModaliasProductId,
+                                                pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].ui32ModaliasDeviceId)) {
+                                BTRCORELOG_DEBUG ("device available in scanned list\n");
+                                lenBTRCoreDevType = btrCore_MapDevClassToDevType(pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].enDeviceType);
 
-                            BTRCORELOG_INFO ("Device type %d Modalias v%04Xp%04Xd%04X\n",
-                                    btrCore_MapDevClassToDevType(pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].enDeviceType),
-                                    pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].ui32ModaliasVendorId,
-                                    pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].ui32ModaliasProductId,
-                                    pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].ui32ModaliasDeviceId);
+                                BTRCORELOG_INFO ("Device type %d Modalias v%04Xp%04Xd%04X\n",
+                                        btrCore_MapDevClassToDevType(pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].enDeviceType),
+                                        pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].ui32ModaliasVendorId,
+                                        pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].ui32ModaliasProductId,
+                                        pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].ui32ModaliasDeviceId);
 
-                            if ((lenBTRCoreDevType == enBTRCoreHID) &&
-                                (pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].ui32ModaliasVendorId == BTRCORE_XBOX_VENDOR_ID) &&
-                                (pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].ui32ModaliasProductId == BTRCORE_XBOX_GEN4_PRODUCT_ID) &&
-                                (pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].ui32ModaliasDeviceId == BTRCORE_XBOX_GEN4_DEF_FIRMWARE)) {
-                                if((BTRCore_GetBluetoothVersion(version) == enBTRCoreSuccess) && (strcmp(version,BTCORE_BLUETOOTH_VERSION_5P2))) {
+                                if (lenBTRCoreDevType == enBTRCoreHID) {
                                     stBTRCoreBTDevice       stScannedDevice;
                                     MEMSET_S(&stScannedDevice,sizeof(stBTRCoreBTDevice), 0 ,sizeof(stBTRCoreBTDevice));
 
@@ -2710,6 +2698,21 @@ btrCore_OutTask (
                                     BTRCORELOG_TRACE ("lpstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDevicePrevState = %d\n", pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDevicePrevState);
                                     pstlhBTRCore->stKnownDevStInfoArr[i32ScannedDevIdx].eDevicePrevState = enBTRCoreDevStPaired;
                                     pstlhBTRCore->stKnownDevStInfoArr[i32ScannedDevIdx].eDeviceCurrState = enBTRCoreDevStConnected;
+
+                                    /* Before send paired event, device state is changed as paired when we have received characteristic events.
+                                     * so paired event is not send to UI*/
+                                    if((leBTDevState == enBTRCoreDevStPaired) && (enBTRCoreHID == lenBTRCoreMapDevType)) {
+                                        pstlhBTRCore->stDevStatusCbInfo.isPaired = lpstBTDeviceInfo->bPaired;
+
+                                        lpstBTRCoreBTDevice = &pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx];
+                                        lpstBTRCoreDevStateInfo = &pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx];
+
+                                        pstlhBTRCore->stDevStatusCbInfo.ui32VendorId  = pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasVendorId;
+                                        pstlhBTRCore->stDevStatusCbInfo.ui32ProductId = pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasProductId;
+                                        pstlhBTRCore->stDevStatusCbInfo.ui32DeviceId  = pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasDeviceId;
+
+                                        bTriggerDevStatusChangeCb = TRUE;
+                                    }
                                 }
                                 else if ((pstlhBTRCore->stScannedDevStInfoArr[i32ScannedDevIdx].eDeviceCurrState != leBTDevState) &&
                                     (pstlhBTRCore->stScannedDevStInfoArr[i32ScannedDevIdx].eDeviceCurrState != enBTRCoreDevStInitialized) &&
@@ -2956,47 +2959,44 @@ btrCore_OutTask (
                         }
 
                         if (bIsDeviceExist) {
-                            if (pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId == BTRCORE_XBOX_VENDOR_ID &&
-                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId == BTRCORE_XBOX_GEN4_PRODUCT_ID &&
-                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasDeviceId == BTRCORE_XBOX_GEN4_DEF_FIRMWARE) {
-                                char version[BTRCORE_MAX_BT_VERSION_SIZE] = {0};
+                            if(BTRCore_IsUnsupportedGamepad(pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
+                                            pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId,
+                                            pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasDeviceId)) {
 
                                 BTRCORELOG_INFO ("Unsupported device detected: %s\n", lpstBTDeviceInfo->pcModalias);
 
-                                if((BTRCore_GetBluetoothVersion(version) == enBTRCoreSuccess) && (strcmp(version,BTCORE_BLUETOOTH_VERSION_5P2))) {
-                                    //This is telemetry log. If we change this print,need to change and configure the telemetry string in xconf server.
-                                    BTRCORELOG_ERROR ("Failed to pair a device name,class,apperance,modalias: %s,%u,%u,v%04Xp%04Xd%04X\n",
-                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].pcDeviceName, pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32DevClassBtSpec,
-                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui16DevAppearanceBleSpec,
-                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
-                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId,
-                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasDeviceId);
+                                //This is telemetry log. If we change this print,need to change and configure the telemetry string in xconf server.
+                                BTRCORELOG_ERROR ("Failed to pair a device name,class,apperance,modalias: %s,%u,%u,v%04Xp%04Xd%04X\n",
+                                pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].pcDeviceName, pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32DevClassBtSpec,
+                                pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui16DevAppearanceBleSpec,
+                                pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
+                                pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId,
+                                pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasDeviceId);
 
-                                    pstlhBTRCore->stDevStatusCbInfo.deviceId           = lBTRCoreDevId;
-                                    pstlhBTRCore->stDevStatusCbInfo.eDeviceType        = btrCore_MapDevClassToDevType(pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].enDeviceType);
-                                    pstlhBTRCore->stDevStatusCbInfo.eDeviceCurrState   = enBTRCoreDevStUnsupported;
-                                    pstlhBTRCore->stDevStatusCbInfo.eDeviceClass       = pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].enDeviceType;
-                                    pstlhBTRCore->stDevStatusCbInfo.ui32DevClassBtSpec = pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32DevClassBtSpec;
-                                    pstlhBTRCore->stDevStatusCbInfo.ui16DevAppearanceBleSpec = pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui16DevAppearanceBleSpec;
+                                pstlhBTRCore->stDevStatusCbInfo.deviceId           = lBTRCoreDevId;
+                                pstlhBTRCore->stDevStatusCbInfo.eDeviceType        = btrCore_MapDevClassToDevType(pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].enDeviceType);
+                                pstlhBTRCore->stDevStatusCbInfo.eDeviceCurrState   = enBTRCoreDevStUnsupported;
+                                pstlhBTRCore->stDevStatusCbInfo.eDeviceClass       = pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].enDeviceType;
+                                pstlhBTRCore->stDevStatusCbInfo.ui32DevClassBtSpec = pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32DevClassBtSpec;
+                                pstlhBTRCore->stDevStatusCbInfo.ui16DevAppearanceBleSpec = pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui16DevAppearanceBleSpec;
 
-                                    strncpy(pstlhBTRCore->stDevStatusCbInfo.deviceName, pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].pcDeviceName, BD_NAME_LEN);
-                                    strncpy(pstlhBTRCore->stDevStatusCbInfo.deviceAddress,pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].pcDeviceAddress,BD_NAME_LEN);
+                                strncpy(pstlhBTRCore->stDevStatusCbInfo.deviceName, pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].pcDeviceName, BD_NAME_LEN);
+                                strncpy(pstlhBTRCore->stDevStatusCbInfo.deviceAddress,pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].pcDeviceAddress,BD_NAME_LEN);
 
-                                    pstlhBTRCore->stDevStatusCbInfo.ui32VendorId       = pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId;
-                                    pstlhBTRCore->stDevStatusCbInfo.ui32ProductId      = pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId;
-                                    pstlhBTRCore->stDevStatusCbInfo.ui32DeviceId       = pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasDeviceId;
+                                pstlhBTRCore->stDevStatusCbInfo.ui32VendorId       = pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId;
+                                pstlhBTRCore->stDevStatusCbInfo.ui32ProductId      = pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId;
+                                pstlhBTRCore->stDevStatusCbInfo.ui32DeviceId       = pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasDeviceId;
 
-                                    if (pstlhBTRCore->fpcBBTRCoreStatus) {
-                                        if ((lenBTRCoreRet = pstlhBTRCore->fpcBBTRCoreStatus(&pstlhBTRCore->stDevStatusCbInfo, pstlhBTRCore->pvcBStatusUserData)) != enBTRCoreSuccess) {
-                                            BTRCORELOG_ERROR ("Failure fpcBBTRCoreStatus Ret = %d\n", lenBTRCoreRet);
-                                        }
-                                        else {
-                                            //This is telemetry log. If we change this print,need to change and configure the telemetry string in xconf server.
-                                            BTRCORELOG_INFO ("Unsupport BT device detected v%04Xp%04Xd%04X\n",
-                                            pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
-                                            pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId,
-                                            pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasDeviceId);
-                                        }
+                                if (pstlhBTRCore->fpcBBTRCoreStatus) {
+                                    if ((lenBTRCoreRet = pstlhBTRCore->fpcBBTRCoreStatus(&pstlhBTRCore->stDevStatusCbInfo, pstlhBTRCore->pvcBStatusUserData)) != enBTRCoreSuccess) {
+                                        BTRCORELOG_ERROR ("Failure fpcBBTRCoreStatus Ret = %d\n", lenBTRCoreRet);
+                                    }
+                                    else {
+                                        //This is telemetry log. If we change this print,need to change and configure the telemetry string in xconf server.
+                                        BTRCORELOG_INFO ("Unsupport BT device detected v%04Xp%04Xd%04X\n",
+                                        pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
+                                        pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId,
+                                        pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasDeviceId);
                                     }
                                 }
                             }
@@ -4980,6 +4980,106 @@ BTRCore_GetDeviceTypeClass (
     return enBTRCoreSuccess;
 }
 
+enBTRCoreRet BTRCore_refreshLEActionListForGamepads(tBTRCoreHandle hBTRCore)
+{
+    char lcpAddDeviceCmd[BT_MAX_STR_LEN/2] = {'\0'};
+    char lcBtmgmtResponse[BT_MAX_STR_LEN/2] = {'\0'};
+    FILE*           lpcBtmgmtCmd = NULL;
+    int             i32DevIdx = 0;
+    stBTRCoreHdl*   pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
+    if (!pstlhBTRCore)
+    {
+        BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
+        return enBTRCoreNotInitialized;
+    }
+
+    if (btrCore_PopulateListOfPairedDevices(pstlhBTRCore, pstlhBTRCore->curAdapterPath) == enBTRCoreSuccess) {
+        for (i32DevIdx = 0; i32DevIdx < pstlhBTRCore->numOfPairedDevices; i32DevIdx++) {
+            //only refresh action list for LE gamepads
+            if (((pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_Keyboard)      ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_Mouse)         ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_MouseKeyBoard) ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_Joystick)      ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_GamePad)) && 
+            !btrCore_IsDeviceRdkRcu(pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceAddress, pstlhBTRCore->stKnownDevicesArr[i32DevIdx].ui16DevAppearanceBleSpec) &&
+            pstlhBTRCore->stKnownDevicesArr[i32DevIdx].ui32DevClassBtSpec == 0 ) {
+
+                //if the state is disconnected, refreshing the action list will not change anything as upper layers may not allow the autoconnection - reset the device to paired here
+                if (pstlhBTRCore->stKnownDevStInfoArr[i32DevIdx].eDeviceCurrState == enBTRCoreDevStDisconnected)
+                {
+                    pstlhBTRCore->stKnownDevStInfoArr[i32DevIdx].eDevicePrevState = enBTRCoreDevStInitialized;
+                    pstlhBTRCore->stKnownDevStInfoArr[i32DevIdx].eDeviceCurrState = enBTRCoreDevStPaired;
+                }
+
+                snprintf(lcpAddDeviceCmd, BT_MAX_STR_LEN/2, "btmgmt add-device -t 1 -a 2 %s", pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceAddress);
+                BTRCORELOG_INFO ("lcpAddDeviceCmd: %s\n", lcpAddDeviceCmd);
+
+                lpcBtmgmtCmd = popen(lcpAddDeviceCmd, "r");
+                if ((lpcBtmgmtCmd == NULL)) {
+                    BTRCORELOG_ERROR ("Failed to run lcpAddDeviceCmd command\n");
+                }
+                else {
+                    if (fgets(lcBtmgmtResponse, sizeof(lcBtmgmtResponse)-1, lpcBtmgmtCmd) == NULL) {
+                        BTRCORELOG_ERROR ("Failed to Output of lcpAddDeviceCmd\n");
+                    }
+                    else {
+                        BTRCORELOG_WARN ("Output of lcpAddDeviceCmd =  %s\n", lcBtmgmtResponse);
+                    }
+
+                    pclose(lpcBtmgmtCmd);
+                }
+            }
+        }
+    }
+    return enBTRCoreSuccess;
+}
+
+enBTRCoreRet BTRCore_clearLEActionListForGamepads(tBTRCoreHandle hBTRCore)
+{
+    char lcpAddDeviceCmd[BT_MAX_STR_LEN/2] = {'\0'};
+    char lcBtmgmtResponse[BT_MAX_STR_LEN/2] = {'\0'};
+    FILE*           lpcBtmgmtCmd = NULL;
+    int             i32DevIdx = 0;
+    stBTRCoreHdl*   pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
+    if (!pstlhBTRCore)
+    {
+        BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
+        return enBTRCoreNotInitialized;
+    }
+
+    if (btrCore_PopulateListOfPairedDevices(pstlhBTRCore, pstlhBTRCore->curAdapterPath) == enBTRCoreSuccess) {
+        for (i32DevIdx = 0; i32DevIdx < pstlhBTRCore->numOfPairedDevices; i32DevIdx++) {
+            //only refresh action list for LE gamepads
+            if (((pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_Keyboard)      ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_Mouse)         ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_MouseKeyBoard) ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_Joystick)      ||
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_GamePad)) && 
+            !btrCore_IsDeviceRdkRcu(pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceAddress, pstlhBTRCore->stKnownDevicesArr[i32DevIdx].ui16DevAppearanceBleSpec) &&
+            pstlhBTRCore->stKnownDevicesArr[i32DevIdx].ui32DevClassBtSpec == 0 ) {
+                snprintf(lcpAddDeviceCmd, BT_MAX_STR_LEN/2, "btmgmt add-device -t 1 -a 0 %s", pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceAddress);
+                BTRCORELOG_INFO ("lcpAddDeviceCmd: %s\n", lcpAddDeviceCmd);
+
+                lpcBtmgmtCmd = popen(lcpAddDeviceCmd, "r");
+                if ((lpcBtmgmtCmd == NULL)) {
+                    BTRCORELOG_ERROR ("Failed to run lcpAddDeviceCmd command\n");
+                }
+                else {
+                    if (fgets(lcBtmgmtResponse, sizeof(lcBtmgmtResponse)-1, lpcBtmgmtCmd) == NULL) {
+                        BTRCORELOG_ERROR ("Failed to Output of lcpAddDeviceCmd\n");
+                    }
+                    else {
+                        BTRCORELOG_WARN ("Output of lcpAddDeviceCmd =  %s\n", lcBtmgmtResponse);
+                    }
+
+                    pclose(lpcBtmgmtCmd);
+                }
+            }
+        }
+    }
+    return enBTRCoreSuccess;
+}
+
 enBTRCoreRet BTRCore_newBatteryLevelDevice (tBTRCoreHandle hBTRCore)
 {
 
@@ -6550,6 +6650,25 @@ BTRCore_GetBluetoothVersion (
     }
 
     return enBTRCoreSuccess;
+}
+
+BOOLEAN BTRCore_IsUnsupportedGamepad (
+        unsigned int ui32Vendor,
+        unsigned int ui32Product,
+        unsigned int ui32DeviceId) {
+    BOOLEAN isUnsupported = false;
+
+    BTRCORELOG_DEBUG("Vendor:%04X product:%04X DeviceId:%04X\n",ui32Vendor, ui32Product, ui32DeviceId);
+ /* If Bluetooth version is 5.2, 5.3 or above, || privacy is enabled, we need to add the disable_unsupported_gamepad DISTRO feature in the builds.
+ * We have enabled BT_UNSUPPORTED_GAMEPAD_ENABLED macro based on this distro feature */
+#ifdef BT_UNSUPPORTED_GAMEPAD_ENABLED
+    if (BTRCORE_XBOX_VENDOR_ID == ui32Vendor && BTRCORE_XBOX_GEN4_PRODUCT_ID == ui32Product &&
+       ((BTRCORE_XBOX_GEN4_DEF_FIRMWARE == ui32DeviceId) ||
+	(BTRCORE_XBOX_GEN4_DEF_FIRMWARE_501 == ui32DeviceId))) {
+        isUnsupported = true;
+    }
+#endif
+    return isUnsupported;
 }
 
 // Outgoing callbacks Registration Interfaces

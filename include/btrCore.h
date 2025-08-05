@@ -74,6 +74,7 @@ extern "C" {
 #define BTRCORE_XBOX_GEN4_PRODUCT_ID          0x0B13
 #define BTRCORE_XBOX_ELITE_PRODUCT_ID         0x0B05
 #define BTRCORE_XBOX_GEN4_DEF_FIRMWARE        0x0509
+#define BTRCORE_XBOX_GEN4_DEF_FIRMWARE_501    0x0501
 #define BTRCORE_XBOX_ELITE_DEF_FIRMWARE       0x0903
 
 #define BTRCORE_MAX_BT_VERSION_SIZE           4
@@ -1027,6 +1028,27 @@ enBTRCoreRet BTRCore_ReleaseDeviceDataPath(tBTRCoreHandle hBTRCore, tBTRCoreDevI
 enBTRCoreRet BTRCore_SetDeviceDataAckTimeout(tBTRCoreHandle hBTRCore, unsigned int aui32AckTOutms);
 
 /**
+ * @brief  This api adds all LE gamepads back to the action list in case they have been disconnected.
+ *
+ * @param[in]  hBTRCore           Bluetooth core handle.
+ *
+ * @return  Returns the status of the operation.
+ * @retval  Returns enBTRCoreSuccess on success, appropriate error code otherwise.
+ */
+
+enBTRCoreRet BTRCore_refreshLEActionListForGamepads(tBTRCoreHandle hBTRCore);
+
+/**
+ * @brief  This api removes all LE gamepads from the action list so they can not connect.
+ *
+ * @param[in]  hBTRCore           Bluetooth core handle.
+ *
+ * @return  Returns the status of the operation.
+ * @retval  Returns enBTRCoreSuccess on success, appropriate error code otherwise.
+ */
+enBTRCoreRet BTRCore_clearLEActionListForGamepads(tBTRCoreHandle hBTRCore);
+
+/**
  * @brief  This API starts the battery level thread to start querying battery levels for a newly connected device.
  *
  * @param[in]  hBTRCore           Bluetooth core handle.
@@ -1311,6 +1333,18 @@ enBTRCoreRet BTRCore_SetPropertyValue(tBTRCoreHandle hBTRCore, char *aUUID, char
   * @retval  Returns enBTRCoreSuccess on success, appropriate error code otherwise.
   */
 enBTRCoreRet BTRCore_GetBluetoothVersion(char *version);
+
+/**
+  * @brief  This API is used to Get unsupport gamepad support status
+  *
+  * @param[in]  ui32Vendor
+  * @param[in]  ui32Product
+  * @param[in]  ui32DeviceId
+  *
+  * @return  Returns the status of the operation.
+  * @retval  Returns true if gamepad unsupported, otherwise return false.
+  */
+BOOLEAN BTRCore_IsUnsupportedGamepad(unsigned int ui32Vendor, unsigned int ui32Product, unsigned int ui32DeviceId);
 
 // Outgoing callbacks Registration Interfaces
 /* BTRCore_RegisterDiscoveryCb - Callback to notify the application every time when a new device is found and added to discovery list */
