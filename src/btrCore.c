@@ -6656,7 +6656,7 @@ BOOLEAN BTRCore_IsUnsupportedGamepad (
         unsigned int ui32Vendor,
         unsigned int ui32Product,
         unsigned int ui32DeviceId) {
-    BOOLEAN isUnsupported = false;
+    BOOLEAN isUnsupported = FALSE;
 
     BTRCORELOG_DEBUG("Vendor:%04X product:%04X DeviceId:%04X\n",ui32Vendor, ui32Product, ui32DeviceId);
  /* If Bluetooth version is 5.2, 5.3 or above, || privacy is enabled, we need to add the disable_unsupported_gamepad DISTRO feature in the builds.
@@ -6665,7 +6665,7 @@ BOOLEAN BTRCore_IsUnsupportedGamepad (
     if (BTRCORE_XBOX_VENDOR_ID == ui32Vendor && BTRCORE_XBOX_GEN4_PRODUCT_ID == ui32Product &&
        ((BTRCORE_XBOX_GEN4_DEF_FIRMWARE == ui32DeviceId) ||
 	(BTRCORE_XBOX_GEN4_DEF_FIRMWARE_501 == ui32DeviceId))) {
-        isUnsupported = true;
+        isUnsupported = TRUE;
     }
 #endif
     return isUnsupported;
