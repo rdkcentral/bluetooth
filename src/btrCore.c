@@ -67,6 +67,7 @@ int b_rdk_logger_enabled = 0;
 
 #define BTRCORE_REMOTE_CONTROL_APPEARANCE 0x0180
 #define BTRCORE_REMOTE_OUI_LENGTH 8
+#define BTRCORE_AMAZON_OUI_LENGTH 8
 static char * BTRCORE_REMOTE_OUI_VALUES[] = {
     "20:44:41", //LC103
     "E8:0F:C8", //EC302
@@ -80,6 +81,11 @@ static char * BTRCORE_REMOTE_OUI_VALUES[] = {
     NULL
 };
 
+static char * BTRCORE_AMAZON_OUI_VALUES[] = {
+    "20:A1:71", //Luna Gamepad
+    "EC:FD:86", //AmazonController-0B0
+    NULL
+};
 /* Local types */
 //TODO: Move to a private header
 typedef enum _enBTRCoreTaskOp {
@@ -767,6 +773,24 @@ btrCore_ClearScannedDevicesList (
     apsthBTRCore->numOfScannedDevices = 0;
 }
 
+static BOOLEAN btrCore_IsLunaGamepad(
+    char * pcAddress
+) {
+    unsigned char i;
+    if (pcAddress == NULL) {
+        BTRCORELOG_ERROR("Received NULL mac address\n");
+        return FALSE;
+    }
+
+    for (i=0; BTRCORE_AMAZON_OUI_VALUES[i] != NULL; i++) {
+        if (!strncmp(pcAddress, BTRCORE_AMAZON_OUI_VALUES[i], BTRCORE_AMAZON_OUI_LENGTH)) {
+            BTRCORELOG_DEBUG(" Device OUI matches amazon gamepad\n");
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 static BOOLEAN btrCore_IsDeviceRdkRcu(
     char * pcAddress, 
     unsigned short ui16Appearance
@@ -835,6 +859,15 @@ btrCore_AddDeviceToScannedDevicesArr (
     if (lstFoundDevice.enDeviceType == enBTRCore_DC_Unknown && !strncmp(apstBTDeviceInfo->pcIcon,"input-gaming",strlen("input-gaming"))) {
         BTRCORELOG_INFO("HID Device detected based on PcIcon ...\n");
         lstFoundDevice.enDeviceType = enBTRCore_DC_HID_GamePad;
+    }
+
+    if (lstFoundDevice.enDeviceType == enBTRCore_DC_Unknown &&
+        lstFoundDevice.pcDeviceName &&
+        (strstr(lstFoundDevice.pcDeviceName,"Luna") ||
+         strstr(lstFoundDevice.pcDeviceName,"Amazon") ||
+         btrCore_IsLunaGamepad(lstFoundDevice.pcDeviceAddress))) {
+         lstFoundDevice.enDeviceType = enBTRCore_DC_HID_GamePad;
+         lstFoundDevice.ui16DevAppearanceBleSpec = 0x3c4;
     }
 
     /* Populate the profile supported */
