@@ -2344,8 +2344,7 @@ btrCore_OutTask (
                         int                 i32LoopIdx = -1;
                         int                 i32KnownDevIdx  = -1, i32ScannedDevIdx = -1;
                         BOOLEAN             postEvent = FALSE;
-                        char                version[BTRCORE_MAX_BT_VERSION_SIZE] = {0};
-
+                        
                         (void)lpstBTDeviceInfo;
 
                         for (i32LoopIdx = 0; i32LoopIdx < pstlhBTRCore->numOfPairedDevices; i32LoopIdx++) {
