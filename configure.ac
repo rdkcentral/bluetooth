@@ -213,6 +213,23 @@ AC_ARG_ENABLE([leonly],
     [echo "LE Only Mode Not enabled"])
 AM_CONDITIONAL([LE_ONLY], [test x$LE_ONLY = xtrue])
 
+AC_ARG_ENABLE([unsupportedgamepad],
+               AS_HELP_STRING([--enable-unsupportedgamepad],[enable unsupportedgamepad (default is no)]),
+               [
+                case "${enableval}" in
+                 yes) ENABLE_UNSUPPOR_GAMEPAD=true ;;
+                 no)  ENABLE_UNSUPPOR_GAMEPAD=false ;;
+                 *) AC_MSG_ERROR([bad value ${enableval} for --enable-unsupportedgamepad]) ;;
+                esac
+                if test "$ENABLE_UNSUPPOR_GAMEPAD" = true; then
+                  AC_DEFINE(BT_UNSUPPORTED_GAMEPAD_ENABLED, 1, [Enabled ENABLE_UNSUPPOR_GAMEPAD flag])
+                else
+                 [echo "Not enabled unsupported gamepad feature flag"]
+                fi
+                ],
+                [ENABLE_UNSUPPOR_GAMEPAD=false])
+AM_CONDITIONAL([BT_UNSUPPORTED_GAMEPAD_ENABLED], [test "x$ENABLE_UNSUPPOR_GAMEPAD" = xtrue])
+
 AC_ARG_ENABLE([gattclient],
     [AS_HELP_STRING([--enable-gattclient],[enable gatt client (default is no)])],
     [
