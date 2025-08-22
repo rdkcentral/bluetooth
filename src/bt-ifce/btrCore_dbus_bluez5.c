@@ -3904,6 +3904,13 @@ BtrCore_BTGetProp (
     dbus_message_append_args(lpDBusMsg, DBUS_TYPE_STRING, &pInterface, DBUS_TYPE_INVALID);
 
     dbus_error_init(&lDBusErr);
+
+    // Check if message creation was successful and the connection is not closed yet.
+    if (lpDBusMsg == NULL || pstlhBtIfce->pDBusConn == NULL) {
+        BTRCORELOG_ERROR ("Failed to create message ...\n");
+        return -1;
+    }
+
     if (!dbus_connection_send_with_reply(pstlhBtIfce->pDBusConn, lpDBusMsg, &lpDBusPendC, -1)) {
         BTRCORELOG_ERROR ("failed to send message\n");
     }
