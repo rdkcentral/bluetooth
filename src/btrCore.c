@@ -268,6 +268,7 @@ btrCore_InitDataSt (
     }
 
     /* Scanned Devices */
+    BTRCORELOG_INFO ("bFound is made false in init function\n");
     for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
         apsthBTRCore->stScannedDevicesArr[i].tDeviceId          = 0;
         apsthBTRCore->stScannedDevicesArr[i].enDeviceType       = enBTRCore_DC_Unknown;
@@ -748,6 +749,8 @@ btrCore_ClearScannedDevicesList (
 ) {
     int i;
 
+    BTRCORELOG_INFO("Clearing scanned devices\n");
+
     for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
         apsthBTRCore->stScannedDevicesArr[i].tDeviceId          = 0;
         apsthBTRCore->stScannedDevicesArr[i].i32RSSI            = INT_MIN;
@@ -814,6 +817,8 @@ btrCore_AddDeviceToScannedDevicesArr (
         BTRCORELOG_INFO("Skipping detected RCU: %s (%s)", lstFoundDevice.pcDeviceName, apstBTDeviceInfo->pcAddress);
         return -1;
     }
+
+    BTRCORELOG_INFO(" Device detected based on PcIcon ...\n");
 
     lstFoundDevice.bFound               = FALSE;
     lstFoundDevice.i32RSSI              = apstBTDeviceInfo->i32RSSI;
@@ -907,6 +912,7 @@ btrCore_AddDeviceToScannedDevicesArr (
             BTRCORELOG_INFO ("Adding %s at location %d\n", lstFoundDevice.pcDeviceAddress, i);
 
             lstFoundDevice.bFound   = TRUE;     //mark the record as found
+	    BTRCORELOG_INFO("bFound is made true here ...\n");
 
             MEMCPY_S(&apsthBTRCore->stScannedDevicesArr[i],sizeof(apsthBTRCore->stScannedDevicesArr[0]), &lstFoundDevice, sizeof(stBTRCoreBTDevice));
 
@@ -924,6 +930,7 @@ btrCore_AddDeviceToScannedDevicesArr (
 
         if (lstFoundDevice.enDeviceType == enBTRCore_DC_Tile) {
             lstFoundDevice.bFound   = TRUE;     //mark the record as found
+	    BTRCORELOG_INFO("bFound is made true here 2\n");
         }
 
         MEMCPY_S(apstFoundDevice,sizeof(stBTRCoreBTDevice), &lstFoundDevice, sizeof(stBTRCoreBTDevice));
@@ -950,7 +957,7 @@ btrCore_RemoveDeviceFromScannedDevicesArr (
     }
 
     if (i32LoopIdx != apstlhBTRCore->numOfScannedDevices) {
-        BTRCORELOG_TRACE ("i32ScannedDevIdx = %d\n", i32LoopIdx);
+        BTRCORELOG_INFO ("i32ScannedDevIdx = %d\n", i32LoopIdx);
         BTRCORELOG_TRACE ("pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].eDeviceCurrState = %d\n", apstlhBTRCore->stScannedDevStInfoArr[i32LoopIdx].eDeviceCurrState);
         BTRCORELOG_TRACE ("pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].eDevicePrevState = %d\n", apstlhBTRCore->stScannedDevStInfoArr[i32LoopIdx].eDevicePrevState);
 
@@ -1298,6 +1305,7 @@ btrCore_PopulateListOfPairedDevices (
                     apsthBTRCore->stKnownDevStInfoArr[apsthBTRCore->numOfPairedDevices].eDeviceCurrState = enBTRCoreDevStPaired;
                     apsthBTRCore->stKnownDevicesArr[apsthBTRCore->numOfPairedDevices].bDeviceConnected   = FALSE;
                     apsthBTRCore->stKnownDevicesArr[apsthBTRCore->numOfPairedDevices].bFound             = TRUE; // Paired Now
+		    BTRCORELOG_INFO ("KnownDevices_bfound made true \n");
                 }
                 apsthBTRCore->numOfPairedDevices++;
             }
@@ -4189,8 +4197,9 @@ BTRCore_GetListOfScannedDevices (
     pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
     MEMSET_S(pListOfScannedDevices, sizeof(stBTRCoreScannedDevicesCount), 0, sizeof(stBTRCoreScannedDevicesCount));
 
-    BTRCORELOG_TRACE ("adapter path is %s\n", pstlhBTRCore->curAdapterPath);
+    BTRCORELOG_INFO ("adapter path is %s\n", pstlhBTRCore->curAdapterPath);
     for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
+    	BTRCORELOG_INFO ("Am I true? %d \n", pstlhBTRCore->stScannedDevicesArr[i].bFound);
         if (pstlhBTRCore->stScannedDevicesArr[i].bFound) {
             BTRCORELOG_TRACE ("Device : %d\n", i);
             BTRCORELOG_TRACE ("Name   : %s\n", pstlhBTRCore->stScannedDevicesArr[i].pcDeviceName);
@@ -7141,6 +7150,8 @@ btrCore_BTDeviceConnectionIntimationCb (
             strncpy(lpstlhBTRCore->stConnCbInfo.cConnAuthDeviceName, apstBTDeviceInfo->pcName, (strlen(apstBTDeviceInfo->pcName) < (BTRCORE_STR_LEN - 1)) ? strlen(apstBTDeviceInfo->pcName) : BTRCORE_STR_LEN - 1);
 
         MEMCPY_S(&lpstlhBTRCore->stConnCbInfo.stFoundDevice,sizeof(lpstlhBTRCore->stConnCbInfo.stFoundDevice), &lstFoundDevice, sizeof(stBTRCoreBTDevice));
+
+        BTRCORELOG_INFO ("bFound is made true for stFoundDevice\n");
         lpstlhBTRCore->stConnCbInfo.stFoundDevice.bFound = TRUE;
 
         if ((lenBTRCoreDevType == enBTRCoreMobileAudioIn) || (lenBTRCoreDevType == enBTRCorePCAudioIn) || (lenBTRCoreDevType == enBTRCoreHID)) {
