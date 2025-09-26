@@ -944,6 +944,7 @@ btrCore_AddDeviceToScannedDevicesArr (
             (lstFoundDevice.enDeviceType == enBTRCore_DC_WearableHeadset) ||
             (lstFoundDevice.ui16DevAppearanceBleSpec == BTRCORE_REMOTE_CONTROL_APPEARANCE)) {
             BTRCORELOG_INFO("Skipping device %s (%s) as there is a audio/remote devices detected on HID scan\n", lstFoundDevice.pcDeviceName, lstFoundDevice.pcDeviceAddress);
+            return -1;
          }
     }
 
