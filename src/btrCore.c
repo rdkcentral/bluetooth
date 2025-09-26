@@ -934,6 +934,19 @@ btrCore_AddDeviceToScannedDevicesArr (
         }
     }
 
+    /* HID devices are discovered without a valid appearance value. So ome device types are currently skipped during HID discovery.
+     * TODO : Improve filtering logic to ensure only HID-specific devices are allowed during HID discovery.
+     */
+    if (apsthBTRCore->aenDeviceDiscoveryType == enBTRCoreHID) {
+        if ((lstFoundDevice.enDeviceType == enBTRCore_DC_Loudspeaker) ||
+            (lstFoundDevice.enDeviceType == enBTRCore_DC_Headphones) ||
+            (lstFoundDevice.enDeviceType  == enBTRCore_DC_PortableAudio) ||
+            (lstFoundDevice.enDeviceType == enBTRCore_DC_WearableHeadset) ||
+            (lstFoundDevice.ui16DevAppearanceBleSpec == BTRCORE_REMOTE_CONTROL_APPEARANCE)) {
+            BTRCORELOG_INFO("Skipping device %s (%s) as there is a audio/remote devices detected on HID scan\n", lstFoundDevice.pcDeviceName, lstFoundDevice.pcDeviceAddress);
+         }
+    }
+
     for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
         if (((lstFoundDevice.tDeviceId == apsthBTRCore->stScannedDevicesArr[i].tDeviceId) && (lstFoundDevice.ui32DevClassBtSpec == apsthBTRCore->stScannedDevicesArr[i].ui32DevClassBtSpec) ) || (apsthBTRCore->stScannedDevicesArr[i].bFound == FALSE)) {
             BTRCORELOG_INFO ("Unique DevID = %lld\n",      lstFoundDevice.tDeviceId);
