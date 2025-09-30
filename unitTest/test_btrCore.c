@@ -8431,3 +8431,5 @@ void test_btrCore_BTDeviceAuthenticationCb1(void) {
     free(btrCoreHdl);
 }
 
+
+
