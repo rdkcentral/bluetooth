@@ -4756,6 +4756,7 @@ BTRCore_ConnectDevice (
     /* Should think on moving a connected LE device from scanned list to paired list */
 
 
+	
     if ((lpstBTRCoreDevStateInfo->eDevicePrevState != enBTRCoreDevStConnected) &&
         (lpstBTRCoreDevStateInfo->eDeviceCurrState != enBTRCoreDevStPlaying)) {
         lpstBTRCoreDevStateInfo->eDevicePrevState  = lpstBTRCoreDevStateInfo->eDeviceCurrState;
