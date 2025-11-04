@@ -1099,33 +1099,33 @@ btrCore_BTParseAdapter (
             if (strcmp (pcKey, "Address") == 0 && dbus_type == DBUS_TYPE_STRING) {
                 dbus_message_iter_get_basic(&dict_entry_value_iter, &pcVal);
                 strncpy(apstBTAdapterInfo->pcAddress, pcVal, BT_MAX_STR_LEN-1);  // TODO strncpy is unsafe; use snprintf instead
-                BTRCORELOG_TRACE ("pcAddress               = %s\n", apstBTAdapterInfo->pcAddress);
+                BTRCORELOG_INFO ("pcAddress               = %s\n", apstBTAdapterInfo->pcAddress);
             }
             else if (strcmp (pcKey, "Name") == 0 && dbus_type == DBUS_TYPE_STRING) {
                 dbus_message_iter_get_basic(&dict_entry_value_iter, &pcVal);
                 strncpy(apstBTAdapterInfo->pcName, pcVal, BT_MAX_STR_LEN-1);
-                BTRCORELOG_TRACE ("pcName                  = %s\n", apstBTAdapterInfo->pcName);
+                BTRCORELOG_INFO ("pcName                  = %s\n", apstBTAdapterInfo->pcName);
             }
             else if (strcmp (pcKey, "Alias") == 0 && dbus_type == DBUS_TYPE_STRING) {
                 dbus_message_iter_get_basic(&dict_entry_value_iter, &pcVal);
                 strncpy(apstBTAdapterInfo->pcAlias, pcVal, BT_MAX_STR_LEN-1);
-                BTRCORELOG_TRACE ("pcAlias                 = %s\n", apstBTAdapterInfo->pcAlias);
+                BTRCORELOG_INFO ("pcAlias                 = %s\n", apstBTAdapterInfo->pcAlias);
             }
             else if (strcmp (pcKey, "Class") == 0 && dbus_type == DBUS_TYPE_UINT32) {
                 dbus_message_iter_get_basic(&dict_entry_value_iter, &apstBTAdapterInfo->ui32Class);
-                BTRCORELOG_TRACE ("ui32Class               = %u\n", apstBTAdapterInfo->ui32Class);
+                BTRCORELOG_INFO ("ui32Class               = %u\n", apstBTAdapterInfo->ui32Class);
             }
             else if (strcmp (pcKey, "Powered") == 0 && dbus_type == DBUS_TYPE_BOOLEAN) {
                 dbus_message_iter_get_basic(&dict_entry_value_iter, &apstBTAdapterInfo->bPowered);
-                BTRCORELOG_TRACE ("bPowered                = %d\n", apstBTAdapterInfo->bPowered);
+                BTRCORELOG_INFO ("bPowered                = %d\n", apstBTAdapterInfo->bPowered);
             }
             else if (strcmp (pcKey, "Discoverable") == 0 && dbus_type == DBUS_TYPE_BOOLEAN) {
                 dbus_message_iter_get_basic(&dict_entry_value_iter, &apstBTAdapterInfo->bDiscoverable);
-                BTRCORELOG_TRACE ("bDiscoverable           = %d\n", apstBTAdapterInfo->bDiscoverable);
+                BTRCORELOG_INFO ("bDiscoverable           = %d\n", apstBTAdapterInfo->bDiscoverable);
             }
             else if (strcmp (pcKey, "DiscoverableTimeout") == 0 && dbus_type == DBUS_TYPE_UINT32) {
                 dbus_message_iter_get_basic(&dict_entry_value_iter, &apstBTAdapterInfo->ui32DiscoverableTimeout);
-                BTRCORELOG_TRACE ("ui32DiscoverableTimeout = %u\n", apstBTAdapterInfo->ui32DiscoverableTimeout);
+                BTRCORELOG_INFO ("ui32DiscoverableTimeout = %u\n", apstBTAdapterInfo->ui32DiscoverableTimeout);
             }
             else if (strcmp (pcKey, "Pairable") == 0 && dbus_type == DBUS_TYPE_BOOLEAN) {
                 dbus_message_iter_get_basic(&dict_entry_value_iter, &apstBTAdapterInfo->bPairable);
@@ -1133,7 +1133,7 @@ btrCore_BTParseAdapter (
             }
             else if (strcmp (pcKey, "PairableTimeout") == 0 && dbus_type == DBUS_TYPE_UINT32) {
                 dbus_message_iter_get_basic(&dict_entry_value_iter, &apstBTAdapterInfo->ui32PairableTimeout);
-                BTRCORELOG_TRACE ("ui32PairableTimeout     = %u\n", apstBTAdapterInfo->ui32PairableTimeout);
+                BTRCORELOG_INFO ("ui32PairableTimeout     = %u\n", apstBTAdapterInfo->ui32PairableTimeout);
             }
             else if (strcmp (pcKey, "Discovering") == 0 && dbus_type == DBUS_TYPE_BOOLEAN) {
                 dbus_message_iter_get_basic(&dict_entry_value_iter, &apstBTAdapterInfo->bDiscovering);
@@ -1142,7 +1142,7 @@ btrCore_BTParseAdapter (
             else if (strcmp (pcKey, "Modalias") == 0 && dbus_type == DBUS_TYPE_STRING) {
                 dbus_message_iter_get_basic(&dict_entry_value_iter, &pcVal);
                 strncpy(apstBTAdapterInfo->pcModalias, pcVal, BT_MAX_STR_LEN-1);
-                BTRCORELOG_TRACE ("pcModalias              = %s\n", apstBTAdapterInfo->pcModalias);
+                BTRCORELOG_INFO ("pcModalias              = %s\n", apstBTAdapterInfo->pcModalias);
             }
             else if (strcmp (pcKey, "UUIDs") == 0 && dbus_type == DBUS_TYPE_ARRAY) {
                 DBusMessageIter uuid_array_iter;
@@ -1153,7 +1153,7 @@ btrCore_BTParseAdapter (
                     if ((dbus_type == DBUS_TYPE_STRING) && (count < BT_MAX_DEVICE_PROFILE)) {
                         dbus_message_iter_get_basic (&uuid_array_iter, &pcVal);
                         strncpy(apstBTAdapterInfo->ppcUUIDs[count], pcVal, (BT_MAX_UUID_STR_LEN - 1));
-                        BTRCORELOG_TRACE ("UUID value is %s\n", apstBTAdapterInfo->ppcUUIDs[count]);
+                        BTRCORELOG_INFO ("UUID value is %s\n", apstBTAdapterInfo->ppcUUIDs[count]);
                         count++;
                     }
                 }
@@ -1211,6 +1211,7 @@ btrCore_BTGetDeviceInfo (
             return -1;
         }
         else {
+            BTRCORELOG_INFO ("Parsing the device %s passed..\n", apcIface);
             strncpy(apstBTDeviceInfo->pcDevicePath, apcIface, (strlen(apcIface) < BT_MAX_DEV_PATH_LEN) ? strlen(apcIface) : BT_MAX_DEV_PATH_LEN - 1 );
             dbus_message_unref(lpDBusReply);
             return 0;
@@ -1257,15 +1258,36 @@ btrCore_BTParseDevice (
     }
 
     dbus_type = dbus_message_iter_get_arg_type(&arg_i);
+
+    BTRCORELOG_INFO ("Start: prop structure: %c, %d\n",
+		    dbus_message_iter_get_arg_type(&arg_i),
+		    dbus_message_iter_get_arg_type(&arg_i));
+
     if (dbus_message_iter_get_arg_type(&arg_i) != DBUS_TYPE_ARRAY) {
         dbus_message_iter_next(&arg_i);
         dbus_type = dbus_message_iter_get_arg_type(&arg_i);
 
         if (dbus_message_iter_get_arg_type(&arg_i) != DBUS_TYPE_ARRAY) {
-            BTRCORELOG_ERROR ("Unknown Prop structure from Bluez\n");
+            BTRCORELOG_ERROR ("Unknown Prop structure from Bluez: %c, %d\n",
+			    dbus_message_iter_get_arg_type(&arg_i),
+			    dbus_message_iter_get_arg_type(&arg_i));
             return -1;
         }
+	else {
+            BTRCORELOG_INFO ("Known prop structure: %c, %d\n",
+			    dbus_message_iter_get_arg_type(&arg_i),
+			    dbus_message_iter_get_arg_type(&arg_i));
+	}
     }
+    else {
+	BTRCORELOG_INFO ("Outer check: Known prop structure: %c, %d\n",
+			    dbus_message_iter_get_arg_type(&arg_i),
+			    dbus_message_iter_get_arg_type(&arg_i));
+    }
+
+    BTRCORELOG_INFO ("prop structure: %c, %d\n",
+		    dbus_message_iter_get_arg_type(&arg_i),
+		    dbus_message_iter_get_arg_type(&arg_i));
 
     dbus_message_iter_recurse(&arg_i, &element_i);
     while (dbus_message_iter_get_arg_type(&element_i) != DBUS_TYPE_INVALID) {
@@ -4093,6 +4115,7 @@ BtrCore_BTSetProp (
         case enBTAdPropPowered:
             lDBusType = DBUS_TYPE_BOOLEAN;
             lDBusKey  = "Powered";
+	    BTRCORELOG_INFO ("I come here, 2\n");
             break;
         case enBTAdPropDiscoverable:
             lDBusType = DBUS_TYPE_BOOLEAN;
@@ -4223,6 +4246,7 @@ BtrCore_BTSetProp (
         lpDBusMsg = dbus_message_new_signal(apcBtOpIfcePath,
                                         DBUS_INTERFACE_PROPERTIES,
                                         "PropertiesChanged");
+        BTRCORELOG_INFO ("enBTGattCharacteristic: %s\n", apcBtOpIfcePath);
     }
     else {
         lpDBusMsg = dbus_message_new_method_call(BT_DBUS_BLUEZ_PATH,
@@ -4234,6 +4258,7 @@ BtrCore_BTSetProp (
             BTRCORELOG_ERROR ("Can't allocate new method call\n");
             return -1;
         }
+        BTRCORELOG_INFO ("aenBtOpIfceType:%d, %s\n", aenBtOpIfceType, apcBtOpIfcePath);
     }
     
     if (aenBtOpIfceType == enBTGattCharacteristic) {
@@ -4271,20 +4296,22 @@ BtrCore_BTSetProp (
         dbus_message_iter_append_basic(&lDBusMsgIterValue, lDBusType, apvVal);
         dbus_message_iter_close_container(&lDBusMsgIter, &lDBusMsgIterValue);
         //dbus_message_append_args(lpDBusMsg, DBUS_TYPE_STRING, &pInterface, DBUS_TYPE_STRING, &lDBusKey, lDBusType, apvVal, DBUS_TYPE_INVALID);
+        BTRCORELOG_INFO ("aenBtOpIfceType 2:%d\n", aenBtOpIfceType);
     }
         
     const char* lsignature = dbus_message_get_signature(lpDBusMsg);
     int             li32MessageType;
     const char*     lpcSender;
     const char*     lpcDestination;
-    BTRCORELOG_TRACE("Signature is %s\n", lsignature);
+    BTRCORELOG_INFO("Signature is %s\n", lsignature);
         
     li32MessageType = dbus_message_get_type(lpDBusMsg);
     lpcSender       = dbus_message_get_sender(lpDBusMsg);
     lpcDestination  = dbus_message_get_destination(lpDBusMsg);
   
-    BTRCORELOG_TRACE ("%s Sender=%s -> Dest=%s Path=%s; Interface=%s; Member=%s\n",
-                    btrCore_DBusType2Name(li32MessageType),
+    BTRCORELOG_INFO ("%p, %s Sender=%s -> Dest=%s Path=%s; Interface=%s; Member=%s\n",
+                    pstlhBtIfce->pDBusConn,
+		    btrCore_DBusType2Name(li32MessageType),
                     lpcSender ? lpcSender : "Null",
                     lpcDestination ? lpcDestination : "Null",
                     dbus_message_get_path(lpDBusMsg),
@@ -4298,6 +4325,9 @@ BtrCore_BTSetProp (
         BTRCORELOG_ERROR ("lpDBusReply Null\n");
         btrCore_BTHandleDusError(&lDBusErr, __LINE__, __FUNCTION__);
         return -1;
+    }
+    else {
+        BTRCORELOG_INFO ("lpDBusReply is NOT Null\n");
     }
 
     dbus_message_unref(lpDBusReply);
@@ -7995,7 +8025,7 @@ btrCore_BTDBusConnectionFilterCb (
     const char*      lpcDestination     = NULL;
     stBtIfceHdl*     pstlhBtIfce = (stBtIfceHdl*)apvUserData;
 
-    BTRCORELOG_DEBUG ("Connection Filter Activated....\n");
+    BTRCORELOG_INFO ("Connection Filter Activated....\n");
 
     if (!apDBusConn || !apDBusMsg || !apvUserData) {
         return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
@@ -8015,7 +8045,7 @@ btrCore_BTDBusConnectionFilterCb (
     lpcSender       = dbus_message_get_sender(apDBusMsg);
     lpcDestination  = dbus_message_get_destination(apDBusMsg);
   
-    BTRCORELOG_DEBUG ("%s Sender=%s -> Dest=%s Path=%s; Interface=%s; Member=%s\n",
+    BTRCORELOG_INFO ("%s Sender=%s -> Dest=%s Path=%s; Interface=%s; Member=%s\n",
                     btrCore_DBusType2Name(li32MessageType),
                     lpcSender ? lpcSender : "Null",
                     lpcDestination ? lpcDestination : "Null",
@@ -8023,14 +8053,14 @@ btrCore_BTDBusConnectionFilterCb (
                     dbus_message_get_interface(apDBusMsg),
                     dbus_message_get_member(apDBusMsg));
     const char* lSignature = dbus_message_get_signature(apDBusMsg);
-    BTRCORELOG_TRACE("Signature is %s\n", lSignature);
+    BTRCORELOG_INFO("Signature is %s\n", lSignature);
 
     if (li32MessageType == DBUS_MESSAGE_TYPE_ERROR) {
         const char* lpcError = dbus_message_get_error_name(apDBusMsg);
         BTRCORELOG_ERROR ("Error = %s\n", lpcError ? lpcError : NULL);
     }
     else if (dbus_message_is_signal(apDBusMsg, DBUS_INTERFACE_PROPERTIES, "PropertiesChanged")) {
-        BTRCORELOG_TRACE ("Property Changed!\n");
+        BTRCORELOG_INFO ("Property Changed, its a signal!\n");
 
         DBusMessageIter lDBusMsgIter;
         const char*     lpcDBusIface = NULL;
@@ -8042,7 +8072,7 @@ btrCore_BTDBusConnectionFilterCb (
         if (dbus_message_iter_get_arg_type(&lDBusMsgIter) == DBUS_TYPE_ARRAY) {
             if (lpcDBusIface) {
                 if (!strcmp(lpcDBusIface, BT_DBUS_BLUEZ_ADAPTER_PATH)) {
-                    BTRCORELOG_DEBUG ("Property Changed! : %s\n", BT_DBUS_BLUEZ_ADAPTER_PATH);
+                    BTRCORELOG_INFO ("Property Changed! : %s\n", BT_DBUS_BLUEZ_ADAPTER_PATH);
 
                     {
                         DBusMessageIter lDBusMsgIterDict, lDBusMsgIter1;
@@ -8081,10 +8111,10 @@ btrCore_BTDBusConnectionFilterCb (
 
                     pstlhBtIfce->ui32IsAdapterDiscovering = pstBTAdapterInfo->bDiscovering;
                     if (pstBTAdapterInfo->bDiscovering) {
-                        BTRCORELOG_INFO ("Adapter Started Discovering | %d\n", pstlhBtIfce->ui32IsAdapterDiscovering);
+                        BTRCORELOG_INFO ("Adapter Started Discovering | %d, %s\n", pstlhBtIfce->ui32IsAdapterDiscovering, adapter_path);
                     }
                     else {
-                        BTRCORELOG_INFO ("Adapter Stopped Discovering | %d\n", pstlhBtIfce->ui32IsAdapterDiscovering);
+                        BTRCORELOG_INFO ("Adapter Stopped Discovering | %d, %s\n", pstlhBtIfce->ui32IsAdapterDiscovering, adapter_path);
                     }
 
                     if (!i32OpRet) {
