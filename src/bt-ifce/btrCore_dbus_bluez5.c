@@ -4847,7 +4847,7 @@ BtrCore_BTGetPairedDeviceInfo (
         dbus_error_init(&lDBusErr);
 
         // Check if message creation was successful and the connection is not closed yet.
-        if (lpDBusMsg == NULL || pstlhBtIfce->pDBusConn == NULL) {
+        if (lpDBusMsg == NULL || pstlhBtIfce->pDBusConn == NULL || pstlhBtIfce->pDBusConn == NULL) {
             BTRCORELOG_ERROR ("Failed to create message ...\n");
             return -1;
         }
