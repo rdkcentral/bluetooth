@@ -4755,8 +4755,10 @@ BTRCore_ConnectDevice (
     BTRCORELOG_INFO ("Connected to device %s Successfully. = %llu\n", lpcBTRCoreBTDeviceName, aBTRCoreDevId);
     /* Should think on moving a connected LE device from scanned list to paired list */
 
+    if (lenBTDeviceType != enBTDevHID) {
+        lpstBTRCoreBTDevice->bDeviceConnected = TRUE;
+    }
 
-	
     if ((lpstBTRCoreDevStateInfo->eDevicePrevState != enBTRCoreDevStConnected) &&
         (lpstBTRCoreDevStateInfo->eDeviceCurrState != enBTRCoreDevStPlaying)) {
         lpstBTRCoreDevStateInfo->eDevicePrevState  = lpstBTRCoreDevStateInfo->eDeviceCurrState;
