@@ -356,6 +356,8 @@ typedef struct _stBTRCoreBTDevice {
     stBTRCoreSupportedServiceList stDeviceProfile;
     stBTRCoreAdServiceData        stAdServiceData[BTRCORE_MAX_DEVICE_PROFILE];
     unsigned char                 ui8batteryLevel;
+    int64_t                       disconnect_ts;
+    int64_t                       last_disconnect_ts;
 } stBTRCoreBTDevice;
 
 typedef struct _stBTRCoreScannedDevicesCount {
