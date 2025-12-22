@@ -66,6 +66,7 @@ int b_rdk_logger_enabled = 0;
 #define BATTERY_LEVEL_NOT_FOUND_REFRESH_INTERVAL 5
 
 #define BTRCORE_REMOTE_CONTROL_APPEARANCE 0x0180
+#define BTRCORE_LE_HID_DEVICE_APPEARANCE 0x03c4
 #define BTRCORE_REMOTE_OUI_LENGTH 8
 #define BTRCORE_AMAZON_OUI_LENGTH 8
 
@@ -195,6 +196,8 @@ typedef struct _stBTRCoreHdl {
 static void btrCore_InitDataSt (stBTRCoreHdl* apsthBTRCore);
 static tBTRCoreDevId btrCore_GenerateUniqueDeviceID (const char* apcDeviceMac);
 static BOOLEAN btrCore_IsDevNameSameAsAddress(const stBTRCoreBTDevice *dev);
+static BOOLEAN btrCore_CheckLeHidConnectionStability(stBTRCoreBTDevice *DeviceInfo);
+static void btrCore_RemoveUnstableDeviceFromActionList(stBTRCoreBTDevice *DeviceInfo);
 static enBTRCoreDeviceClass btrCore_MapClassIDtoAVDevClass(unsigned int aui32ClassId);
 static enBTRCoreDeviceClass btrCore_MapServiceClasstoDevType(unsigned int aui32ClassId);
 static enBTRCoreDeviceClass btrCore_MapClassIDtoDevClass(unsigned int aui32ClassId);
@@ -370,6 +373,43 @@ btrCore_GenerateUniqueDeviceID (
     }
 
     return lBTRCoreDevId;
+}
+
+static void btrCore_RemoveUnstableDeviceFromActionList (
+    stBTRCoreBTDevice *DeviceInfo
+) {
+    char lcpAddDeviceCmd[BT_MAX_STR_LEN/2] = {'\0'};
+    char lcBtmgmtResponse[BT_MAX_STR_LEN/2] = {'\0'};
+    FILE* lpcBtmgmtCmd = NULL;
+    snprintf(lcpAddDeviceCmd, BT_MAX_STR_LEN/2, "btmgmt add-device -t 1 -a 0 %s", DeviceInfo->pcDeviceAddress);
+    BTRCORELOG_INFO ("lcpAddDeviceCmd: %s\n", lcpAddDeviceCmd);
+    lpcBtmgmtCmd = popen(lcpAddDeviceCmd, "r");
+    if ((lpcBtmgmtCmd == NULL)) {
+        BTRCORELOG_ERROR ("Failed to run lcpAddDeviceCmd command\n");
+    }
+    else {
+        if (fgets(lcBtmgmtResponse, sizeof(lcBtmgmtResponse)-1, lpcBtmgmtCmd) == NULL) {
+            BTRCORELOG_ERROR ("Failed to Output of lcpAddDeviceCmd\n");
+        }
+        else {
+            BTRCORELOG_WARN ("Output of lcpAddDeviceCmd =  %s\n", lcBtmgmtResponse);
+        }
+        pclose(lpcBtmgmtCmd);
+    }
+}
+
+static BOOLEAN
+btrCore_CheckLeHidConnectionStability (
+    stBTRCoreBTDevice *DeviceInfo
+) {
+    DeviceInfo->last_disconnect_ts = DeviceInfo->disconnect_ts;
+    DeviceInfo->disconnect_ts = g_get_monotonic_time();
+
+    if (DeviceInfo->last_disconnect_ts > 0 && ((DeviceInfo->disconnect_ts - DeviceInfo->last_disconnect_ts) < G_TIME_SPAN_SECOND)) {
+        BTRCORELOG_ERROR("HID device detected as unstable; scheduling for removal from action list\n");
+        return TRUE;
+    }
+    return FALSE;
 }
 
 static BOOLEAN
@@ -2638,6 +2678,15 @@ btrCore_OutTask (
                                         if((enBTRCoreHID == lenBTRCoreMapDevType) &&
                                             (leBTDevState == enBTRCoreDevStDisconnected) &&
                                             (enBTRCoreDevStConnected == pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceCurrState)) {
+                                                lpstBTRCoreBTDevice     = &pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx];
+                                                if ((lpstBTRCoreBTDevice->ui16DevAppearanceBleSpec == BTRCORE_LE_HID_DEVICE_APPEARANCE) && (!btrCore_IsDeviceRdkRcu(lpstBTRCoreBTDevice->pcDeviceAddress,lpstBTRCoreBTDevice->ui16DevAppearanceBleSpec))) {
+                                                    gboolean IsDeviceStable = FALSE;
+                                                    IsDeviceStable = btrCore_CheckLeHidConnectionStability (lpstBTRCoreBTDevice);
+                                                    if (IsDeviceStable) {
+                                                        BTRCORELOG_INFO("KDA : HID device identified as unstable, removing from action list. It may need repair....\n");
+                                                        btrCore_RemoveUnstableDeviceFromActionList (lpstBTRCoreBTDevice);
+                                                    }
+                                                }
                                                 leBTDevState = enBTRCoreDevStLost;
                                                 pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].bDeviceConnected = FALSE;
                                         }
@@ -2732,6 +2781,15 @@ btrCore_OutTask (
                                 enBTRCoreDeviceType  lenBTRCoreMapDevType = btrCore_MapDevClassToDevType(pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx].enDeviceType);
                                 BTRCORELOG_INFO ("DevType: %d\n",lenBTRCoreMapDevType);
                                 lpstBTRCoreBTDevice     = &pstlhBTRCore->stScannedDevicesArr[i32ScannedDevIdx];
+
+                                if ((lenBTRCoreMapDevType == enBTRCoreHID) && (lpstBTRCoreBTDevice->ui16DevAppearanceBleSpec == BTRCORE_LE_HID_DEVICE_APPEARANCE) && (leBTDevState == enBTRCoreDevStDisconnected) && !btrCore_IsDeviceRdkRcu(lpstBTRCoreBTDevice->pcDeviceAddress,lpstBTRCoreBTDevice->ui16DevAppearanceBleSpec)) {
+                                    gboolean IsDeviceStable = FALSE;
+                                    IsDeviceStable = btrCore_CheckLeHidConnectionStability (lpstBTRCoreBTDevice);
+                                    if (IsDeviceStable) {
+                                        BTRCORELOG_INFO("SDA : HID device identified as unstable, removing from action list. It may need repair....\n");
+                                        btrCore_RemoveUnstableDeviceFromActionList (lpstBTRCoreBTDevice);
+                                    }
+                                }
 
                                 char lpcBtVersion[BTRCORE_STR_LEN] = {'\0'};
                                 if (enBTRCoreSuccess == BTRCore_GetVersionInfo(pstlhBTRCore, lpcBtVersion)) {
