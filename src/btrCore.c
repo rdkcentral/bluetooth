@@ -988,6 +988,12 @@ btrCore_AddDeviceToScannedDevicesArr (
          }
     }
 
+    if ((apsthBTRCore->aenDeviceDiscoveryType == enBTRCoreSpeakers ||
+        apsthBTRCore->aenDeviceDiscoveryType == enBTRCoreAudioAndHID) &&
+        (lstFoundDevice.enDeviceType == enBTRCore_DC_Unknown)) {
+        BTRCORELOG_INFO("Skipping device %s addr %s as the device type is not properly detected \n", lstFoundDevice.pcDeviceName, lstFoundDevice.pcDeviceAddress);
+    }
+
     for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
         if (((lstFoundDevice.tDeviceId == apsthBTRCore->stScannedDevicesArr[i].tDeviceId) && (lstFoundDevice.ui32DevClassBtSpec == apsthBTRCore->stScannedDevicesArr[i].ui32DevClassBtSpec) ) || (apsthBTRCore->stScannedDevicesArr[i].bFound == FALSE)) {
             BTRCORELOG_INFO ("Unique DevID = %lld\n",      lstFoundDevice.tDeviceId);
