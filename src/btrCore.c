@@ -988,8 +988,6 @@ btrCore_AddDeviceToScannedDevicesArr (
          }
     }
 
-    BTRCORELOG_INFO ("###############\n");
-
     if ((apsthBTRCore->aenDeviceDiscoveryType == enBTRCoreSpeakers ||
         apsthBTRCore->aenDeviceDiscoveryType == enBTRCoreAudioAndHID) &&
         (lstFoundDevice.enDeviceType == enBTRCore_DC_Unknown)) {
