@@ -831,7 +831,7 @@ static BOOLEAN btrCore_IsStadiaGamepad(
         return FALSE;
     }
 
-    for (i=0; BTRCORE_GOOGLE_OUI_VALUES[i] != NULL; i++) {
+    for (i = 0; BTRCORE_GOOGLE_OUI_VALUES[i] != NULL; i++) {
         if (!strncmp(pcAddress, BTRCORE_GOOGLE_OUI_VALUES[i], BTRCORE_GOOGLE_OUI_LENGTH)) {
             BTRCORELOG_DEBUG(" Device OUI matches Google stadia gamepad\n");
             return TRUE;
