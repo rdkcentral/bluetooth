@@ -2646,7 +2646,7 @@ btrCore_OutTask (
                                 if ((lenBTRCoreDevType == enBTRCoreUnknown) && (leBTDevState == enBTRCoreDevStConnected) &&
                                     (btrCore_IsStadiaGamepad(pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].pcDeviceAddress) ||
                                      (pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].pcDeviceName[0] != '\0' &&
-                                      strstr(pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].pcDeviceName,"Stadia")))) {
+                                      strstr(pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].pcDeviceName, "Stadia")))) {
                                       BTRCORELOG_INFO("Identfied the device as stadia based on OUI values/device name ....\n");
                                       pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui16DevAppearanceBleSpec = BTRCORE_LE_HID_DEVICE_APPEARANCE;
                                       pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].enDeviceType = enBTRCore_DC_HID_GamePad;
