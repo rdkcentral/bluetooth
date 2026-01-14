@@ -69,6 +69,7 @@ int b_rdk_logger_enabled = 0;
 #define BTRCORE_LE_HID_DEVICE_APPEARANCE 0x03c4
 #define BTRCORE_REMOTE_OUI_LENGTH 8
 #define BTRCORE_AMAZON_OUI_LENGTH 8
+#define BTRCORE_GOOGLE_OUI_LENGTH 8
 
 static char * BTRCORE_REMOTE_OUI_VALUES[] = {
     "20:44:41", //LC103
@@ -86,6 +87,13 @@ static char * BTRCORE_REMOTE_OUI_VALUES[] = {
 static char * BTRCORE_AMAZON_OUI_VALUES[] = {
     "20:A1:71", //Luna Gamepad
     "EC:FD:86", //AmazonController-0B0
+    NULL
+};
+
+static char * BTRCORE_GOOGLE_OUI_VALUES[] = {
+    "61:47:AA", //Stadia8ZSF-5e22
+    "EF:6F:4D", //StadiaJVRN-58e0
+    "CA:7B:25", //Stadia2TFX-0fa6
     NULL
 };
 /* Local types */
@@ -812,6 +820,24 @@ btrCore_ClearScannedDevicesList (
 
     apsthBTRCore->skipDeviceDiscUpdate = 0;
     apsthBTRCore->numOfScannedDevices = 0;
+}
+
+static BOOLEAN btrCore_IsStadiaGamepad(
+    char * pcAddress
+) {
+    unsigned char i;
+    if (pcAddress == NULL) {
+        BTRCORELOG_ERROR("Received NULL mac address\n");
+        return FALSE;
+    }
+
+    for (i=0; BTRCORE_GOOGLE_OUI_VALUES[i] != NULL; i++) {
+        if (!strncmp(pcAddress, BTRCORE_GOOGLE_OUI_VALUES[i], BTRCORE_GOOGLE_OUI_LENGTH)) {
+            BTRCORELOG_DEBUG(" Device OUI matches Google stadia gamepad\n");
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 
 static BOOLEAN btrCore_IsLunaGamepad(
@@ -2617,6 +2643,14 @@ btrCore_OutTask (
                                 BTRCORELOG_TRACE ("leBTDevState = %d\n", leBTDevState);
                                 BTRCORELOG_TRACE ("lpstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceCurrState = %d\n", pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceCurrState);
                                 BTRCORELOG_TRACE ("lpstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDevicePrevState = %d\n", pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDevicePrevState);
+                                if ((lenBTRCoreDevType == enBTRCoreUnknown) && (leBTDevState == enBTRCoreDevStConnected) &&
+                                    (btrCore_IsStadiaGamepad(pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].pcDeviceAddress) ||
+                                     (pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].pcDeviceName[0] != '\0' &&
+                                      strstr(pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].pcDeviceName,"Stadia")))) {
+                                      BTRCORELOG_INFO("Identfied the device as stadia based on OUI values/device name ....\n");
+                                      pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui16DevAppearanceBleSpec = BTRCORE_LE_HID_DEVICE_APPEARANCE;
+                                      pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].enDeviceType = enBTRCore_DC_HID_GamePad;
+                                }
 
                                 if ((pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceCurrState != leBTDevState) &&
                                     (pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceCurrState != enBTRCoreDevStInitialized)) {
@@ -5113,7 +5147,11 @@ enBTRCoreRet BTRCore_refreshLEActionListForGamepads(tBTRCoreHandle hBTRCore)
             (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_Mouse)         ||
             (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_MouseKeyBoard) ||
             (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_Joystick)      ||
-            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_GamePad)) && 
+            (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_GamePad)       ||
+            ((pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_Unknown) &&
+             (btrCore_IsStadiaGamepad(pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceAddress) ||
+	     (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceName[0] != '\0' &&
+              strstr(pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceName,"Stadia"))))) &&
             !btrCore_IsDeviceRdkRcu(pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceAddress, pstlhBTRCore->stKnownDevicesArr[i32DevIdx].ui16DevAppearanceBleSpec) &&
             pstlhBTRCore->stKnownDevicesArr[i32DevIdx].ui32DevClassBtSpec == 0 ) {
 
@@ -5122,6 +5160,12 @@ enBTRCoreRet BTRCore_refreshLEActionListForGamepads(tBTRCoreHandle hBTRCore)
                 {
                     pstlhBTRCore->stKnownDevStInfoArr[i32DevIdx].eDevicePrevState = enBTRCoreDevStInitialized;
                     pstlhBTRCore->stKnownDevStInfoArr[i32DevIdx].eDeviceCurrState = enBTRCoreDevStPaired;
+                }
+
+                if (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_Unknown) {
+                    BTRCORELOG_INFO("No valid device type and appearance values so marking as HID ...\n");
+                    pstlhBTRCore->stKnownDevicesArr[i32DevIdx].ui16DevAppearanceBleSpec = BTRCORE_LE_HID_DEVICE_APPEARANCE;
+                    pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType = enBTRCore_DC_HID_GamePad;
                 }
 
                 snprintf(lcpAddDeviceCmd, BT_MAX_STR_LEN/2, "btmgmt add-device -t 1 -a 2 %s", pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceAddress);
