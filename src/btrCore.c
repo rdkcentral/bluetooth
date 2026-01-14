@@ -5150,7 +5150,7 @@ enBTRCoreRet BTRCore_refreshLEActionListForGamepads(tBTRCoreHandle hBTRCore)
             (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_HID_GamePad)       ||
             ((pstlhBTRCore->stKnownDevicesArr[i32DevIdx].enDeviceType == enBTRCore_DC_Unknown) &&
              (btrCore_IsStadiaGamepad(pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceAddress) ||
-	     (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceName[0] != '\0' &&
+             (pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceName[0] != '\0' &&
               strstr(pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceName,"Stadia"))))) &&
             !btrCore_IsDeviceRdkRcu(pstlhBTRCore->stKnownDevicesArr[i32DevIdx].pcDeviceAddress, pstlhBTRCore->stKnownDevicesArr[i32DevIdx].ui16DevAppearanceBleSpec) &&
             pstlhBTRCore->stKnownDevicesArr[i32DevIdx].ui32DevClassBtSpec == 0 ) {
