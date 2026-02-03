@@ -24,7 +24,7 @@ BTRCORE_IFCE_INC = -I${top_srcdir}/include/bt-ifce
 AM_CPPFLAGS = -Wall -Werror -I${top_srcdir}/include -I${top_srcdir}/include/logger -I${top_srcdir}/include/safec $(BTRCORE_IFCE_INC) 
 
 if IS_LIBSYSWRAPPER_ENABLED
-AM_LDFLAGS = -lsecure_wrapper -ltelemetry_msgsender
+AM_LDFLAGS = -lsecure_wrapper
 endif
 
 lib_LTLIBRARIES = libbtrCore.la
@@ -36,7 +36,7 @@ libbtrCore_la_SOURCES = btrCore.c btrCore_avMedia.c btrCore_le.c
 endif
 
 libbtrCore_la_CFLAGS = $(INCLUDE_FILES) $(GLIB_CFLAGS) $(LIBSYSWRAPPER_FLAG) $(SAFEC_CFLAGS)
-libbtrCore_la_LIBADD = $(GLIB_LIBS) $(BTR_CORE_LOGGER_LIBS) $(SAFEC_LFLAGS) $(top_builddir)/src/bt-ifce/libbtrCoreIfce.la
+libbtrCore_la_LIBADD = $(GLIB_LIBS) $(BTR_CORE_LOGGER_LIBS) $(SAFEC_LFLAGS) $(top_builddir)/src/bt-ifce/libbtrCoreIfce.la -ltelemetry_msgsender
 
 # Explicitly declare the header file U want to expose out of libbtrCore.so here
 include_HEADERS = $(top_srcdir)/include/btrCoreTypes.h
