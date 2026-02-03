@@ -27,6 +27,8 @@ if IS_LIBSYSWRAPPER_ENABLED
 AM_LDFLAGS = -lsecure_wrapper
 endif
 
+AM_LDFLAGS += -ltelemetry_msgsender
+
 lib_LTLIBRARIES = libbtrCore.la
 
 if LE_ONLY
