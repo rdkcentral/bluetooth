@@ -45,7 +45,8 @@ AM_CPPFLAGS = -Wall -Werror -I${top_srcdir}/include/logger -I${top_srcdir}/inclu
 if IS_LIBSYSWRAPPER_ENABLED
 AM_LDFLAGS = -lsecure_wrapper
 endif
- 
+AM_LDFLAGS += -ltelemetry_msgsender
+
 lib_LTLIBRARIES = libbtrCoreIfce.la
 libbtrCoreIfce_la_SOURCES = $(BTRCORE_IFCE_SRCS)
 libbtrCoreIfce_la_CFLAGS = $(INCLUDE_FILES) $(GLIB_CFLAGS) $(LIBSYSWRAPPER_FLAG) $(SAFEC_CFLAGS)
