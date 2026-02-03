@@ -24,10 +24,8 @@ BTRCORE_IFCE_INC = -I${top_srcdir}/include/bt-ifce
 AM_CPPFLAGS = -Wall -Werror -I${top_srcdir}/include -I${top_srcdir}/include/logger -I${top_srcdir}/include/safec $(BTRCORE_IFCE_INC) 
 
 if IS_LIBSYSWRAPPER_ENABLED
-AM_LDFLAGS = -lsecure_wrapper
+AM_LDFLAGS = -lsecure_wrapper -ltelemetry_msgsender
 endif
-
-AM_LDFLAGS += -ltelemetry_msgsender
 
 lib_LTLIBRARIES = libbtrCore.la
 
