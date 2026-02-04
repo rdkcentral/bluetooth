@@ -3264,7 +3264,7 @@ BTRCore_Init (
     unBTOpIfceProp  lunBtOpAdapProp;
 
 	char btmgr_name[] = "btmgr";
-	t2_init(btmgr_name);
+	t2_init_1(btmgr_name);
 	
 #ifdef RDK_LOGGER_ENABLED
     const char* pDebugConfig = NULL;
