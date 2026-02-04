@@ -36,6 +36,7 @@
 #include <string.h>     //for strcnp
 #include <errno.h>      //for error numbers
 #include <stdint.h>
+#include <telemetry_busmessage_sender.h>
 
 /* Ext lib Headers */
 #include <glib.h>
@@ -3262,6 +3263,9 @@ BTRCore_Init (
     stBTRCoreHdl*   pstlhBTRCore = NULL; 
     unBTOpIfceProp  lunBtOpAdapProp;
 
+	char btmgr_name[] = "btmgr";
+	t2_init(btmgr_name);
+	
 #ifdef RDK_LOGGER_ENABLED
     const char* pDebugConfig = NULL;
     const char* BTRCORE_DEBUG_ACTUAL_PATH    = "/etc/debug.ini";
