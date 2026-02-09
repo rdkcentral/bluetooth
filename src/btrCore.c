@@ -7139,7 +7139,7 @@ btrCore_BTDeviceStatusUpdateCb (
                 strncpy(FoundDevice.pcDeviceName,    apstBTDeviceInfo->pcName,       BD_NAME_LEN);
                 strncpy(FoundDevice.pcDeviceAddress, apstBTDeviceInfo->pcAddress,    BD_NAME_LEN);
 
-				static char * TempXboxName = "Xbox Wireless Controller"
+				static char * TempXboxName = "Xbox Wireless Controller";
 
                 if(btrCore_IsDevNameSameAsAddress(&FoundDevice)) {
 					/* Xbox Gen3 exception: force immediate UI update with a temporary name */
