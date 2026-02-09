@@ -7149,6 +7149,7 @@ btrCore_BTDeviceStatusUpdateCb (
                      ERR_CHK(rc);
 					   rc = strcpy_s(apstBTDeviceInfo->pcName,BD_NAME_LEN,TempXboxName);
                      ERR_CHK(rc);
+					   FoundDevice.pcDeviceAddress[BD_ADDR_LEN - 1] = '\0'; 
 
 					   BTRCORELOG_INFO("Gen3 detected by OUI; forcing UI update with temporary name for %s\n",FoundDevice.pcDeviceAddress);
 					   enBTRCoreRet ret = btrCore_OutTaskAddOp(lpstlhBTRCore->pGAQueueOutTask,enBTRCoreTaskOpProcess,enBTRCoreTaskPTcBDeviceDisc,&lstOTskInData);
