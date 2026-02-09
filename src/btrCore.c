@@ -7141,12 +7141,24 @@ btrCore_BTDeviceStatusUpdateCb (
                 if(btrCore_IsDevNameSameAsAddress(&FoundDevice)) {
 					/* Xbox Gen3 exception: force immediate UI update with a temporary name */
                    if (btrCore_IsXboxGen3Gamepad(FoundDevice.pcDeviceAddress) && enBTRCoreHID == lenBTRCoreDevType) {
-                     errno_t rc = strcpy_s(FoundDevice.pcDeviceName,BD_NAME_LEN,"Xbox Wireless Controller-temp");
-                   
+                     errno_t rc;
+					   rc = strcpy_s(FoundDevice.pcDeviceName,BD_NAME_LEN,"Xbox Wireless Controller");
                      ERR_CHK(rc);
-                   
-                     BTRCORELOG_INFO("Gen3 detected by OUI; forcing UI update with temporary name for %s\n",FoundDevice.pcDeviceAddress);
+					   rc = strcpy_s(apstBTDeviceInfo->pcName,BD_NAME_LEN,"Xbox Wireless Controller");
+                     ERR_CHK(rc);
+
+					   BTRCORELOG_INFO("Gen3 detected by OUI; forcing UI update with temporary name for %s\n",FoundDevice.pcDeviceAddress);
+					   enBTRCoreRet ret = btrCore_OutTaskAddOp(lpstlhBTRCore->pGAQueueOutTask,enBTRCoreTaskOpProcess,enBTRCoreTaskPTcBDeviceDisc,&lstOTskInData);
+                     
+                     if (ret == enBTRCoreSuccess) {
+                     BTRCORELOG_INFO("Gen3 TEMP-NAME POSTED: DeviceDisc event queued for %s (name=%s)\n",FoundDevice.pcDeviceAddress,FoundDevice.pcDeviceName);
                      }
+                     
+                     else {
+                     BTRCORELOG_WARN("Gen3 TEMP-NAME FAILED: DeviceDisc enqueue failed %d for %s\n",ret,FoundDevice.pcDeviceAddress);
+                     }
+					   return 0;
+				   }
                     else if ((lenBTRCoreDevType == enBTRCoreSpeakers) || (lenBTRCoreDevType == enBTRCoreHeadSet) || (enBTRCoreHID == lenBTRCoreDevType)) {
                         BTRCORELOG_INFO("pcName - %s pcAddress - %s DeviceType - %d skipCount - %lld\n",apstBTDeviceInfo->pcName,apstBTDeviceInfo->pcAddress,lenBTRCoreDevType,lpstlhBTRCore->skipDeviceDiscUpdate);
 
