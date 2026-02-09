@@ -98,7 +98,7 @@ static char * BTRCORE_GOOGLE_OUI_VALUES[] = {
     NULL
 };
 
-static char* BTRCORE_XBOX_GEN3_OUI_VALUES[] = {
+static char * BTRCORE_XBOX_GEN3_OUI_VALUES[] = {
     "44:16:22",   // Microsoft (Xbox Gen3)
     "9C:AA:1B",   // Microsoft (Xbox Gen3)
     NULL
@@ -865,8 +865,9 @@ static BOOLEAN btrCore_IsLunaGamepad(
     }
     return FALSE;
 }
-static BOOLEAN
-btrCore_IsXboxGen3Gamepad(char* pcAddress) {
+static BOOLEAN btrCore_IsXboxGen3Gamepad(
+     char * pcAddress
+) {
     unsigned char i;
     if (pcAddress == NULL) {
         BTRCORELOG_ERROR("Received NULL mac address\n");
@@ -7152,10 +7153,6 @@ btrCore_BTDeviceStatusUpdateCb (
                      
                      if (ret == enBTRCoreSuccess) {
                      BTRCORELOG_INFO("Gen3 TEMP-NAME POSTED: DeviceDisc event queued for %s (name=%s)\n",FoundDevice.pcDeviceAddress,FoundDevice.pcDeviceName);
-                     }
-                     
-                     else {
-                     BTRCORELOG_WARN("Gen3 TEMP-NAME FAILED: DeviceDisc enqueue failed %d for %s\n",ret,FoundDevice.pcDeviceAddress);
                      }
 					   return 0;
 				   }
