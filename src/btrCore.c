@@ -7145,9 +7145,10 @@ btrCore_BTDeviceStatusUpdateCb (
                    btrCore_IsXboxGen3Gamepad(FoundDevice.pcDeviceAddress)) {
 				   static const char* xboxTempName = "Xbox Wireless Controller";
                    errno_t rc;
+				   MEMSET_S(FoundDevice.pcDeviceName, BD_NAME_LEN, 0, BD_NAME_LEN);
                      rc = strcpy_s(FoundDevice.pcDeviceName,BD_NAME_LEN,xboxTempName);
                      ERR_CHK(rc);
-                     
+                   MEMSET_S(apstBTDeviceInfo->pcName, BD_NAME_LEN, 0, BD_NAME_LEN);  
                      rc = strcpy_s(apstBTDeviceInfo->pcName,BD_NAME_LEN,xboxTempName);
                      ERR_CHK(rc);
                    
