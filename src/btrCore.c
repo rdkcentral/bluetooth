@@ -98,7 +98,7 @@ static char * BTRCORE_GOOGLE_OUI_VALUES[] = {
     NULL
 };
 
-static char* BTRCORE_XBOX_GEN3_OUI_VALUES[] = {
+static char * BTRCORE_XBOX_GEN3_OUI_VALUES[] = {
     "44:16:22",   // Microsoft (Xbox Gen3)
     "9C:AA:1B",   // Microsoft (Xbox Gen3)
     NULL
@@ -866,8 +866,9 @@ static BOOLEAN btrCore_IsLunaGamepad(
     return FALSE;
 }
 
-static BOOLEAN
-btrCore_IsXboxGen3Gamepad(char* pcAddress) {
+static BOOLEAN btrCore_IsXboxGen3Gamepad(
+    char * pcAddress
+) {
     unsigned char i;
     if (pcAddress == NULL) {
         BTRCORELOG_ERROR("Received NULL mac address\n");
@@ -7142,14 +7143,15 @@ btrCore_BTDeviceStatusUpdateCb (
 				/* Xbox Gen3 exception: force immediate UI update with a temporary name */
                if (btrCore_IsDevNameSameAsAddress(&FoundDevice) &&
                    btrCore_IsXboxGen3Gamepad(FoundDevice.pcDeviceAddress)) {
+				   static const char* xboxTempName = "Xbox Wireless Controller";
                    errno_t rc;
-                     rc = strcpy_s(FoundDevice.pcDeviceName,BD_NAME_LEN,"Xbox Wireless Controller");
+                     rc = strcpy_s(FoundDevice.pcDeviceName,BD_NAME_LEN,xboxTempName);
                      ERR_CHK(rc);
                      
-                     rc = strcpy_s(apstBTDeviceInfo->pcName,BD_NAME_LEN,"Xbox Wireless Controller");
+                     rc = strcpy_s(apstBTDeviceInfo->pcName,BD_NAME_LEN,xboxTempName);
                      ERR_CHK(rc);
                    
-                   BTRCORELOG_INFO("Gen3 detected by OUI; forcing UI update with temporary name for %s\n",FoundDevice.pcDeviceAddress);
+                   BTRCORELOG_INFO("Gen3 detected by OUI; forcing UI update with temporary name for %s\n",FoundDevice.pcDeviceName);
                    }
 
                 if(btrCore_IsDevNameSameAsAddress(&FoundDevice)) {
