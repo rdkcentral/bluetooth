@@ -7141,16 +7141,17 @@ btrCore_BTDeviceStatusUpdateCb (
                 strncpy(FoundDevice.pcDeviceAddress, apstBTDeviceInfo->pcAddress,    BD_NAME_LEN);
 
 				/* Xbox Gen3 exception: force immediate UI update with a temporary name */
-               if (btrCore_IsDevNameSameAsAddress(&FoundDevice) &&
+               if (btrCore_IsDevNameSameAsAddress(&FoundDevice) && 
+				   (lenBTRCoreDevType == enBTRCoreHID) &&
                    btrCore_IsXboxGen3Gamepad(FoundDevice.pcDeviceAddress)) {
 				   static const char* xboxTempName = "Xbox Wireless Controller";
                    errno_t rc;
 				   MEMSET_S(FoundDevice.pcDeviceName, BD_NAME_LEN, 0, BD_NAME_LEN);
-                     rc = strcpy_s(FoundDevice.pcDeviceName,BD_NAME_LEN,xboxTempName);
-                     ERR_CHK(rc);
+                   rc = strcpy_s(FoundDevice.pcDeviceName,BD_NAME_LEN,xboxTempName);
+                   ERR_CHK(rc);
                    MEMSET_S(apstBTDeviceInfo->pcName, BD_NAME_LEN, 0, BD_NAME_LEN);  
-                     rc = strcpy_s(apstBTDeviceInfo->pcName,BD_NAME_LEN,xboxTempName);
-                     ERR_CHK(rc);
+                   rc = strcpy_s(apstBTDeviceInfo->pcName,BD_NAME_LEN,xboxTempName);
+                   ERR_CHK(rc);
                    
                    BTRCORELOG_INFO("Gen3 detected by OUI; forcing UI update with temporary name for %s\n",FoundDevice.pcDeviceName);
                    }
