@@ -7146,12 +7146,7 @@ btrCore_BTDeviceStatusUpdateCb (
                     MEMSET_S(apstBTDeviceInfo->pcName, BD_NAME_LEN, 0, BD_NAME_LEN);
                     rc = strcpy_s(apstBTDeviceInfo->pcName, BD_NAME_LEN, xboxTempName);
                     ERR_CHK(rc);
-
-                    BTRCORELOG_INFO("Gen3 detected by OUI; forcing UI update with temporary name for %s\n", FoundDevice.pcDeviceName);
-                }
-                    rc = strcpy_s(apstBTDeviceInfo->pcName,BD_NAME_LEN,"Xbox Wireless Controller");
-                    ERR_CHK(rc);
-
+					
                     BTRCORELOG_INFO("Gen3 detected by OUI; forcing UI update with temporary name for %s\n",FoundDevice.pcDeviceAddress);
                 }
                 if(btrCore_IsDevNameSameAsAddress(&FoundDevice)) {
