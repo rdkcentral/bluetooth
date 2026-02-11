@@ -30,9 +30,9 @@ endif
 lib_LTLIBRARIES = libbtrCore.la
 
 if LE_ONLY
-libbtrCore_la_SOURCES = btrCore.c btrCore_le.c
+libbtrCore_la_SOURCES = btrCore.c btrCore_le.c btrCore_telemetry.c
 else
-libbtrCore_la_SOURCES = btrCore.c btrCore_avMedia.c btrCore_le.c
+libbtrCore_la_SOURCES = btrCore.c btrCore_avMedia.c btrCore_le.c btrCore_telemetry.c
 endif
 
 libbtrCore_la_CFLAGS = $(INCLUDE_FILES) $(GLIB_CFLAGS) $(LIBSYSWRAPPER_FLAG) $(SAFEC_CFLAGS)
@@ -42,3 +42,4 @@ libbtrCore_la_LIBADD = $(GLIB_LIBS) $(BTR_CORE_LOGGER_LIBS) $(SAFEC_LFLAGS) $(to
 include_HEADERS = $(top_srcdir)/include/btrCoreTypes.h
 include_HEADERS += $(top_srcdir)/include/btrCore.h
 include_HEADERS += $(top_srcdir)/include/btrCore_service.h
+include_HEADERS += $(top_srcdir)/include/logger/btrCore_telemetry.h

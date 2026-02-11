@@ -36,13 +36,13 @@
 #include <string.h>     //for strcnp
 #include <errno.h>      //for error numbers
 #include <stdint.h>
-#include <telemetry_busmessage_sender.h>
 
 /* Ext lib Headers */
 #include <glib.h>
 
 /* Interface lib Headers */
 #include "btrCore_logger.h"
+#include "btrCore_telemetry.h"
 #include "safec_lib.h"
 
 /* Local Headers */
@@ -3139,6 +3139,12 @@ btrCore_OutTask (
                                     }
                                     else {
                                         //This is telemetry log. If we change this print,need to change and configure the telemetry string in xconf server.
+                                        char buffer[128];
+                                        snprintf(buffer, sizeof(buffer), "Unsupport BT device detected v%04Xp%04Xd%04X",
+                                            pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
+                                            pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId,
+                                            pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasDeviceId);
+                                        telemetry_event_s("BT_INFO_NotSupp_split", buffer);
                                         BTRCORELOG_INFO ("Unsupport BT device detected v%04Xp%04Xd%04X\n",
                                         pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
                                         pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId,
