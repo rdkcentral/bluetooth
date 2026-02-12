@@ -39,6 +39,7 @@
 
 /* Interface lib Headers */
 #include "btrCore_logger.h"
+#include "btrCore_telemetry.h"
 
 /* Local Headers */
 #include "btrCore_bt_ifce.h"
@@ -5337,6 +5338,8 @@ btrCore_BTStartDiscoveryCb (
         BTRCORELOG_INFO("Discovery started successfully\n");
     }
     else {
+        //This is telemetry log. If we change this marker name, need to change and configure the telemetry marker in xconf server.
+        telemetry_event_d("BT_ERR_DiscStartFail", 1);
         BTRCORELOG_INFO("Discovery start failed - %s\n",error->message);
     }
 }
@@ -5358,6 +5361,8 @@ btrCore_BTStopDiscoveryCb (
         BTRCORELOG_INFO("Discovery stopped successfully\n");
     }
     else {
+        //This is telemetry log. If we change this marker name, need to change and configure the telemetry marker in xconf server.
+        telemetry_event_d("BT_ERR_DiscStopFail", 1);
         BTRCORELOG_INFO("Discovery stop failed - %s\n",error->message);
     }
 }
