@@ -4478,6 +4478,8 @@ BTRCore_PairDevice (
                                     pDeviceAddress,
                                     pairingOp) < 0) {
         BTRCORELOG_ERROR ("Failed to pair a device\n");
+        //This is telemetry log. If we change this marker name, need to change and configure the telemetry marker in xconf server.
+        telemetry_event_d("BT_ERR_FailToPair", 1);
         return enBTRCorePairingFailed;
     }
 
