@@ -3277,9 +3277,6 @@ BTRCore_Init (
     stBTRCoreHdl*   pstlhBTRCore = NULL; 
     unBTOpIfceProp  lunBtOpAdapProp;
 
-	char btmgr_name[] = "btmgr";
-	telemetry_init(btmgr_name);
-	
 #ifdef RDK_LOGGER_ENABLED
     const char* pDebugConfig = NULL;
     const char* BTRCORE_DEBUG_ACTUAL_PATH    = "/etc/debug.ini";
