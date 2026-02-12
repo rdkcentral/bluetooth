@@ -7140,21 +7140,21 @@ btrCore_BTDeviceStatusUpdateCb (
                 strncpy(FoundDevice.pcDeviceName,    apstBTDeviceInfo->pcName,       BD_NAME_LEN);
                 strncpy(FoundDevice.pcDeviceAddress, apstBTDeviceInfo->pcAddress,    BD_NAME_LEN);
 
-				/* Xbox Gen3 exception: force immediate UI update with a temporary name */
+                /* Xbox Gen3 exception: force immediate UI update with a temporary name */
                 if (btrCore_IsDevNameSameAsAddress(&FoundDevice) &&
                     (lenBTRCoreDevType == enBTRCoreHID) &&
                     btrCore_IsXboxGen3Gamepad(FoundDevice.pcDeviceAddress)) {
-					static const char* xboxTempName = "Xbox Wireless Controller";
-					errno_t rc;
-				    MEMSET_S(FoundDevice.pcDeviceName, BD_NAME_LEN, 0, BD_NAME_LEN);
-					rc = strcpy_s(FoundDevice.pcDeviceName,BD_NAME_LEN,xboxTempName);
-                    ERR_CHK(rc);
-					MEMSET_S(apstBTDeviceInfo->pcName, BD_NAME_LEN, 0, BD_NAME_LEN);
-					rc = strcpy_s(apstBTDeviceInfo->pcName,BD_NAME_LEN,xboxTempName);
-                    ERR_CHK(rc);
+                         static const char* xboxTempName = "Xbox Wireless Controller";
+                         errno_t rc;
+                         MEMSET_S(FoundDevice.pcDeviceName, sizeof(FoundDevice.pcDeviceName), 0, sizeof(FoundDevice.pcDeviceName));
+                         rc = strcpy_s(FoundDevice.pcDeviceName, sizeof(FoundDevice.pcDeviceName), xboxTempName);
+                         ERR_CHK(rc);
+                         MEMSET_S(apstBTDeviceInfo->pcName, sizeof(apstBTDeviceInfo->pcName), 0, sizeof(apstBTDeviceInfo->pcName));
+                         rc = strcpy_s(apstBTDeviceInfo->pcName, sizeof(apstBTDeviceInfo->pcName), xboxTempName);
+                         ERR_CHK(rc);
 
-					BTRCORELOG_INFO("Gen3 detected by OUI; forcing UI update with temporary name for %s\n",FoundDevice.pcDeviceName);
-				}
+                         BTRCORELOG_INFO("Gen3 detected by OUI; forcing UI update with temporary name for %s\n",FoundDevice.pcDeviceName);
+                 }
 					
 
                 if(btrCore_IsDevNameSameAsAddress(&FoundDevice)) {
