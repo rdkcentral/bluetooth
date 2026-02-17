@@ -4699,17 +4699,28 @@ BtrCore_BTGetPairedDeviceInfo (
     int             d = 0;
 
 
-    if (!apstBtIfceHdl || !apBtAdapter || !pPairedDeviceInfo)
+    if (!apstBtIfceHdl || !apBtAdapter || !pPairedDeviceInfo ||
+        !pstlhBtIfce || !pstlhBtIfce->pDBusConn) {
+        BTRCORELOG_ERROR ("NULL check failed.\n");
         return -1;
+    }
 
 
     dbus_error_init(&lDBusErr);
     lpDBusReply = btrCore_BTSendMethodCall(pstlhBtIfce->pDBusConn, "/", DBUS_INTERFACE_OBJECT_MANAGER, "GetManagedObjects");
     if (!lpDBusReply) {
-        BTRCORELOG_ERROR ("org.bluez.Manager.ListAdapters returned an error: '%s'\n", lDBusErr.message);
-        dbus_error_free(&lDBusErr);
+        if (dbus_error_is_set(&lDBusErr)) {
+            BTRCORELOG_ERROR ("GetManagedObjects returned an error: '%s'\n", lDBusErr.message);
+            dbus_error_free(&lDBusErr);
+        }
+        else {
+            BTRCORELOG_ERROR ("GetManagedObjects returned an error:unknown error\n");
+        }
+
         return -1;
     }
+
+    BTRCORELOG_INFO("Hitting BtrCore_BTGetPairedDeviceInfo\n");
 
     for ( i = 0; i < BT_MAX_NUM_DEVICE; i++) {
         MEMSET_S(&paths[i][0], BT_MAX_DEV_PATH_LEN, '\0', BT_MAX_DEV_PATH_LEN);
@@ -4778,14 +4789,31 @@ BtrCore_BTGetPairedDeviceInfo (
                                             ++b;
                                         }
                                         else if (DBUS_TYPE_BOOLEAN == dbus_message_iter_get_arg_type(&innerDictEntryIter3)) {
-                                            bool *device_prop = FALSE;
+                                            dbus_bool_t device_prop = 0;
                                             dbus_message_iter_get_basic(&innerDictEntryIter3, &device_prop);
 
                                             if (dbusObject2) {
                                                 if (strcmp(dbusObject2, "Paired") == 0 && device_prop) {
-                                                    if(adapter_path)
+                                                    BTRCORELOG_INFO("device_prop changed from pointer to bool, %d\n", device_prop);
+                                                    if ((adapter_path) && (adapter_path[0] != '\0') && (d < BT_MAX_NUM_DEVICE)) {
                                                        strncpy(&paths[d][0], adapter_path, (strlen(adapter_path) < BT_MAX_DEV_PATH_LEN) ? strlen(adapter_path) : BT_MAX_DEV_PATH_LEN - 1);
-                                                    ++d;
+                                                       ++d;
+                                                       BTRCORELOG_INFO("path is copied for paired devices.\n");
+                                                    }
+                                                    else {
+                                                        if (!adapter_path) {
+                                                            BTRCORELOG_INFO("adapter_path is NULL\n");
+                                                        }
+                                                        else if (adapter_path[0] == '\0') {
+                                                            BTRCORELOG_INFO("adapter_path string is empty\n");
+                                                        }
+                                                        else if (d >= BT_MAX_NUM_DEVICE) {
+                                                            BTRCORELOG_WARN("Paired device list full; dropping extra entries\n");
+                                                        }
+                                                    }
+                                                }
+                                                else {
+                                                    BTRCORELOG_INFO("In else: device_prop changed from pointer to bool, %d\n", device_prop);
                                                 }
                                             }
                                         }
@@ -4820,7 +4848,8 @@ BtrCore_BTGetPairedDeviceInfo (
         }
     }
 
-    num = d;
+    num = (d <= BT_MAX_NUM_DEVICE) ? d : BT_MAX_NUM_DEVICE;
+    BTRCORELOG_INFO("num is: %d\n", num);
 
     /* Update the number of devices */
     pPairedDeviceInfo->numberOfDevices = num;
@@ -4831,6 +4860,10 @@ BtrCore_BTGetPairedDeviceInfo (
         strncpy(&pPairedDeviceInfo->devicePath[i][0], &paths[i][0], (strlen(&paths[i][0]) < BT_MAX_DEV_PATH_LEN) ? strlen(&paths[i][0]) : BT_MAX_DEV_PATH_LEN - 1);
     }
 
+    if (i >= num) {
+        BTRCORELOG_INFO("num is: %d, i is %d\n", num, i);
+    }
+
     dbus_message_unref(lpDBusReply);
     lpDBusReply = NULL;
 
@@ -4838,33 +4871,54 @@ BtrCore_BTGetPairedDeviceInfo (
     for ( i = 0; i < num; i++) {
         DBusPendingCall*    lpDBusPendC = NULL;
 
+        if (pPairedDeviceInfo->devicePath[i][0] == '\0') {
+            BTRCORELOG_INFO("Skipping empty device path at idx %d\n", i);
+            continue;
+        }
+
         lpDBusMsg = dbus_message_new_method_call(BT_DBUS_BLUEZ_PATH,
                                                  pPairedDeviceInfo->devicePath[i],
                                                  DBUS_INTERFACE_PROPERTIES,
                                                  "GetAll");
-        dbus_message_append_args(lpDBusMsg, DBUS_TYPE_STRING, &pdeviceInterface, DBUS_TYPE_INVALID);
 
-        dbus_error_init(&lDBusErr);
-
-        // Check if message creation was successful and the connection is not closed yet.
-        if (lpDBusMsg == NULL || pstlhBtIfce == NULL || pstlhBtIfce->pDBusConn == NULL) {
+        if (lpDBusMsg == NULL) {
             BTRCORELOG_ERROR ("Failed to create message ...\n");
             return -1;
         }
 
+        dbus_message_append_args(lpDBusMsg, DBUS_TYPE_STRING, &pdeviceInterface, DBUS_TYPE_INVALID);
+
+        //Check if the connection is not closed yet.
+        if (pstlhBtIfce->pDBusConn == NULL) {
+            if (lpDBusMsg) {
+                BTRCORELOG_INFO ("Message is not null, unref it\n");
+                dbus_message_unref(lpDBusMsg);
+                lpDBusMsg = NULL;
+            }
+            else {
+                BTRCORELOG_ERROR ("lpDBusMsg is already NULL:2\n");
+            }
+            BTRCORELOG_ERROR ("pDBusConn is NULL\n");
+            return -1;
+        }
+
         if (!dbus_connection_send_with_reply(pstlhBtIfce->pDBusConn, lpDBusMsg, &lpDBusPendC, -1)) {
-            BTRCORELOG_ERROR ("failed to send message");
+            BTRCORELOG_ERROR ("failed to send message\n");
+            dbus_message_unref(lpDBusMsg);
+            lpDBusMsg = NULL;
             return -1;
         }
 
         dbus_connection_flush(pstlhBtIfce->pDBusConn);
         dbus_message_unref(lpDBusMsg);
+        lpDBusMsg = NULL;
         // CID 342201: Unused value (UNUSED_VALUE)
 
         if (lpDBusPendC != NULL) {
             dbus_pending_call_block(lpDBusPendC);
             lpDBusReply =  dbus_pending_call_steal_reply(lpDBusPendC);
             dbus_pending_call_unref(lpDBusPendC);
+            lpDBusPendC = NULL;
 
             if (lpDBusReply != NULL) {
                 stBTDeviceInfo  apstBTDeviceInfo;
@@ -4873,6 +4927,7 @@ BtrCore_BTGetPairedDeviceInfo (
                 if (0 != btrCore_BTParseDevice(lpDBusReply, &apstBTDeviceInfo)) {
                     BTRCORELOG_ERROR ("Parsing the device %s failed..\n", pPairedDeviceInfo->devicePath[i]);
                     dbus_message_unref(lpDBusReply);
+                    lpDBusReply = NULL;
                     return -1;
                 }
                 else {
@@ -4880,8 +4935,19 @@ BtrCore_BTGetPairedDeviceInfo (
                 }
 
                 dbus_message_unref(lpDBusReply);
+                lpDBusReply = NULL;
+            }
+            else {
+                BTRCORELOG_INFO ("lpDBusReply is already NULL\n");
             }
         }
+        else {
+            BTRCORELOG_INFO ("lpDBusPendC is already NULL\n");
+        }
+    }
+
+    if (i >= num) {
+        BTRCORELOG_INFO("2 - num is: %d, i is %d\n", num, i);
     }
 
 
