@@ -7144,8 +7144,7 @@ btrCore_BTDeviceStatusUpdateCb (
                 strncpy(FoundDevice.pcDeviceAddress, apstBTDeviceInfo->pcAddress,    BD_NAME_LEN);
 
 				if (btrCore_IsDevNameSameAsAddress(&FoundDevice) &&
-    (lenBTRCoreDevType == enBTRCoreDevType_HID_GamePad)) {    // or your actual gamepad dev type
-    // WARNING: This blocks your event handler for 5 seconds!
+    (lenBTRCoreDevType == enBTRCoreDevType_HID_GamePad)) {  
     BTRCORELOG_INFO("Detected nameless gamepad %s; blocking for 5 seconds...", FoundDevice.pcDeviceAddress);
     sleep(5);
     BTRCORELOG_INFO("Checking device %s after 5 seconds.", FoundDevice.pcDeviceAddress);
