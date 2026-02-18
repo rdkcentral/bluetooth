@@ -41,7 +41,7 @@ void telemetry_init(char* name)
  */
 void telemetry_event_s(char* marker, char* value)
 {
-    BTRCORELOG_TRACE("T2: marker=\"%s\", value=\"%s\"\n", marker, value);
+    // TRACE log removed as per request
     T2ERROR t2error = t2_event_s(marker, value);
     if (t2error != T2ERROR_SUCCESS) {
         BTRCORELOG_ERROR("t2_event_s(\"%s\", \"%s\") returned error code %d\n", marker, value, t2error);
@@ -53,7 +53,7 @@ void telemetry_event_s(char* marker, char* value)
  */
 void telemetry_event_d(char* marker, int value)
 {
-    BTRCORELOG_TRACE("T2: marker=\"%s\", value=%d\n", marker, value);
+    // TRACE log removed as per request
     T2ERROR t2error = t2_event_d(marker, value);
     if (t2error != T2ERROR_SUCCESS) {
         BTRCORELOG_ERROR("t2_event_d(\"%s\", %d) returned error code %d\n", marker, value, t2error);
@@ -65,7 +65,7 @@ void telemetry_event_d(char* marker, int value)
  */
 void telemetry_event_f(char* marker, double value)
 {
-    BTRCORELOG_TRACE("T2: marker=\"%s\", value=%f\n", marker, value);
+    // TRACE log removed as per request
     T2ERROR t2error = t2_event_f(marker, value);
     if (t2error != T2ERROR_SUCCESS) {
         BTRCORELOG_ERROR("t2_event_f(\"%s\", %f) returned error code %d\n", marker, value, t2error);
