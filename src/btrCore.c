@@ -880,7 +880,7 @@ static gpointer btrCore_NamelessGamepadTimerThread(gpointer arg) {
     stBTRCoreBTDevice* gamepad = btrCore_FindDeviceByMac(timerArg->lpstlhBTRCore, timerArg->mac);
     if (gamepad &&
         btrCore_IsDevNameSameAsAddress(gamepad) &&
-        gamepad->enDeviceType == enBTRCoreHID &&
+        gamepad->enDeviceType == enBTRCore_DC_HID_GamePad &&
         btrCore_IsAnyPS5Connected(timerArg->lpstlhBTRCore)) {
 
         strncpy(gamepad->pcDeviceName, "Wireless Controller", BD_NAME_LEN-1);
