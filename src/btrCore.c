@@ -97,28 +97,20 @@ static char * BTRCORE_GOOGLE_OUI_VALUES[] = {
     NULL
 };
 
-static stBTRCoreBTDevice* btrCore_FindDeviceByMac(stBTRCoreHdl* lpstlhBTRCore, const char* mac) {
+static stBTRCoreBTDevice* btrCore_FindDeviceByMac(tBTRCoreHandle lpstlhBTRCore, const char* mac) {
+    stBTRCore* core = (stBTRCore*)lpstlhBTRCore;
     int i;
-    for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++)
-        if (lpstlhBTRCore->stScannedDevicesArr[i].bFound &&
-            strncmp(lpstlhBTRCore->stScannedDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0)
-            return &lpstlhBTRCore->stScannedDevicesArr[i];
-    for (i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++)
-        if (lpstlhBTRCore->stKnownDevicesArr[i].tDeviceId &&
-            strncmp(lpstlhBTRCore->stKnownDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0)
-            return &lpstlhBTRCore->stKnownDevicesArr[i];
-    return NULL;
-}
-
-static gboolean btrCore_IsAnyPS5Connected(stBTRCoreHdl* lpstlhBTRCore) {
-    int i;
-    for (i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
-        if (lpstlhBTRCore->stKnownDevicesArr[i].bDeviceConnected &&
-            strcmp(lpstlhBTRCore->stKnownDevicesArr[i].pcDeviceName, "DualSense Wireless Controller") == 0) {
-            return TRUE;
-        }
+    for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
+        if (core->stScannedDevicesArr[i].bFound &&
+            strncmp(core->stScannedDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0)
+            return &core->stScannedDevicesArr[i];
     }
-    return FALSE;
+    for (i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
+        if (core->stKnownDevicesArr[i].tDeviceId &&
+            strncmp(core->stKnownDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0)
+            return &core->stKnownDevicesArr[i];
+    }
+    return NULL;
 }
 
 /* Local types */
@@ -882,6 +874,19 @@ static BOOLEAN btrCore_IsLunaGamepad(
     }
     return FALSE;
 }
+
+static BOOLEAN btrCore_IsAnyPS5Connected(tBTRCoreHandle lpstlhBTRCore) {
+    stBTRCore* core = (stBTRCore*)lpstlhBTRCore;
+    int i;
+    for (i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
+        if (core->stKnownDevicesArr[i].bDeviceConnected &&
+            strcmp(core->stKnownDevicesArr[i].pcDeviceName, "DualSense Wireless Controller") == 0) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 static BOOLEAN btrCore_IsDeviceRdkRcu(
     char * pcAddress, 
     unsigned short ui16Appearance
@@ -7139,22 +7144,23 @@ btrCore_BTDeviceStatusUpdateCb (
                 strncpy(FoundDevice.pcDeviceAddress, apstBTDeviceInfo->pcAddress,    BD_NAME_LEN);
 
 				if (btrCore_IsDevNameSameAsAddress(&FoundDevice) &&
-                    (lenBTRCoreDevType == enBTRCore_DC_HID_GamePad)) {
+    (lenBTRCoreDevType == enBTRCoreDevType_HID_GamePad)) {    // or your actual gamepad dev type
+    // WARNING: This blocks your event handler for 5 seconds!
+    BTRCORELOG_INFO("Detected nameless gamepad %s; blocking for 5 seconds...", FoundDevice.pcDeviceAddress);
+    sleep(5);
+    BTRCORELOG_INFO("Checking device %s after 5 seconds.", FoundDevice.pcDeviceAddress);
 
-                     BTRCORELOG_INFO("Detected nameless gamepad %s; blocking for 5 seconds...", FoundDevice.pcDeviceAddress);
-                     sleep(5);
-                     BTRCORELOG_INFO("Checking device %s after 5 seconds.", FoundDevice.pcDeviceAddress);
+    stBTRCoreBTDevice* gamepad = btrCore_FindDeviceByMac(lpstlhBTRCore, FoundDevice.pcDeviceAddress);
+    if (gamepad &&
+        btrCore_IsDevNameSameAsAddress(gamepad) &&
+        gamepad->enDeviceType == enBTRCoreDevType_HID_GamePad &&  // (replace with your actual value)
+        btrCore_IsAnyPS5Connected(lpstlhBTRCore)) {
 
-                     stBTRCoreBTDevice* gamepad = btrCore_FindDeviceByMac(lpstlhBTRCore, FoundDevice.pcDeviceAddress);
-                     if (gamepad &&
-                         btrCore_IsDevNameSameAsAddress(gamepad) &&
-                         gamepad->enDeviceType == enBTRCore_DC_HID_GamePad &&
-                         btrCore_IsAnyPS5Connected(lpstlhBTRCore)) {
-                          strncpy(gamepad->pcDeviceName, "Wireless Controller", BD_NAME_LEN-1);
-                          gamepad->pcDeviceName[BD_NAME_LEN-1] = '\0';
-                          BTRCORELOG_INFO("Set fallback name 'Wireless Controller' for device %s", gamepad->pcDeviceAddress);
-                        }
-                }
+        strncpy(gamepad->pcDeviceName, "Wireless Controller", BD_NAME_LEN-1);
+        gamepad->pcDeviceName[BD_NAME_LEN-1] = '\0';
+        BTRCORELOG_INFO("Set fallback name 'Wireless Controller' for device %s", gamepad->pcDeviceAddress);
+    }
+}
 
                 if(btrCore_IsDevNameSameAsAddress(&FoundDevice)) {
                     if ((lenBTRCoreDevType == enBTRCoreSpeakers) || (lenBTRCoreDevType == enBTRCoreHeadSet) || (enBTRCoreHID == lenBTRCoreDevType)) {
