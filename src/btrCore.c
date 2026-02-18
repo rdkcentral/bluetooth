@@ -3739,7 +3739,7 @@ BTRCore_GetAdapter (
     stBTRCoreAdapter*   apstBTRCoreAdapter
 ) {
     stBTRCoreHdl*   pstlhBTRCore = NULL;
-
+	BTRMGRLOG_INFO("=== BTRCore_GetAdapter: Got adapter path ===");
     if (!hBTRCore) {
         BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
         return enBTRCoreNotInitialized;
@@ -3760,7 +3760,7 @@ BTRCore_GetAdapter (
         apstBTRCoreAdapter->pcAdapterPath    = pstlhBTRCore->curAdapterPath;
         apstBTRCoreAdapter->pcAdapterDevName = NULL;
     }
-
+	BTRMGRLOG_INFO("=== BTRCore_GetAdapter END ===");
     return enBTRCoreSuccess;
 }
 
