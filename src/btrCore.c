@@ -97,24 +97,6 @@ static char * BTRCORE_GOOGLE_OUI_VALUES[] = {
     NULL
 };
 
-static stBTRCoreBTDevice* btrCore_FindDeviceByMac(tBTRCoreHandle lpstlhBTRCore, const char* mac) {
-    stBTRCoreHdl* core = (stBTRCoreHdl*)lpstlhBTRCore;    // <-- FIXED!
-
-    for (unsigned int i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
-        if (core->stScannedDevicesArr[i].bFound &&
-            strncmp(core->stScannedDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0)
-            return &core->stScannedDevicesArr[i];
-    }
-
-    for (unsigned int i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
-        if (core->stKnownDevicesArr[i].tDeviceId &&
-            strncmp(core->stKnownDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0)
-            return &core->stKnownDevicesArr[i];
-    }
-
-    return NULL;
-}
-
 /* Local types */
 //TODO: Move to a private header
 typedef enum _enBTRCoreTaskOp {
@@ -222,6 +204,23 @@ typedef struct _stBTRCoreHdl {
     BOOLEAN                         batteryLevelThreadExit;
 } stBTRCoreHdl;
 
+static stBTRCoreBTDevice* btrCore_FindDeviceByMac(tBTRCoreHandle lpstlhBTRCore, const char* mac) {
+    stBTRCoreHdl* core = (stBTRCoreHdl*)lpstlhBTRCore;    // <-- FIXED!
+
+    for (unsigned int i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
+        if (core->stScannedDevicesArr[i].bFound &&
+            strncmp(core->stScannedDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0)
+            return &core->stScannedDevicesArr[i];
+    }
+
+    for (unsigned int i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
+        if (core->stKnownDevicesArr[i].tDeviceId &&
+            strncmp(core->stKnownDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0)
+            return &core->stKnownDevicesArr[i];
+    }
+
+    return NULL;
+}
 
 /* Static Function Prototypes */
 static void btrCore_InitDataSt (stBTRCoreHdl* apsthBTRCore);
