@@ -96,6 +96,23 @@ static char * BTRCORE_GOOGLE_OUI_VALUES[] = {
     "CA:7B:25", //Stadia2TFX-0fa6
     NULL
 };
+
+static stBTRCoreBTDevice* btrCore_FindDeviceByMac(tBTRCoreHandle lpstlhBTRCore, const char* mac) {
+    stBTRCore* core = (stBTRCore*)lpstlhBTRCore;
+    int i;
+    for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
+        if (core->stScannedDevicesArr[i].bFound &&
+            strncmp(core->stScannedDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0)
+            return &core->stScannedDevicesArr[i];
+    }
+    for (i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
+        if (core->stKnownDevicesArr[i].tDeviceId &&
+            strncmp(core->stKnownDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0)
+            return &core->stKnownDevicesArr[i];
+    }
+    return NULL;
+}
+
 /* Local types */
 //TODO: Move to a private header
 typedef enum _enBTRCoreTaskOp {
@@ -121,6 +138,10 @@ typedef enum _enBTRCoreTaskProcessType {
     enBTRCoreTaskPTUnknown
 } enBTRCoreTaskProcessType;
 
+typedef struct {
+    char mac[BTRCORE_MAX_STR_LEN];
+    tBTRCoreHandle lpstlhBTRCore;
+} NamelessGamepadTimerArg;
 
 typedef struct _stBTRCoreTaskGAqData {
     enBTRCoreTaskOp             enBTRCoreTskOp;
@@ -838,6 +859,44 @@ static BOOLEAN btrCore_IsStadiaGamepad(
         }
     }
     return FALSE;
+}
+
+static BOOLEAN btrCore_IsAnyPS5Connected(tBTRCoreHandle lpstlhBTRCore) {
+    stBTRCore* core = (stBTRCore*)lpstlhBTRCore;
+    int i;
+    for (i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
+        if (core->stKnownDevicesArr[i].bDeviceConnected &&
+            strcmp(core->stKnownDevicesArr[i].pcDeviceName, "DualSense Wireless Controller") == 0) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+static gpointer btrCore_NamelessGamepadTimerThread(gpointer arg) {
+    NamelessGamepadTimerArg* timerArg = (NamelessGamepadTimerArg*)arg;
+    sleep(5);
+
+    stBTRCoreBTDevice* gamepad = btrCore_FindDeviceByMac(timerArg->lpstlhBTRCore, timerArg->mac);
+    if (gamepad &&
+        btrCore_IsDevNameSameAsAddress(gamepad) &&
+        gamepad->enDeviceType == enBTRCoreDevType_HID_GamePad && // use your actual enum value
+        btrCore_IsAnyPS5Connected(timerArg->lpstlhBTRCore)) {
+
+        strncpy(gamepad->pcDeviceName, "Wireless Controller", BD_NAME_LEN-1);
+        gamepad->pcDeviceName[BD_NAME_LEN-1] = '\0';
+        BTRCORELOG_INFO("Set fallback name 'Wireless Controller' for device %s", gamepad->pcDeviceAddress);
+    }
+    g_free(timerArg);
+    return NULL;
+}
+
+static void launch_nameless_gamepad_timer(const char* mac, tBTRCoreHandle lpstlhBTRCore) {
+    NamelessGamepadTimerArg* arg = g_malloc(sizeof(NamelessGamepadTimerArg));
+    strncpy(arg->mac, mac, BTRCORE_MAX_STR_LEN-1);
+    arg->mac[BTRCORE_MAX_STR_LEN-1] = '\0';
+    arg->lpstlhBTRCore = lpstlhBTRCore;
+    g_thread_new("nameless_gamepad", btrCore_NamelessGamepadTimerThread, arg);
 }
 
 static BOOLEAN btrCore_IsLunaGamepad(
@@ -7112,6 +7171,11 @@ btrCore_BTDeviceStatusUpdateCb (
                 MEMSET_S(&FoundDevice, sizeof(stBTRCoreBTDevice), 0, sizeof(stBTRCoreBTDevice));
                 strncpy(FoundDevice.pcDeviceName,    apstBTDeviceInfo->pcName,       BD_NAME_LEN);
                 strncpy(FoundDevice.pcDeviceAddress, apstBTDeviceInfo->pcAddress,    BD_NAME_LEN);
+
+				if (btrCore_IsDevNameSameAsAddress(&FoundDevice) &&
+                   (lenBTRCoreDevType == enBTRCoreDevType_HID_GamePad)) {
+                   launch_nameless_gamepad_timer(FoundDevice.pcDeviceAddress, lpstlhBTRCore);
+                }
 
                 if(btrCore_IsDevNameSameAsAddress(&FoundDevice)) {
                     if ((lenBTRCoreDevType == enBTRCoreSpeakers) || (lenBTRCoreDevType == enBTRCoreHeadSet) || (enBTRCoreHID == lenBTRCoreDevType)) {
