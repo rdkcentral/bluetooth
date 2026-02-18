@@ -862,11 +862,17 @@ static BOOLEAN btrCore_IsStadiaGamepad(
     return FALSE;
 }
 
-static BOOLEAN btrCore_IsAnyPS5Connected(tBTRCoreHandle lpstlhBTRCore) {
+static BOOLEAN btrCore_IsAnyPSConnected(tBTRCoreHandle lpstlhBTRCore) {
     stBTRCoreHdl* core = (stBTRCoreHdl*)lpstlhBTRCore;
     for (unsigned int i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
         if (core->stKnownDevicesArr[i].bDeviceConnected &&
-            strcmp(core->stKnownDevicesArr[i].pcDeviceName, "DualSense Wireless Controller") == 0) {
+            core->stKnownDevicesArr[i].ui32ModaliasVendorId == 0x054C && (
+                core->stKnownDevicesArr[i].ui32ModaliasProductId == 0x09CC || // PS4
+                core->stKnownDevicesArr[i].ui32ModaliasProductId == 0x05C4 || // PS4
+                core->stKnownDevicesArr[i].ui32ModaliasProductId == 0x0DF2 || // PS5
+                core->stKnownDevicesArr[i].ui32ModaliasProductId == 0x0CE6    // PS5
+            )) 
+        {
             return TRUE;
         }
     }
@@ -881,7 +887,7 @@ static gpointer btrCore_NamelessGamepadTimerThread(gpointer arg) {
     if (gamepad &&
         btrCore_IsDevNameSameAsAddress(gamepad) &&
         gamepad->enDeviceType == enBTRCore_DC_HID_GamePad &&
-        btrCore_IsAnyPS5Connected(timerArg->lpstlhBTRCore)) {
+        btrCore_IsAnyPSConnected(timerArg->lpstlhBTRCore)) {
 
         strncpy(gamepad->pcDeviceName, "Wireless Controller", BD_NAME_LEN-1);
         gamepad->pcDeviceName[BD_NAME_LEN-1] = '\0';
