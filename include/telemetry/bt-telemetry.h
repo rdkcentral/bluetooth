@@ -17,12 +17,12 @@
  * limitations under the License.
 */
 /* 
- * @file btrCore_telemetry.h
+ * @file bt-telemetry.h
  * Includes telemetry wrapper utilities for Bluetooth Core and Bluetooth Manager
  */
 
-#ifndef __BTRCORE_TELEMETRY_H__
-#define __BTRCORE_TELEMETRY_H__
+ #ifndef __BT_TELEMETRY_H__
+ #define __BT_TELEMETRY_H__
 
 /**
  * @brief Initialize telemetry with component name
@@ -57,4 +57,4 @@ void telemetry_event_d(char* marker, int value);
  */
 void telemetry_event_f(char* marker, double value);
 
-#endif /* __BTRCORE_TELEMETRY_H__ */
+#endif /* __BT_TELEMETRY_H__ */
