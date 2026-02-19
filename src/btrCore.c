@@ -205,20 +205,26 @@ typedef struct _stBTRCoreHdl {
 } stBTRCoreHdl;
 
 static stBTRCoreBTDevice* btrCore_FindDeviceByMac(tBTRCoreHandle lpstlhBTRCore, const char* mac) {
-    stBTRCoreHdl* core = (stBTRCoreHdl*)lpstlhBTRCore;    // <-- FIXED!
+    BTRCORELOG_INFO("%s: Searching for device with MAC [%s]", __func__, mac);
+    stBTRCoreHdl* core = (stBTRCoreHdl*)lpstlhBTRCore;
 
     for (unsigned int i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
         if (core->stScannedDevicesArr[i].bFound &&
-            strncmp(core->stScannedDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0)
+            strncmp(core->stScannedDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0) {
+            BTRCORELOG_INFO("%s: Found device in scanned devices at index %u", __func__, i);
             return &core->stScannedDevicesArr[i];
+        }
     }
 
     for (unsigned int i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
         if (core->stKnownDevicesArr[i].tDeviceId &&
-            strncmp(core->stKnownDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0)
+            strncmp(core->stKnownDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0) {
+            BTRCORELOG_INFO("%s: Found device in known devices at index %u", __func__, i);
             return &core->stKnownDevicesArr[i];
+        }
     }
 
+    BTRCORELOG_WARN("%s: Device with MAC [%s] not found", __func__, mac);
     return NULL;
 }
 
@@ -863,6 +869,7 @@ static BOOLEAN btrCore_IsStadiaGamepad(
 }
 
 static BOOLEAN btrCore_IsAnyPSConnected(tBTRCoreHandle lpstlhBTRCore) {
+    BTRCORELOG_INFO("%s: Checking for any PS4/PS5 controllers", __func__);
     stBTRCoreHdl* core = (stBTRCoreHdl*)lpstlhBTRCore;
     for (unsigned int i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
         if (core->stKnownDevicesArr[i].bDeviceConnected &&
@@ -873,9 +880,12 @@ static BOOLEAN btrCore_IsAnyPSConnected(tBTRCoreHandle lpstlhBTRCore) {
                 core->stKnownDevicesArr[i].ui32ModaliasProductId == 0x0CE6    // PS5
             )) 
         {
+            BTRCORELOG_INFO("%s: Found PS controller - MAC [%s], ProductId [0x%04X]", 
+                __func__, core->stKnownDevicesArr[i].pcDeviceAddress, core->stKnownDevicesArr[i].ui32ModaliasProductId);
             return TRUE;
         }
     }
+    BTRCORELOG_INFO("%s: No PS4/PS5 controllers connected", __func__);
     return FALSE;
 }
 
