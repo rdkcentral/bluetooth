@@ -39,7 +39,7 @@
 
 /* Interface lib Headers */
 #include "btrCore_logger.h"
-#include <telemetry/bt-telemetry.h>
+#include "bt-telemetry.h"
 
 /* Local Headers */
 #include "btrCore_bt_ifce.h"

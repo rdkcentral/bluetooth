@@ -17,7 +17,7 @@
  * limitations under the License.
 */
 /*
- * btrCore_telemetry.c
+ * bt-telemetry.c
  * Implementation of telemetry wrapper utilities for Bluetooth Core and Bluetooth Manager
  */
 
@@ -25,7 +25,7 @@
 #include <telemetry_busmessage_sender.h>
 
 #include "btrCore_logger.h"
-#include <telemetry/bt-telemetry.h>
+#include "bt-telemetry.h"
 
 /**
  * @brief Initialize telemetry with component name
