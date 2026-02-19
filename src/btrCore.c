@@ -891,21 +891,50 @@ static BOOLEAN btrCore_IsAnyPSConnected(tBTRCoreHandle lpstlhBTRCore) {
 
 static gpointer btrCore_NamelessGamepadTimerThread(gpointer arg) {
     NamelessGamepadTimerArg* timerArg = (NamelessGamepadTimerArg*)arg;
-	BTRCORELOG_INFO("NAMLESS GAMEPAD THREAD triggered for MAC [%s]", timerArg->mac);
+    BTRCORELOG_INFO("%s: Thread started for MAC [%s]", __func__, timerArg->mac);
+
     sleep(5);
 
     stBTRCoreBTDevice* gamepad = btrCore_FindDeviceByMac(timerArg->lpstlhBTRCore, timerArg->mac);
-    if (gamepad &&
-        btrCore_IsDevNameSameAsAddress(gamepad) &&
-        gamepad->enDeviceType == enBTRCore_DC_HID_GamePad &&
-        btrCore_IsAnyPSConnected(timerArg->lpstlhBTRCore)) {
+    if (!gamepad) {
+        BTRCORELOG_WARN("%s: Device not found for MAC [%s] after sleep", __func__, timerArg->mac);
+        g_free(timerArg);
+        return NULL;
+    }
 
+    BTRCORELOG_INFO("%s: Checking fallback conditions for device [%s]", __func__, timerArg->mac);
+
+    if (btrCore_IsDevNameSameAsAddress(gamepad)) {
+        BTRCORELOG_INFO("%s: Device name is same as address", __func__);
+    } else {
+        BTRCORELOG_INFO("%s: Device name is NOT same as address", __func__);
+    }
+
+    if (gamepad->enDeviceType == enBTRCore_DC_HID_GamePad) {
+        BTRCORELOG_INFO("%s: Device is a HID GamePad", __func__);
+    } else {
+        BTRCORELOG_INFO("%s: Device is NOT a HID GamePad (type=%d)", __func__, gamepad->enDeviceType);
+    }
+
+    if (btrCore_IsAnyPSConnected(timerArg->lpstlhBTRCore)) {
+        BTRCORELOG_INFO("%s: At least one PS controller detected", __func__);
+    } else {
+        BTRCORELOG_INFO("%s: No PS controllers detected; not applying fallback", __func__);
+    }
+
+    if (btrCore_IsDevNameSameAsAddress(gamepad)
+        && gamepad->enDeviceType == enBTRCore_DC_HID_GamePad
+        && btrCore_IsAnyPSConnected(timerArg->lpstlhBTRCore)) 
+    {
         strncpy(gamepad->pcDeviceName, "Wireless Controller", BD_NAME_LEN-1);
         gamepad->pcDeviceName[BD_NAME_LEN-1] = '\0';
-        BTRCORELOG_INFO("Set fallback name 'Wireless Controller' for device %s", gamepad->pcDeviceAddress);
+        BTRCORELOG_INFO("%s: Set fallback name 'Wireless Controller' for device [%s]", __func__, gamepad->pcDeviceAddress);
+    } else {
+        BTRCORELOG_INFO("%s: Fallback name NOT set (conditions not met)", __func__);
     }
 
     g_free(timerArg);
+    BTRCORELOG_INFO("%s: Thread exiting for MAC [%s]", __func__, timerArg->mac);
     return NULL;
 }
 
