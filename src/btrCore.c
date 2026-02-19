@@ -893,7 +893,7 @@ static gpointer btrCore_NamelessGamepadTimerThread(gpointer arg) {
     NamelessGamepadTimerArg* timerArg = (NamelessGamepadTimerArg*)arg;
     BTRCORELOG_INFO("%s: Thread started for MAC [%s]", __func__, timerArg->mac);
 
-    sleep(5);
+    sleep(1);
 
     stBTRCoreBTDevice* gamepad = btrCore_FindDeviceByMac(timerArg->lpstlhBTRCore, timerArg->mac);
     if (!gamepad) {
