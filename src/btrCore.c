@@ -881,6 +881,7 @@ static BOOLEAN btrCore_IsAnyPSConnected(tBTRCoreHandle lpstlhBTRCore) {
 
 static gpointer btrCore_NamelessGamepadTimerThread(gpointer arg) {
     NamelessGamepadTimerArg* timerArg = (NamelessGamepadTimerArg*)arg;
+	BTRCORELOG_INFO("NAMLESS GAMEPAD THREAD triggered for MAC [%s]", timerArg->mac);
     sleep(5);
 
     stBTRCoreBTDevice* gamepad = btrCore_FindDeviceByMac(timerArg->lpstlhBTRCore, timerArg->mac);
