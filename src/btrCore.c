@@ -206,9 +206,19 @@ typedef struct _stBTRCoreHdl {
 
 static stBTRCoreBTDevice* btrCore_FindDeviceByMac(tBTRCoreHandle lpstlhBTRCore, const char* mac) {
     BTRCORELOG_INFO("%s: Searching for device with MAC [%s]", __func__, mac);
+
     stBTRCoreHdl* core = (stBTRCoreHdl*)lpstlhBTRCore;
 
-    for (unsigned int i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
+    for (unsigned int i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {    
+        BTRCORELOG_INFO(
+            "%s: [Scanned %u] bFound=%d tDeviceId=%lld Name='%s' Address='%s'",
+            __func__, i,
+            core->stScannedDevicesArr[i].bFound,
+            (long long)core->stScannedDevicesArr[i].tDeviceId,
+            core->stScannedDevicesArr[i].pcDeviceName,
+            core->stScannedDevicesArr[i].pcDeviceAddress
+        );
+
         if (core->stScannedDevicesArr[i].bFound &&
             strncmp(core->stScannedDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0) {
             BTRCORELOG_INFO("%s: Found device in scanned devices at index %u", __func__, i);
@@ -217,6 +227,15 @@ static stBTRCoreBTDevice* btrCore_FindDeviceByMac(tBTRCoreHandle lpstlhBTRCore, 
     }
 
     for (unsigned int i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
+        BTRCORELOG_INFO(
+            "%s: [Known %u] bDeviceConnected=%d tDeviceId=%lld Name='%s' Address='%s'",
+            __func__, i,
+            core->stKnownDevicesArr[i].bDeviceConnected,
+            (long long)core->stKnownDevicesArr[i].tDeviceId,
+            core->stKnownDevicesArr[i].pcDeviceName,
+            core->stKnownDevicesArr[i].pcDeviceAddress
+        );
+
         if (core->stKnownDevicesArr[i].tDeviceId &&
             strncmp(core->stKnownDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0) {
             BTRCORELOG_INFO("%s: Found device in known devices at index %u", __func__, i);
