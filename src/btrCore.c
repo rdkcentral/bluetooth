@@ -3297,9 +3297,6 @@ BTRCore_Init (
 
     BTRCORELOG_INFO ("BTRCore_Init\n");
 
-    char btmgr_name[] = "btmgr";
-	telemetry_init(btmgr_name);
-    
     if (!phBTRCore) {
         BTRCORELOG_ERROR ("enBTRCoreInvalidArg\n");
         return enBTRCoreInvalidArg;
