@@ -942,35 +942,35 @@ static gpointer btrCore_NamelessGamepadTimerThread(gpointer arg) {
     }
 
     if (btrCore_IsDevNameSameAsAddress(gamepad)
-        && gamepad->enDeviceType == enBTRCore_DC_HID_GamePad
-        && btrCore_IsAnyPSConnected(timerArg->lpstlhBTRCore)) 
-    {
-        strncpy(gamepad->pcDeviceName, "Wireless Controller", BD_NAME_LEN-1);
+    && gamepad->enDeviceType == enBTRCore_DC_HID_GamePad
+    && btrCore_IsAnyPSConnected(timerArg->lpstlhBTRCore)) 
+{
+    strncpy(gamepad->pcDeviceName, "Wireless Controller", BD_NAME_LEN-1);
     gamepad->pcDeviceName[BD_NAME_LEN-1] = '\0';
-    // Build device info for event
-    stBTDeviceInfo BTDevInfo;
-    memset(&BTDevInfo, 0, sizeof(BTDevInfo));
-    strncpy(BTDevInfo.pcName, "Wireless Controller", BD_NAME_LEN-1);
-    BTDevInfo.pcName[BD_NAME_LEN-1] = '\0';
-    strncpy(BTDevInfo.pcAddress, gamepad->pcDeviceAddress, BD_NAME_LEN-1);
-    BTDevInfo.pcAddress[BD_NAME_LEN-1] = '\0';
-    // (set other fields as appropriate for enough matching...)
 
-    stBTRCoreOTskInData lstOTskInData;
-    memset(&lstOTskInData, 0, sizeof(lstOTskInData));
-    lstOTskInData.bTRCoreDevId = gamepad->tDeviceId;
-    lstOTskInData.enBTRCoreDevType = enBTRCoreHID;
-    lstOTskInData.pstBTDevInfo = &BTDevInfo;
+    // --- Allocate on heap, not stack! ---
+    stBTDeviceInfo* pBTDevInfo = g_malloc0(sizeof(stBTDeviceInfo));
+    strncpy(pBTDevInfo->pcName, "Wireless Controller", BD_NAME_LEN-1);
+    pBTDevInfo->pcName[BD_NAME_LEN-1] = '\0';
+    strncpy(pBTDevInfo->pcAddress, gamepad->pcDeviceAddress, BD_NAME_LEN-1);
+    pBTDevInfo->pcAddress[BD_NAME_LEN-1] = '\0';
+    // Set additional fields as needed for your discovery update
+
+    stBTRCoreOTskInData* pLstOTskInData = g_malloc0(sizeof(stBTRCoreOTskInData));
+    pLstOTskInData->bTRCoreDevId    = gamepad->tDeviceId;
+    pLstOTskInData->enBTRCoreDevType= enBTRCoreHID;
+    pLstOTskInData->pstBTDevInfo    = pBTDevInfo;
 
     stBTRCoreHdl* core = (stBTRCoreHdl*)timerArg->lpstlhBTRCore;
     enBTRCoreRet lenBTRCoreRet = btrCore_OutTaskAddOp(
         core->pGAQueueOutTask,
         enBTRCoreTaskOpProcess,
         enBTRCoreTaskPTcBDeviceDisc,
-        &lstOTskInData
+        pLstOTskInData
     );
     BTRCORELOG_INFO("%s: OutTaskAddOp called to trigger UI update for fallback name, ret=%d",
                     __func__, lenBTRCoreRet);
+    // You may need to ensure the event frees these pointers later after processed!
 }
 
 		 else {
