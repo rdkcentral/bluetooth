@@ -469,8 +469,11 @@ void test_BTRCore_GetAdapter_should_ReturnInvalidAdapter_when_BtrCore_BTGetAdapt
     printf("Before calling BTRCore_GetAdapter, adapter.adapter_number: %d, adapter.pcAdapterPath: %p, adapter.pcAdapterDevName: %p\n",
            adapter.adapter_number, adapter.pcAdapterPath, adapter.pcAdapterDevName);
     
+
     BtrCore_BTGetAdapterPath_ExpectAndReturn((void*)hBTRCore->connHdl,NULL,NULL);
-    
+    // Expect telemetry_event_d to be called with the error marker and value 1
+    telemetry_event_d_ExpectAndReturn("BT_ERR_GetBTAdapterFail", 1);
+
     actual_result = BTRCore_GetAdapter(hBTRCore, &adapter);
     TEST_ASSERT_EQUAL(expected_result, actual_result);
 
