@@ -946,28 +946,32 @@ static gpointer btrCore_NamelessGamepadTimerThread(gpointer arg) {
         && btrCore_IsAnyPSConnected(timerArg->lpstlhBTRCore)) 
     {
         strncpy(gamepad->pcDeviceName, "Wireless Controller", BD_NAME_LEN-1);
-        gamepad->pcDeviceName[BD_NAME_LEN-1] = '\0';
-        BTRCORELOG_INFO("%s: Set fallback name 'Wireless Controller' for device [%s]", __func__, gamepad->pcDeviceAddress);
+    gamepad->pcDeviceName[BD_NAME_LEN-1] = '\0';
+    // Build device info for event
+    stBTDeviceInfo BTDevInfo;
+    memset(&BTDevInfo, 0, sizeof(BTDevInfo));
+    strncpy(BTDevInfo.pcName, "Wireless Controller", BD_NAME_LEN-1);
+    BTDevInfo.pcName[BD_NAME_LEN-1] = '\0';
+    strncpy(BTDevInfo.pcAddress, gamepad->pcDeviceAddress, BD_NAME_LEN-1);
+    BTDevInfo.pcAddress[BD_NAME_LEN-1] = '\0';
+    // (set other fields as appropriate for enough matching...)
 
-		stBTRCoreHdl* core = (stBTRCoreHdl*)timerArg->lpstlhBTRCore;
-        stBTRCoreOTskInData lstOTskInData;
-        memset(&lstOTskInData, 0, sizeof(lstOTskInData));
+    stBTRCoreOTskInData lstOTskInData;
+    memset(&lstOTskInData, 0, sizeof(lstOTskInData));
+    lstOTskInData.bTRCoreDevId = gamepad->tDeviceId;
+    lstOTskInData.enBTRCoreDevType = enBTRCoreHID;
+    lstOTskInData.pstBTDevInfo = &BTDevInfo;
 
-        // Fill in device info for the update
-        lstOTskInData.bTRCoreDevId = gamepad->tDeviceId;
-        lstOTskInData.enBTRCoreDevType = enBTRCoreHID; // Gamepad device type for HID
-        lstOTskInData.pstBTDevInfo = NULL;
-
-        // Post to the outtask queue, which triggers the discovery/update callback path
-        enBTRCoreRet lenBTRCoreRet = btrCore_OutTaskAddOp(
+    stBTRCoreHdl* core = (stBTRCoreHdl*)timerArg->lpstlhBTRCore;
+    enBTRCoreRet lenBTRCoreRet = btrCore_OutTaskAddOp(
         core->pGAQueueOutTask,
         enBTRCoreTaskOpProcess,
         enBTRCoreTaskPTcBDeviceDisc,
         &lstOTskInData
-        );
-		BTRCORELOG_INFO("%s: OutTaskAddOp called to trigger UI update for fallback name, ret=%d",
+    );
+    BTRCORELOG_INFO("%s: OutTaskAddOp called to trigger UI update for fallback name, ret=%d",
                     __func__, lenBTRCoreRet);
-	}
+}
 
 		 else {
         BTRCORELOG_INFO("%s: Fallback name NOT set (conditions not met)", __func__);
