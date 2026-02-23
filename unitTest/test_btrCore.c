@@ -458,6 +458,7 @@ void test_BTRCore_GetAdapter_should_ReturnNotInitialized_when_HandleIsNULL(void)
 }
 void test_BTRCore_GetAdapter_should_ReturnInvalidAdapter_when_BtrCore_BTGetAdapterPathFails(void)
 {
+    telemetry_event_d_Ignore();
     stBTRCoreHdl* hBTRCore = malloc(sizeof(stBTRCoreHdl));
     stBTRCoreAdapter adapter;
     enBTRCoreRet expected_result = enBTRCoreInvalidAdapter;
