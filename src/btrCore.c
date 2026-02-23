@@ -948,7 +948,28 @@ static gpointer btrCore_NamelessGamepadTimerThread(gpointer arg) {
         strncpy(gamepad->pcDeviceName, "Wireless Controller", BD_NAME_LEN-1);
         gamepad->pcDeviceName[BD_NAME_LEN-1] = '\0';
         BTRCORELOG_INFO("%s: Set fallback name 'Wireless Controller' for device [%s]", __func__, gamepad->pcDeviceAddress);
-    } else {
+
+		stBTRCoreHdl* core = (stBTRCoreHdl*)timerArg->lpstlhBTRCore;
+        stBTRCoreOTskInData lstOTskInData;
+        memset(&lstOTskInData, 0, sizeof(lstOTskInData));
+
+        // Fill in device info for the update
+        lstOTskInData.bTRCoreDevId = gamepad->tDeviceId;
+        lstOTskInData.enBTRCoreDevType = enBTRCoreHID; // Gamepad device type for HID
+        lstOTskInData.pstBTDevInfo = NULL;
+
+        // Post to the outtask queue, which triggers the discovery/update callback path
+        enBTRCoreRet lenBTRCoreRet = btrCore_OutTaskAddOp(
+        core->pGAQueueOutTask,
+        enBTRCoreTaskOpProcess,
+        enBTRCoreTaskPTcBDeviceDisc,
+        &lstOTskInData
+        );
+		BTRCORELOG_INFO("%s: OutTaskAddOp called to trigger UI update for fallback name, ret=%d",
+                    __func__, lenBTRCoreRet);
+	}
+
+		 else {
         BTRCORELOG_INFO("%s: Fallback name NOT set (conditions not met)", __func__);
     }
 
