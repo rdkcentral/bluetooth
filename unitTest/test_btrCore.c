@@ -28,6 +28,8 @@
 
 #include "mock_btrCore_bt_ifce.h"
 
+#include "mock_bt-telemetry.h"
+
 typedef enum _enBTRCoreTaskOp {
     enBTRCoreTaskOpStart,
     enBTRCoreTaskOpStop,
