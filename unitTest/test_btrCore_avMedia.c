@@ -23,8 +23,7 @@
 
 
 #include "btrCore_avMedia.h"
-
-#include "mock_btrCore_bt_ifce.h"
+#include "bt-telemetry.h"
 
 TEST_FILE("btrCore_avMedia.c")
 
