@@ -20,6 +20,7 @@
 /* Local Headers */
 #include "btrCore.h"
 #include "btrCore_service.h"
+#include "bt-telemetry.h"
 
 #include "mock_btrCore_avMedia.h"
 
