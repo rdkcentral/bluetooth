@@ -55,6 +55,6 @@ void telemetry_event_d(const char* marker, int value);
  * 
  * Usage: telemetry_event_f("HWREV_split", 2.2);
  */
-void telemetry_event_f(char* marker, double value);
+void telemetry_event_f(const char* marker, double value);
 
 #endif /* __BT_TELEMETRY_H__ */
