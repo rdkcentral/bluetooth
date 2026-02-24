@@ -49,6 +49,10 @@ void telemetry_event_s(const char* marker, char* value)
         BTRCORELOG_ERROR("T2: telemetry_event_s - marker is NULL\n");
         return;
     }
+    if (value == NULL) {
+        BTRCORELOG_ERROR("T2: telemetry_event_s - value is NULL\n");
+        return;
+    }
     T2ERROR t2error = t2_event_s(marker, value);
     if (t2error != T2ERROR_SUCCESS) {
         BTRCORELOG_ERROR("t2_event_s(\"%s\", \"%s\") returned error code %d\n", marker, value, t2error);
