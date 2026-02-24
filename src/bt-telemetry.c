@@ -45,6 +45,10 @@ void telemetry_init(const char* name)
  */
 void telemetry_event_s(const char* marker, char* value)
 {
+    if (marker == NULL) {
+        BTRCORELOG_ERROR("T2: telemetry_event_s - marker is NULL\n");
+        return;
+    }
     T2ERROR t2error = t2_event_s(marker, value);
     if (t2error != T2ERROR_SUCCESS) {
         BTRCORELOG_ERROR("t2_event_s(\"%s\", \"%s\") returned error code %d\n", marker, value, t2error);
@@ -56,6 +60,10 @@ void telemetry_event_s(const char* marker, char* value)
  */
 void telemetry_event_d(const char* marker, int value)
 {
+    if (marker == NULL) {
+        BTRCORELOG_ERROR("T2: telemetry_event_d - marker is NULL\n");
+        return;
+    }
     T2ERROR t2error = t2_event_d(marker, value);
     if (t2error != T2ERROR_SUCCESS) {
         BTRCORELOG_ERROR("t2_event_d(\"%s\", %d) returned error code %d\n", marker, value, t2error);
@@ -67,6 +75,10 @@ void telemetry_event_d(const char* marker, int value)
  */
 void telemetry_event_f(const char* marker, double value)
 {
+    if (marker == NULL) {
+        BTRCORELOG_ERROR("T2: telemetry_event_f - marker is NULL\n");
+        return;
+    }
     T2ERROR t2error = t2_event_f(marker, value);
     if (t2error != T2ERROR_SUCCESS) {
         BTRCORELOG_ERROR("t2_event_f(\"%s\", %f) returned error code %d\n", marker, value, t2error);
