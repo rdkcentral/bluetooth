@@ -7278,7 +7278,7 @@ btrCore_BTDeviceStatusUpdateCb (
                    launch_nameless_gamepad_timer(FoundDevice.pcDeviceAddress, lpstlhBTRCore);
                 }
 
-                if(0) {
+                if(btrCore_IsDevNameSameAsAddress(&FoundDevice)) {
                     if ((lenBTRCoreDevType == enBTRCoreSpeakers) || (lenBTRCoreDevType == enBTRCoreHeadSet) || (enBTRCoreHID == lenBTRCoreDevType)) {
                         BTRCORELOG_INFO("pcName - %s pcAddress - %s DeviceType - %d skipCount - %lld\n",apstBTDeviceInfo->pcName,apstBTDeviceInfo->pcAddress,lenBTRCoreDevType,lpstlhBTRCore->skipDeviceDiscUpdate);
 
