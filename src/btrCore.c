@@ -948,7 +948,6 @@ static gpointer btrCore_NamelessGamepadTimerThread(gpointer arg) {
     strncpy(gamepad->pcDeviceName, "Wireless Controller", BD_NAME_LEN-1);
     gamepad->pcDeviceName[BD_NAME_LEN-1] = '\0';
 
-    // Allocate and fill minimal required device info for OutTask
     stBTDeviceInfo* pBTDevInfo = g_malloc0(sizeof(stBTDeviceInfo));
     strncpy(pBTDevInfo->pcName, "Wireless Controller", BD_NAME_LEN-1);
     pBTDevInfo->pcName[BD_NAME_LEN-1] = '\0';
@@ -965,7 +964,6 @@ static gpointer btrCore_NamelessGamepadTimerThread(gpointer arg) {
     strncpy(pBTDevInfo->pcIcon, "input-gaming", BT_MAX_STR_LEN-1);
     pBTDevInfo->pcIcon[BT_MAX_STR_LEN-1] = '\0';
 
-    // Copy service data (not always required, but safe for completeness)
     memcpy(pBTDevInfo->saServices, gamepad->stAdServiceData, sizeof(stBTAdServiceData) * BT_MAX_DEVICE_PROFILE);
 
     // Prepare and post OutTask event
