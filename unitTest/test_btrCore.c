@@ -28,8 +28,6 @@
 
 #include "mock_btrCore_bt_ifce.h"
 
-#include "mock_bt-telemetry.h"
-
 typedef enum _enBTRCoreTaskOp {
     enBTRCoreTaskOpStart,
     enBTRCoreTaskOpStop,
@@ -471,9 +469,7 @@ void test_BTRCore_GetAdapter_should_ReturnInvalidAdapter_when_BtrCore_BTGetAdapt
     
 
     BtrCore_BTGetAdapterPath_ExpectAndReturn((void*)hBTRCore->connHdl,NULL,NULL);
-    // Assign telemetry_event_d stub for this test
-    telemetry_event_d_StubWithCallback(mock_telemetry_event_d);
-
+    
     actual_result = BTRCore_GetAdapter(hBTRCore, &adapter);
     TEST_ASSERT_EQUAL(expected_result, actual_result);
 
@@ -3503,13 +3499,6 @@ _mock_BTGetPairedDeviceInfo3 (
 
 }
 
-void mock_telemetry_event_d(char* marker, int value) {
-    // Example stub: record call, check marker, etc.
-    // For demonstration, just print or set a flag
-    // e.g., telemetry_event_d_called = 1;
-    // No return value for void function
-}
- 
 void test_BTRCore_GetListOfPairedDevices_should_GetPairedDevicesSuccessfully(void)
 {
     stBTRCoreHdl* hBTRCore = malloc(sizeof(stBTRCoreHdl)); 
