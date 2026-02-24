@@ -468,7 +468,6 @@ void test_BTRCore_GetAdapter_should_ReturnInvalidAdapter_when_BtrCore_BTGetAdapt
     printf("Before calling BTRCore_GetAdapter, adapter.adapter_number: %d, adapter.pcAdapterPath: %p, adapter.pcAdapterDevName: %p\n",
            adapter.adapter_number, adapter.pcAdapterPath, adapter.pcAdapterDevName);
     
-
     BtrCore_BTGetAdapterPath_ExpectAndReturn((void*)hBTRCore->connHdl,NULL,NULL);
     
     actual_result = BTRCore_GetAdapter(hBTRCore, &adapter);
