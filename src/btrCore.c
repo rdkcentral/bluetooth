@@ -943,19 +943,32 @@ static gpointer btrCore_NamelessGamepadTimerThread(gpointer arg) {
 
     if (btrCore_IsDevNameSameAsAddress(gamepad)
     && gamepad->enDeviceType == enBTRCore_DC_HID_GamePad
-    && btrCore_IsAnyPSConnected(timerArg->lpstlhBTRCore)) 
+    && btrCore_IsAnyPSConnected(timerArg->lpstlhBTRCore))
 {
     strncpy(gamepad->pcDeviceName, "Wireless Controller", BD_NAME_LEN-1);
     gamepad->pcDeviceName[BD_NAME_LEN-1] = '\0';
 
-    // --- Allocate on heap, not stack! ---
+    // Allocate and fill minimal required device info for OutTask
     stBTDeviceInfo* pBTDevInfo = g_malloc0(sizeof(stBTDeviceInfo));
     strncpy(pBTDevInfo->pcName, "Wireless Controller", BD_NAME_LEN-1);
     pBTDevInfo->pcName[BD_NAME_LEN-1] = '\0';
+
     strncpy(pBTDevInfo->pcAddress, gamepad->pcDeviceAddress, BD_NAME_LEN-1);
     pBTDevInfo->pcAddress[BD_NAME_LEN-1] = '\0';
-    // Set additional fields as needed for your discovery update
 
+    strncpy(pBTDevInfo->pcDevicePath, gamepad->pcDevicePath, BD_NAME_LEN-1);
+    pBTDevInfo->pcDevicePath[BD_NAME_LEN-1] = '\0';
+
+    pBTDevInfo->ui32Class      = gamepad->ui32DevClassBtSpec;
+    pBTDevInfo->ui16Appearance = gamepad->ui16DevAppearanceBleSpec;
+
+    strncpy(pBTDevInfo->pcIcon, "input-gaming", BT_MAX_STR_LEN-1);
+    pBTDevInfo->pcIcon[BT_MAX_STR_LEN-1] = '\0';
+
+    // Copy service data (not always required, but safe for completeness)
+    memcpy(pBTDevInfo->saServices, gamepad->stAdServiceData, sizeof(stBTAdServiceData) * BT_MAX_DEVICE_PROFILE);
+
+    // Prepare and post OutTask event
     stBTRCoreOTskInData* pLstOTskInData = g_malloc0(sizeof(stBTRCoreOTskInData));
     pLstOTskInData->bTRCoreDevId    = gamepad->tDeviceId;
     pLstOTskInData->enBTRCoreDevType= enBTRCoreHID;
@@ -970,7 +983,6 @@ static gpointer btrCore_NamelessGamepadTimerThread(gpointer arg) {
     );
     BTRCORELOG_INFO("%s: OutTaskAddOp called to trigger UI update for fallback name, ret=%d",
                     __func__, lenBTRCoreRet);
-    // You may need to ensure the event frees these pointers later after processed!
 }
 
 		 else {
