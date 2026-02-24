@@ -31,21 +31,21 @@ typedef enum {
     T2ERROR_FAILURE = 1
 } T2ERROR;
 
-static inline void t2_init(char* name) {
+static inline void t2_init(const char* name) {
     // Stub: do nothing
 }
 
-static inline T2ERROR t2_event_s(char* marker, char* value) {
+static inline T2ERROR t2_event_s(const char* marker, char* value) {
     // Stub: always return success
     return T2ERROR_SUCCESS;
 }
 
-static inline T2ERROR t2_event_d(char* marker, int value) {
+static inline T2ERROR t2_event_d(const char* marker, int value) {
     // Stub: always return success
     return T2ERROR_SUCCESS;
 }
 
-static inline T2ERROR t2_event_f(char* marker, double value) {
+static inline T2ERROR t2_event_f(const char* marker, double value) {
     // Stub: always return success
     return T2ERROR_SUCCESS;
 }
