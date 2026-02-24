@@ -7279,7 +7279,7 @@ btrCore_BTDeviceStatusUpdateCb (
                 }
 
                 if(btrCore_IsDevNameSameAsAddress(&FoundDevice)) {
-                    if ((lenBTRCoreDevType == enBTRCoreSpeakers) || (lenBTRCoreDevType == enBTRCoreHeadSet) || (enBTRCoreHID == lenBTRCoreDevType)) {
+                    if ((lenBTRCoreDevType == enBTRCoreSpeakers) || (lenBTRCoreDevType == enBTRCoreHeadSet)) {
                         BTRCORELOG_INFO("pcName - %s pcAddress - %s DeviceType - %d skipCount - %lld\n",apstBTDeviceInfo->pcName,apstBTDeviceInfo->pcAddress,lenBTRCoreDevType,lpstlhBTRCore->skipDeviceDiscUpdate);
 
                         // NOTE: This increments across devices (not on a per device basis), if we have 5 devices which broadcast name as MAC address
