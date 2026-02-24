@@ -30,8 +30,12 @@
 /**
  * @brief Initialize telemetry with component name
  */
-void telemetry_init(char* name)
+void telemetry_init(const char* name)
 {
+    if (name == NULL) {
+        BTRCORELOG_ERROR("T2: Failed to initialize telemetry - component name is NULL\n");
+        return;
+    }
     BTRCORELOG_INFO("T2: Initializing telemetry with component name=\"%s\"\n", name);
     t2_init(name);
 }
@@ -39,7 +43,7 @@ void telemetry_init(char* name)
 /**
  * @brief Send marker with string value to T2
  */
-void telemetry_event_s(char* marker, char* value)
+void telemetry_event_s(const char* marker, char* value)
 {
     T2ERROR t2error = t2_event_s(marker, value);
     if (t2error != T2ERROR_SUCCESS) {
@@ -50,7 +54,7 @@ void telemetry_event_s(char* marker, char* value)
 /**
  * @brief Send marker with integer value to T2 or report count based markers
  */
-void telemetry_event_d(char* marker, int value)
+void telemetry_event_d(const char* marker, int value)
 {
     T2ERROR t2error = t2_event_d(marker, value);
     if (t2error != T2ERROR_SUCCESS) {
@@ -61,7 +65,7 @@ void telemetry_event_d(char* marker, int value)
 /**
  * @brief Send marker with double value to T2
  */
-void telemetry_event_f(char* marker, double value)
+void telemetry_event_f(const char* marker, double value)
 {
     T2ERROR t2error = t2_event_f(marker, value);
     if (t2error != T2ERROR_SUCCESS) {

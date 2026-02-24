@@ -21,15 +21,15 @@
  * Includes telemetry wrapper utilities for Bluetooth Core and Bluetooth Manager
  */
 
- #ifndef __BT_TELEMETRY_H__
- #define __BT_TELEMETRY_H__
+#ifndef __BT_TELEMETRY_H__
+#define __BT_TELEMETRY_H__
 
 /**
  * @brief Initialize telemetry with component name
  * 
  * @param name Component name for telemetry identification
  */
-void telemetry_init(char* name);
+void telemetry_init(const char* name);
 
 /**
  * @brief Send marker with string value to T2
@@ -37,7 +37,7 @@ void telemetry_init(char* name);
  * @param marker Telemetry marker/event name (use _split suffix for split markers)
  * @param value String value to send
  */
-void telemetry_event_s(char* marker, char* value);
+void telemetry_event_s(const char* marker, char* value);
 
 /**
  * @brief Send marker with integer value to T2 or report count based markers
@@ -45,7 +45,7 @@ void telemetry_event_s(char* marker, char* value);
  * @param marker Telemetry marker/event name
  * @param value Integer value to send
  */
-void telemetry_event_d(char* marker, int value);
+void telemetry_event_d(const char* marker, int value);
 
 /**
  * @brief Send marker with double value to T2

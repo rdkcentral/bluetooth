@@ -40,7 +40,7 @@ endif
 endif
 endif
 
-AM_CPPFLAGS = -Wall -Werror -I${top_srcdir}/include/logger -I${top_srcdir}/include/safec -I${top_srcdir}/include/bt-ifce $(BTRCORE_IFCE_BLUEZ_INC)
+AM_CPPFLAGS = -Wall -Werror -I${top_srcdir}/include/logger -I${top_srcdir}/include/safec -I${top_srcdir}/include/bt-ifce $(BTRCORE_IFCE_BLUEZ_INC) -I${top_srcdir}/include/telemetry
 
 if IS_LIBSYSWRAPPER_ENABLED
 AM_LDFLAGS = -lsecure_wrapper

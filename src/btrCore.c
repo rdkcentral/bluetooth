@@ -3113,14 +3113,14 @@ btrCore_OutTask (
 
                                 //This is telemetry log. If we change this print,need to change and configure the telemetry string in xconf server.
                                 char buffer[256];
-                                snprintf(buffer, sizeof(buffer), "Failed to pair a device name,class,apperance,modalias: %s,%u,%u,v%04Xp%04Xd%04X",
+                                snprintf(buffer, sizeof(buffer), "Failed to pair a device name,class,apperance,modalias: %s,%u,%hu,v%04Xp%04Xd%04X",
                                     pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].pcDeviceName, pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32DevClassBtSpec,
                                     pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui16DevAppearanceBleSpec,
                                     pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
                                     pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId,
                                     pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasDeviceId);
                                 telemetry_event_s("BTPairFail_split", buffer);
-                                BTRCORELOG_ERROR ("Failed to pair a device name,class,apperance,modalias: %s,%u,%u,v%04Xp%04Xd%04X\n",
+                                BTRCORELOG_ERROR ("Failed to pair a device name,class,apperance,modalias: %s,%u,%hu,v%04Xp%04Xd%04X\n",
                                 pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].pcDeviceName, pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32DevClassBtSpec,
                                 pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui16DevAppearanceBleSpec,
                                 pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
