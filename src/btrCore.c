@@ -121,6 +121,10 @@ typedef enum _enBTRCoreTaskProcessType {
     enBTRCoreTaskPTUnknown
 } enBTRCoreTaskProcessType;
 
+typedef struct {
+    char mac[BTRCORE_MAX_STR_LEN];
+    tBTRCoreHandle lpstlhBTRCore;
+} NamelessGamepadTimerArg;
 
 typedef struct _stBTRCoreTaskGAqData {
     enBTRCoreTaskOp             enBTRCoreTskOp;
@@ -199,6 +203,48 @@ typedef struct _stBTRCoreHdl {
     BOOLEAN                         batteryLevelThreadExit;
 } stBTRCoreHdl;
 
+static stBTRCoreBTDevice * btrCore_FindDeviceByMac(tBTRCoreHandle lpstlhBTRCore, const char* mac) {
+    BTRCORELOG_INFO("%s: Searching for device with MAC [%s]", __func__, mac);
+
+    stBTRCoreHdl* core = (stBTRCoreHdl*)lpstlhBTRCore;
+
+    for (unsigned int i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {    
+        BTRCORELOG_INFO(
+            "%s: [Scanned %u] bFound=%d tDeviceId=%lld Name='%s' Address='%s'",
+            __func__, i,
+            core->stScannedDevicesArr[i].bFound,
+            (long long)core->stScannedDevicesArr[i].tDeviceId,
+            core->stScannedDevicesArr[i].pcDeviceName,
+            core->stScannedDevicesArr[i].pcDeviceAddress
+        );
+
+        if (core->stScannedDevicesArr[i].bFound &&
+            strncmp(core->stScannedDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0) {
+            BTRCORELOG_INFO("%s: Found device in scanned devices at index %u", __func__, i);
+            return &core->stScannedDevicesArr[i];
+        }
+    }
+
+    for (unsigned int i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
+        BTRCORELOG_INFO(
+            "%s: [Known %u] bDeviceConnected=%d tDeviceId=%lld Name='%s' Address='%s'",
+            __func__, i,
+            core->stKnownDevicesArr[i].bDeviceConnected,
+            (long long)core->stKnownDevicesArr[i].tDeviceId,
+            core->stKnownDevicesArr[i].pcDeviceName,
+            core->stKnownDevicesArr[i].pcDeviceAddress
+        );
+
+        if (core->stKnownDevicesArr[i].tDeviceId &&
+            strncmp(core->stKnownDevicesArr[i].pcDeviceAddress, mac, BD_NAME_LEN) == 0) {
+            BTRCORELOG_INFO("%s: Found device in known devices at index %u", __func__, i);
+            return &core->stKnownDevicesArr[i];
+        }
+    }
+
+    BTRCORELOG_WARN("%s: Device with MAC [%s] not found", __func__, mac);
+    return NULL;
+}
 
 /* Static Function Prototypes */
 static void btrCore_InitDataSt (stBTRCoreHdl* apsthBTRCore);
@@ -838,6 +884,119 @@ static BOOLEAN btrCore_IsStadiaGamepad(
         }
     }
     return FALSE;
+}
+
+static BOOLEAN btrCore_IsAnyPSConnected(tBTRCoreHandle lpstlhBTRCore) {
+    BTRCORELOG_INFO("%s: Checking for any PS4/PS5 controllers", __func__);
+    stBTRCoreHdl* core = (stBTRCoreHdl*)lpstlhBTRCore;
+    for (unsigned int i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
+        if (core->stKnownDevicesArr[i].bDeviceConnected &&
+            core->stKnownDevicesArr[i].ui32ModaliasVendorId == 0x054C && (
+                core->stKnownDevicesArr[i].ui32ModaliasProductId == 0x09CC || // PS4
+                core->stKnownDevicesArr[i].ui32ModaliasProductId == 0x05C4 || // PS4
+                core->stKnownDevicesArr[i].ui32ModaliasProductId == 0x0DF2 || // PS5
+                core->stKnownDevicesArr[i].ui32ModaliasProductId == 0x0CE6    // PS5
+            )) 
+        {
+            BTRCORELOG_INFO("%s: Found PS controller - MAC [%s], ProductId [0x%04X]", 
+                __func__, core->stKnownDevicesArr[i].pcDeviceAddress, core->stKnownDevicesArr[i].ui32ModaliasProductId);
+            return TRUE;
+        }
+    }
+    BTRCORELOG_INFO("%s: No PS4/PS5 controllers connected", __func__);
+    return FALSE;
+}
+
+static gpointer btrCore_NamelessGamepadTimerThread(gpointer arg) {
+    NamelessGamepadTimerArg* timerArg = (NamelessGamepadTimerArg*)arg;
+    BTRCORELOG_INFO("%s: Thread started for MAC [%s]", __func__, timerArg->mac);
+
+    sleep(1);
+
+    stBTRCoreBTDevice* gamepad = btrCore_FindDeviceByMac(timerArg->lpstlhBTRCore, timerArg->mac);
+    if (!gamepad) {
+        BTRCORELOG_WARN("%s: Device not found for MAC [%s] after sleep", __func__, timerArg->mac);
+        g_free(timerArg);
+        return NULL;
+    }
+
+    BTRCORELOG_INFO("%s: Checking fallback conditions for device [%s]", __func__, timerArg->mac);
+
+    if (btrCore_IsDevNameSameAsAddress(gamepad)) {
+        BTRCORELOG_INFO("%s: Device name is same as address", __func__);
+    } else {
+        BTRCORELOG_INFO("%s: Device name is NOT same as address", __func__);
+    }
+
+    if (gamepad->enDeviceType == enBTRCore_DC_HID_GamePad) {
+        BTRCORELOG_INFO("%s: Device is a HID GamePad", __func__);
+    } else {
+        BTRCORELOG_INFO("%s: Device is NOT a HID GamePad (type=%d)", __func__, gamepad->enDeviceType);
+    }
+
+    if (btrCore_IsAnyPSConnected(timerArg->lpstlhBTRCore)) {
+        BTRCORELOG_INFO("%s: At least one PS controller detected", __func__);
+    } else {
+        BTRCORELOG_INFO("%s: No PS controllers detected; not applying fallback", __func__);
+    }
+
+    if (btrCore_IsDevNameSameAsAddress(gamepad)
+    && gamepad->enDeviceType == enBTRCore_DC_HID_GamePad
+    && btrCore_IsAnyPSConnected(timerArg->lpstlhBTRCore))
+{
+    strncpy(gamepad->pcDeviceName, "Wireless Controller", BD_NAME_LEN-1);
+    gamepad->pcDeviceName[BD_NAME_LEN-1] = '\0';
+
+    stBTDeviceInfo* pBTDevInfo = g_malloc0(sizeof(stBTDeviceInfo));
+    strncpy(pBTDevInfo->pcName, "Wireless Controller", BD_NAME_LEN-1);
+    pBTDevInfo->pcName[BD_NAME_LEN-1] = '\0';
+
+    strncpy(pBTDevInfo->pcAddress, gamepad->pcDeviceAddress, BD_NAME_LEN-1);
+    pBTDevInfo->pcAddress[BD_NAME_LEN-1] = '\0';
+
+    strncpy(pBTDevInfo->pcDevicePath, gamepad->pcDevicePath, BD_NAME_LEN-1);
+    pBTDevInfo->pcDevicePath[BD_NAME_LEN-1] = '\0';
+
+    pBTDevInfo->ui32Class      = gamepad->ui32DevClassBtSpec;
+    pBTDevInfo->ui16Appearance = gamepad->ui16DevAppearanceBleSpec;
+
+    strncpy(pBTDevInfo->pcIcon, "input-gaming", BT_MAX_STR_LEN-1);
+    pBTDevInfo->pcIcon[BT_MAX_STR_LEN-1] = '\0';
+
+    memcpy(pBTDevInfo->saServices, gamepad->stAdServiceData, sizeof(stBTAdServiceData) * BT_MAX_DEVICE_PROFILE);
+
+    // Prepare and post OutTask event
+    stBTRCoreOTskInData* pLstOTskInData = g_malloc0(sizeof(stBTRCoreOTskInData));
+    pLstOTskInData->bTRCoreDevId    = gamepad->tDeviceId;
+    pLstOTskInData->enBTRCoreDevType= enBTRCoreHID;
+    pLstOTskInData->pstBTDevInfo    = pBTDevInfo;
+
+    stBTRCoreHdl* core = (stBTRCoreHdl*)timerArg->lpstlhBTRCore;
+    enBTRCoreRet lenBTRCoreRet = btrCore_OutTaskAddOp(
+        core->pGAQueueOutTask,
+        enBTRCoreTaskOpProcess,
+        enBTRCoreTaskPTcBDeviceDisc,
+        pLstOTskInData
+    );
+    BTRCORELOG_INFO("%s: OutTaskAddOp called to trigger UI update for fallback name, ret=%d",
+                    __func__, lenBTRCoreRet);
+}
+
+		 else {
+        BTRCORELOG_INFO("%s: Fallback name NOT set (conditions not met)", __func__);
+    }
+
+    g_free(timerArg);
+    BTRCORELOG_INFO("%s: Thread exiting for MAC [%s]", __func__, timerArg->mac);
+    return NULL;
+}
+
+static void launch_nameless_gamepad_timer(const char* mac, tBTRCoreHandle lpstlhBTRCore) {
+    NamelessGamepadTimerArg* arg = g_malloc(sizeof(NamelessGamepadTimerArg));
+    strncpy(arg->mac, mac, BTRCORE_MAX_STR_LEN-1);
+    arg->mac[BTRCORE_MAX_STR_LEN-1] = '\0';
+    arg->lpstlhBTRCore = lpstlhBTRCore;
+    g_thread_new("nameless_gamepad", btrCore_NamelessGamepadTimerThread, arg);
 }
 
 static BOOLEAN btrCore_IsLunaGamepad(
@@ -7113,8 +7272,14 @@ btrCore_BTDeviceStatusUpdateCb (
                 strncpy(FoundDevice.pcDeviceName,    apstBTDeviceInfo->pcName,       BD_NAME_LEN);
                 strncpy(FoundDevice.pcDeviceAddress, apstBTDeviceInfo->pcAddress,    BD_NAME_LEN);
 
-                if(btrCore_IsDevNameSameAsAddress(&FoundDevice)) {
-                    if ((lenBTRCoreDevType == enBTRCoreSpeakers) || (lenBTRCoreDevType == enBTRCoreHeadSet) || (enBTRCoreHID == lenBTRCoreDevType)) {
+				if (btrCore_IsDevNameSameAsAddress(&FoundDevice) &&
+                   (lenBTRCoreDevType == enBTRCoreHID)) {
+                   launch_nameless_gamepad_timer(FoundDevice.pcDeviceAddress, lpstlhBTRCore);
+                }
+
+                if (btrCore_IsDevNameSameAsAddress(&FoundDevice) &&
+                   !(lenBTRCoreDevType == enBTRCoreHID)){
+                    if ((lenBTRCoreDevType == enBTRCoreSpeakers) || (lenBTRCoreDevType == enBTRCoreHeadSet)) {
                         BTRCORELOG_INFO("pcName - %s pcAddress - %s DeviceType - %d skipCount - %lld\n",apstBTDeviceInfo->pcName,apstBTDeviceInfo->pcAddress,lenBTRCoreDevType,lpstlhBTRCore->skipDeviceDiscUpdate);
 
                         // NOTE: This increments across devices (not on a per device basis), if we have 5 devices which broadcast name as MAC address
