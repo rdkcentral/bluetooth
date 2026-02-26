@@ -35,8 +35,8 @@ else
 libbtrCore_la_SOURCES = btrCore.c btrCore_avMedia.c btrCore_le.c bt-telemetry.c
 endif
 
-libbtrCore_la_CFLAGS = $(INCLUDE_FILES) $(GLIB_CFLAGS) $(LIBSYSWRAPPER_FLAG) $(SAFEC_CFLAGS)
-libbtrCore_la_LIBADD = $(GLIB_LIBS) $(BTR_CORE_LOGGER_LIBS) $(SAFEC_LFLAGS) $(top_builddir)/src/bt-ifce/libbtrCoreIfce.la -ltelemetry_msgsender
+libbtrCore_la_CFLAGS = $(INCLUDE_FILES) $(GLIB_CFLAGS) $(LIBSYSWRAPPER_FLAG) $(SAFEC_CFLAGS) $(TELEMETRY_CFLAGS)
+libbtrCore_la_LIBADD = $(GLIB_LIBS) $(BTR_CORE_LOGGER_LIBS) $(SAFEC_LFLAGS) $(top_builddir)/src/bt-ifce/libbtrCoreIfce.la $(TELEMETRY_MSGLIBS)
 
 # Explicitly declare the header file U want to expose out of libbtrCore.so here
 include_HEADERS = $(top_srcdir)/include/btrCoreTypes.h

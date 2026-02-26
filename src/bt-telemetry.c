@@ -22,7 +22,10 @@
  */
 
 #include <stdio.h>
+
+#ifdef HAVE_TELEMETRY_MSGSENDER
 #include <telemetry_busmessage_sender.h>
+#endif
 
 #include "btrCore_logger.h"
 #include "bt-telemetry.h"
@@ -36,8 +39,13 @@ void telemetry_init(const char* name)
         BTRCORELOG_ERROR("T2: Failed to initialize telemetry - component name is NULL\n");
         return;
     }
+
+#ifdef HAVE_TELEMETRY_MSGSENDER
     BTRCORELOG_INFO("T2: Initializing telemetry with component name=\"%s\"\n", name);
     t2_init(name);
+#else
+    BTRCORELOG_INFO("T2: telemetry sender disabled - telemetry_init skipped for \"%s\"\n", name);
+#endif
 }
 
 /**
@@ -53,10 +61,15 @@ void telemetry_event_s(const char* marker, char* value)
         BTRCORELOG_ERROR("T2: telemetry_event_s - value is NULL\n");
         return;
     }
+
+#ifdef HAVE_TELEMETRY_MSGSENDER
     T2ERROR t2error = t2_event_s(marker, value);
     if (t2error != T2ERROR_SUCCESS) {
         BTRCORELOG_ERROR("t2_event_s(\"%s\", \"%s\") returned error code %d\n", marker, value, t2error);
     }
+#else
+    BTRCORELOG_INFO("T2: telemetry sender disabled - telemetry_event_s skipped for %s\n", marker);
+#endif
 }
 
 /**
@@ -68,10 +81,15 @@ void telemetry_event_d(const char* marker, int value)
         BTRCORELOG_ERROR("T2: telemetry_event_d - marker is NULL\n");
         return;
     }
+
+#ifdef HAVE_TELEMETRY_MSGSENDER
     T2ERROR t2error = t2_event_d(marker, value);
     if (t2error != T2ERROR_SUCCESS) {
         BTRCORELOG_ERROR("t2_event_d(\"%s\", %d) returned error code %d\n", marker, value, t2error);
     }
+#else
+    BTRCORELOG_INFO("T2: telemetry sender disabled - telemetry_event_d skipped for %s\n", marker);
+#endif
 }
 
 /**
@@ -83,8 +101,13 @@ void telemetry_event_f(const char* marker, double value)
         BTRCORELOG_ERROR("T2: telemetry_event_f - marker is NULL\n");
         return;
     }
+
+#ifdef HAVE_TELEMETRY_MSGSENDER
     T2ERROR t2error = t2_event_f(marker, value);
     if (t2error != T2ERROR_SUCCESS) {
         BTRCORELOG_ERROR("t2_event_f(\"%s\", %f) returned error code %d\n", marker, value, t2error);
     }
+#else
+    BTRCORELOG_INFO("T2: telemetry sender disabled - telemetry_event_f skipped for %s\n", marker);
+#endif
 }

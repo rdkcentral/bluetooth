@@ -53,6 +53,8 @@ PKG_CHECK_MODULES([DBUS], [dbus-1])
 BTR_CORE_SRC="src"
 BTR_CORE_TEST="tests"
 BTR_CORE_LOGGER_LIBS=" "
+TELEMETRY_MSGLIBS=" "
+TELEMETRY_CFLAGS=" "
 BTR_IFCE_DBUS_BLUEZ4=" "
 BTR_IFCE_DBUS_BLUEZ5=" "
 BTR_IFCE_GDBUS_BLUEZ5=" "
@@ -176,6 +178,32 @@ AS_IF([test "x$rdk_logger_ok" = "xyes"], [
     fi
 ], [])
 
+# Check for telemetry sender library
+AC_ARG_ENABLE([telemetry],
+                            AS_HELP_STRING([--enable-telemetry],[enable telemetry sender integration (default is yes)]),
+                            [
+                                case "${enableval}" in
+                                 yes) enable_telemetry=yes;;
+                                 no)  enable_telemetry=no;;
+                                 *) AC_MSG_ERROR([bad value ${enableval} for --enable-telemetry]) ;;
+                                esac
+                            ],
+                            [enable_telemetry=yes])
+
+AS_IF([test "x$enable_telemetry" = "xyes"], [
+        AC_CHECK_HEADERS([telemetry_busmessage_sender.h], [],
+                                         AC_MSG_ERROR([telemetry header (telemetry_busmessage_sender.h) not found]))
+        AC_CHECK_LIB(telemetry_msgsender, t2_init,
+                                 telemetry_msgsender_ok=yes, telemetry_msgsender_ok=no
+                                 AC_MSG_ERROR([telemetry library (libtelemetry_msgsender) not found]))
+        if test "x$telemetry_msgsender_ok" = "xyes"; then
+             TELEMETRY_MSGLIBS="-ltelemetry_msgsender"
+         TELEMETRY_CFLAGS="-DHAVE_TELEMETRY_MSGSENDER"
+        fi
+], [
+        AC_MSG_WARN([telemetry sender integration disabled])
+])
+
 AC_ARG_ENABLE([streaming-in],
               AS_HELP_STRING([--enable-streaming-in],[enable streaming in (a2dp sink) (default is yes)]),
               [
@@ -250,6 +278,8 @@ AM_CONDITIONAL([GATT_CLIENT], [test x$GATT_CLIENT = xtrue])
 AC_SUBST(BTR_CORE_SRC)
 AC_SUBST(BTR_CORE_TEST)
 AC_SUBST(BTR_CORE_LOGGER_LIBS)
+AC_SUBST(TELEMETRY_MSGLIBS)
+AC_SUBST(TELEMETRY_CFLAGS)
 
 # Checks for library functions.
 
