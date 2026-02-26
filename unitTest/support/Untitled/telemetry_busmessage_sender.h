@@ -31,7 +31,7 @@ typedef enum {
     T2ERROR_FAILURE = 1
 } T2ERROR;
 
-static inline void t2_init(const char* name) {
+static inline void t2_init(char* name) {
     // Stub: do nothing
 }
 

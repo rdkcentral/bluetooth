@@ -29,7 +29,7 @@
  * 
  * @param name Component name for telemetry identification
  */
-void telemetry_init(const char* name);
+void telemetry_init(char* name);
 
 /**
  * @brief Send marker with string value to T2

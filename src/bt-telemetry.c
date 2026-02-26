@@ -33,7 +33,7 @@
 /**
  * @brief Initialize telemetry with component name
  */
-void telemetry_init(const char* name)
+void telemetry_init(char* name)
 {
     if (name == NULL) {
         BTRCORELOG_ERROR("T2: Failed to initialize telemetry - component name is NULL\n");
