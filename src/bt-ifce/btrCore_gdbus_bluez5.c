@@ -5349,7 +5349,7 @@ btrCore_BTStartDiscoveryCb (
     else {
         //This is telemetry log. If we change this marker name, need to change and configure the telemetry marker in xconf server.
         telemetry_event_d("BT_ERR_DiscStartFail", 1);
-        BTRCORELOG_INFO("Discovery start failed - %s\n",error->message);
+        BTRCORELOG_INFO("Discovery start failed - %s\n", error ? error->message : "Unknown error");
     }
 }
 
@@ -5372,7 +5372,7 @@ btrCore_BTStopDiscoveryCb (
     else {
         //This is telemetry log. If we change this marker name, need to change and configure the telemetry marker in xconf server.
         telemetry_event_d("BT_ERR_DiscStopFail", 1);
-        BTRCORELOG_INFO("Discovery stop failed - %s\n",error->message);
+        BTRCORELOG_INFO("Discovery stop failed - %s\n", error ? error->message : "Unknown error");
     }
 }
 
