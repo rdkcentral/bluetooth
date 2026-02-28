@@ -20,6 +20,7 @@
 /* Local Headers */
 #include "btrCore.h"
 #include "btrCore_service.h"
+#include "bt-telemetry.h"
 
 #include "mock_btrCore_avMedia.h"
 
@@ -3497,7 +3498,7 @@ _mock_BTGetPairedDeviceInfo3 (
     return 0;
 
 }
- 
+
 void test_BTRCore_GetListOfPairedDevices_should_GetPairedDevicesSuccessfully(void)
 {
     stBTRCoreHdl* hBTRCore = malloc(sizeof(stBTRCoreHdl)); 

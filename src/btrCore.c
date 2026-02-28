@@ -42,6 +42,7 @@
 
 /* Interface lib Headers */
 #include "btrCore_logger.h"
+#include "bt-telemetry.h"
 #include "safec_lib.h"
 
 /* Local Headers */
@@ -3111,7 +3112,15 @@ btrCore_OutTask (
                                 BTRCORELOG_INFO ("Unsupported device detected: %s\n", lpstBTDeviceInfo->pcModalias);
 
                                 //This is telemetry log. If we change this print,need to change and configure the telemetry string in xconf server.
-                                BTRCORELOG_ERROR ("Failed to pair a device name,class,apperance,modalias: %s,%u,%u,v%04Xp%04Xd%04X\n",
+                                char buffer[256];
+                                snprintf(buffer, sizeof(buffer), "Failed to pair a device name,class,apperance,modalias: %s,%u,%hu,v%04Xp%04Xd%04X",
+                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].pcDeviceName, pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32DevClassBtSpec,
+                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui16DevAppearanceBleSpec,
+                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
+                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId,
+                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasDeviceId);
+                                telemetry_event_s("BTPairFail_split", buffer);
+                                BTRCORELOG_ERROR ("Failed to pair a device name,class,apperance,modalias: %s,%u,%hu,v%04Xp%04Xd%04X\n",
                                 pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].pcDeviceName, pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32DevClassBtSpec,
                                 pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui16DevAppearanceBleSpec,
                                 pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
@@ -3138,6 +3147,12 @@ btrCore_OutTask (
                                     }
                                     else {
                                         //This is telemetry log. If we change this print,need to change and configure the telemetry string in xconf server.
+                                        char buffer[128];
+                                        snprintf(buffer, sizeof(buffer), "Unsupport BT device detected v%04Xp%04Xd%04X",
+                                            pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
+                                            pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId,
+                                            pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasDeviceId);
+                                        telemetry_event_s("BT_INFO_NotSupp_split", buffer);
                                         BTRCORELOG_INFO ("Unsupport BT device detected v%04Xp%04Xd%04X\n",
                                         pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
                                         pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId,
@@ -3749,6 +3764,8 @@ BTRCore_GetAdapter (
 
     if (!pstlhBTRCore->curAdapterPath) {
         if ((pstlhBTRCore->curAdapterPath = BtrCore_BTGetAdapterPath(pstlhBTRCore->connHdl, NULL)) == NULL) { //mikek hard code to default adapter for now
+            //This is telemetry log. If we change this marker name, need to change and configure the telemetry marker in xconf server.
+            telemetry_event_d("BT_ERR_GetBTAdapterFail", 1);
             BTRCORELOG_ERROR ("Failed to get BT Adapter");
             return enBTRCoreInvalidAdapter;
         }
@@ -4458,6 +4475,8 @@ BTRCore_PairDevice (
                                     pDeviceAddress,
                                     pairingOp) < 0) {
         BTRCORELOG_ERROR ("Failed to pair a device\n");
+        //This is telemetry log. If we change this marker name, need to change and configure the telemetry marker in xconf server.
+        telemetry_event_d("BT_ERR_FailToPair", 1);
         return enBTRCorePairingFailed;
     }
 
@@ -5257,6 +5276,8 @@ enBTRCoreRet BTRCore_newBatteryLevelDevice (tBTRCoreHandle hBTRCore)
         }
         else
         {
+            //This is telemetry log. If we change this marker name, need to change and configure the telemetry marker in xconf server.
+            telemetry_event_d("BT_ERR_BatteryThreadFail", 1);
             BTRCORELOG_ERROR("Battery thread creation failed\n");
         }
         return enBTRCoreSuccess;

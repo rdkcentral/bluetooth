@@ -39,6 +39,7 @@
 
 /* Interface lib Headers */
 #include "btrCore_logger.h"
+#include "bt-telemetry.h"
 
 /* Local Headers */
 #include "btrCore_bt_ifce.h"
@@ -895,6 +896,15 @@ btrCore_BTParseDevice (
 
     apstBTDeviceInfo->bConnected = bluez_device1_get_connected(dev_proxy);
     BTRCORELOG_INFO ("bConnected        = %d\n", apstBTDeviceInfo->bConnected);
+
+    {
+        //This is telemetry log. If we change this print,need to change and configure the telemetry string in xconf server.
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "bPaired = %d", apstBTDeviceInfo->bPaired);
+        telemetry_event_s("BTpair_split", buffer);
+        snprintf(buffer, sizeof(buffer), "bConnected = %d", apstBTDeviceInfo->bConnected);
+        telemetry_event_s("BTconn_split", buffer);
+    }
 
     apstBTDeviceInfo->ui16Appearance = bluez_device1_get_appearance(dev_proxy);
     BTRCORELOG_INFO ("ui16Appearance    = %d\n", apstBTDeviceInfo->ui16Appearance);
@@ -5337,7 +5347,9 @@ btrCore_BTStartDiscoveryCb (
         BTRCORELOG_INFO("Discovery started successfully\n");
     }
     else {
-        BTRCORELOG_INFO("Discovery start failed - %s\n",error->message);
+        //This is telemetry log. If we change this marker name, need to change and configure the telemetry marker in xconf server.
+        telemetry_event_d("BT_ERR_DiscStartFail", 1);
+        BTRCORELOG_INFO("Discovery start failed - %s\n", error ? error->message : "Unknown error");
     }
 }
 
@@ -5358,7 +5370,9 @@ btrCore_BTStopDiscoveryCb (
         BTRCORELOG_INFO("Discovery stopped successfully\n");
     }
     else {
-        BTRCORELOG_INFO("Discovery stop failed - %s\n",error->message);
+        //This is telemetry log. If we change this marker name, need to change and configure the telemetry marker in xconf server.
+        telemetry_event_d("BT_ERR_DiscStopFail", 1);
+        BTRCORELOG_INFO("Discovery stop failed - %s\n", error ? error->message : "Unknown error");
     }
 }
 
