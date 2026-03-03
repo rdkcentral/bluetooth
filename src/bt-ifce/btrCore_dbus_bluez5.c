@@ -215,7 +215,7 @@ static int btrCore_BTUnRegisterGattService (DBusConnection* apDBusConn, const ch
 static int btrCore_BTRegisterLeAdvGetProp (DBusConnection* apDBusConn, DBusMessage* apDBusMsg, stBtIfceHdl* apstlhBtIfce);
 static DBusMessage* btrCore_BTLEGattOps (DBusMessage* apDBusMsg, stBtIfceHdl* apstlhBtIfce, enBTOpIfceType  aenIfceType, enBTLeGattOp aenGattOp);
 static int btrCore_BTReleaseLEGattObjPath(char* apstObjPath, void* apvUserData);
-static bool btrCore_IsPathValid (char *path);
+static bool btrCore_IsPathValid (const char *path);
 /* Incoming Callbacks Prototypes */
 static DBusHandlerResult btrCore_BTDBusConnectionFilterCb (DBusConnection* apDBusConn, DBusMessage* apDBusMsg, void* apvUserData);
 static DBusHandlerResult btrCore_BTMediaEndpointHandlerCb (DBusConnection* apDBusConn, DBusMessage* apDBusMsg, void* apvUserData);
@@ -3894,7 +3894,11 @@ BtrCore_BTGetProp (
         BTRCORELOG_ERROR ("Invalid Interface Property\n");
         return -1;
     }
-    
+
+	if (!btrCore_IsPathValid(apcBtOpIfcePath)) {
+		BTRCORELOG_ERROR("Invalid apcBtOpIfcePath\n");
+		return -1;
+	}
 
     lpDBusMsg = dbus_message_new_method_call(BT_DBUS_BLUEZ_PATH,
                                              apcBtOpIfcePath,
@@ -5072,7 +5076,7 @@ BtrCore_BTFindServiceSupported (
     return match;
 }
 
-static bool btrCore_IsPathValid(char *path) {
+static bool btrCore_IsPathValid(const char *path) {
     if(!path) {
         BTRCORELOG_ERROR ("path is NULL\n");
         return false;
