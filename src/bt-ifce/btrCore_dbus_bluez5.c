@@ -3908,7 +3908,7 @@ BtrCore_BTGetProp (
 	if (!btrCore_IsPathValid(apcBtOpIfcePath)) {
         BTRCORELOG_ERROR("Invalid apcBtOpIfcePath\n");
         return -1;
-	}
+    }
 
     lpDBusMsg = dbus_message_new_method_call(BT_DBUS_BLUEZ_PATH,
                                              apcBtOpIfcePath,
