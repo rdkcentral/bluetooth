@@ -215,7 +215,7 @@ static int btrCore_BTUnRegisterGattService (DBusConnection* apDBusConn, const ch
 static int btrCore_BTRegisterLeAdvGetProp (DBusConnection* apDBusConn, DBusMessage* apDBusMsg, stBtIfceHdl* apstlhBtIfce);
 static DBusMessage* btrCore_BTLEGattOps (DBusMessage* apDBusMsg, stBtIfceHdl* apstlhBtIfce, enBTOpIfceType  aenIfceType, enBTLeGattOp aenGattOp);
 static int btrCore_BTReleaseLEGattObjPath(char* apstObjPath, void* apvUserData);
-static bool btrCore_IsPathValid (const char *path);
+static bool btrCore_IsPathValid (const char * path);
 /* Incoming Callbacks Prototypes */
 static DBusHandlerResult btrCore_BTDBusConnectionFilterCb (DBusConnection* apDBusConn, DBusMessage* apDBusMsg, void* apvUserData);
 static DBusHandlerResult btrCore_BTMediaEndpointHandlerCb (DBusConnection* apDBusConn, DBusMessage* apDBusMsg, void* apvUserData);
@@ -223,6 +223,16 @@ static DBusHandlerResult btrCore_BTAgentMessageHandlerCb  (DBusConnection* apDBu
 static DBusHandlerResult btrCore_BTLeGattEndpointHandlerCb(DBusConnection* apDBusConn, DBusMessage* apDBusMsg, void* apvUserData);
 static DBusHandlerResult btrCore_BTLeGattMessageHandlerCb (DBusConnection* apDBusConn, DBusMessage* apDBusMsg, void* apvUserData);
 
+static bool btrCore_IsPathValid(const char * path) {
+    if(!path) {
+        BTRCORELOG_ERROR ("path is NULL\n");
+        return false;
+    }
+
+    BTRCORELOG_INFO ("path value is: %s\n", path);
+
+    return strncmp(path, "/", strlen("/")) == 0;
+}
 
 static const DBusObjectPathVTable gDBusMediaEndpointVTable = {
     .message_function = btrCore_BTMediaEndpointHandlerCb,
@@ -5074,17 +5084,6 @@ BtrCore_BTFindServiceSupported (
     (void)dbus_type;
 
     return match;
-}
-
-static bool btrCore_IsPathValid(const char *path) {
-    if(!path) {
-        BTRCORELOG_ERROR ("path is NULL\n");
-        return false;
-    }
-
-    BTRCORELOG_INFO ("path value is: %s\n", path);
-
-    return strncmp(path, "/", strlen("/")) == 0;
 }
 
 int
