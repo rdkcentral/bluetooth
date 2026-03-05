@@ -900,9 +900,9 @@ btrCore_BTParseDevice (
     {
         //This is telemetry log. If we change this print,need to change and configure the telemetry string in xconf server.
         char buffer[64];
-        snprintf(buffer, sizeof(buffer), "bPaired = %d", apstBTDeviceInfo->bPaired);
+        snprintf(buffer, sizeof(buffer), "%d", apstBTDeviceInfo->bPaired);
         telemetry_event_s("BTpair_split", buffer);
-        snprintf(buffer, sizeof(buffer), "bConnected = %d", apstBTDeviceInfo->bConnected);
+        snprintf(buffer, sizeof(buffer), "%d", apstBTDeviceInfo->bConnected);
         telemetry_event_s("BTconn_split", buffer);
     }
 

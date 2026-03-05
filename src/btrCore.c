@@ -3113,7 +3113,7 @@ btrCore_OutTask (
 
                                 //This is telemetry log. If we change this print,need to change and configure the telemetry string in xconf server.
                                 char buffer[256];
-                                snprintf(buffer, sizeof(buffer), "Failed to pair a device name,class,apperance,modalias: %s,%u,%hu,v%04Xp%04Xd%04X",
+                                snprintf(buffer, sizeof(buffer), "%s,%u,%hu,v%04Xp%04Xd%04X",
                                     pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].pcDeviceName, pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32DevClassBtSpec,
                                     pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui16DevAppearanceBleSpec,
                                     pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
@@ -3148,7 +3148,7 @@ btrCore_OutTask (
                                     else {
                                         //This is telemetry log. If we change this print,need to change and configure the telemetry string in xconf server.
                                         char buffer[128];
-                                        snprintf(buffer, sizeof(buffer), "Unsupport BT device detected v%04Xp%04Xd%04X",
+                                        snprintf(buffer, sizeof(buffer), "v%04Xp%04Xd%04X",
                                             pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
                                             pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId,
                                             pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasDeviceId);
