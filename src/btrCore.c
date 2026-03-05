@@ -574,7 +574,7 @@ btrCore_HidNameWaitTimeoutCb (
     }
 
     MEMSET_S(lstBTDeviceInfo.pcName, sizeof(lstBTDeviceInfo.pcName), 0, sizeof(lstBTDeviceInfo.pcName));
-    safec_rc = strcpy_s(lstBTDeviceInfo.pcName, BD_NAME_LEN, "Wireless Controller");
+    safec_rc = strcpy_s(lstBTDeviceInfo.pcName, sizeof(lstBTDeviceInfo.pcName), "Wireless Controller");
     ERR_CHK(safec_rc);
 
     lstOTskInData.bTRCoreDevId      = btrCore_GenerateUniqueDeviceID(lstBTDeviceInfo.pcAddress);
@@ -7296,7 +7296,7 @@ btrCore_BTDeviceStatusUpdateCb (
                             BTRCORELOG_INFO("Skipping the update ...\n");
                         }
                     }
-                    else if ((aenBTRCoreDevClass == enBTRCore_DC_HID_Joystick) || (aenBTRCoreDevClass == enBTRCore_DC_HID_GamePad)) {
+                    else if ((lenBTRCoreDevClass == enBTRCore_DC_HID_Joystick) || (lenBTRCoreDevClass == enBTRCore_DC_HID_GamePad)) {
                         int i = 0;
                         int i32FreeIdx = -1;
                         errno_t safec_rc = -1;
@@ -7346,15 +7346,16 @@ btrCore_BTDeviceStatusUpdateCb (
                                         lpstTimeoutData = NULL;
                                         BTRCORELOG_WARN("Failed to schedule name wait timeout for HID controller %s\n", apstBTDeviceInfo->pcAddress);
                                     }
+                                    else {
+                                        BTRCORELOG_INFO("Delaying discovery callback for HID controller %s for up to %d seconds while waiting for Name update\n",
+                                                        apstBTDeviceInfo->pcAddress,
+                                                        BTRCORE_HID_NAME_WAIT_TIMEOUT_SEC);
+                                    }
                                 }
                                 else {
                                     lpstlhBTRCore->stPendingHidNameInfo[i32FreeIdx].bActive = FALSE;
                                     BTRCORELOG_WARN("Out of memory while scheduling name wait timeout for HID controller %s\n", apstBTDeviceInfo->pcAddress);
                                 }
-
-                                BTRCORELOG_INFO("Delaying discovery callback for HID controller %s for up to %d seconds while waiting for Name update\n",
-                                                apstBTDeviceInfo->pcAddress,
-                                                BTRCORE_HID_NAME_WAIT_TIMEOUT_SEC);
                             }
                             else {
                                 BTRCORELOG_WARN("No free pending slot for HID controller name wait for %s\n", apstBTDeviceInfo->pcAddress);
