@@ -35,6 +35,8 @@ $$ CPPFLAGS=-I/xyz/abc/local/include ./configure --prefix=/xyz/abc/local/ --enab
 $$ make V=1
 $$ make install
 
+Telemetry: use `--enable-telemetry=no` for standalone CI/L2 builds without telemetry sender libs.
+
 2.3 To configure and use GDBus with Bluez5
 -------------------------------------------
 $$ PATH=/xyz/abc/local/bin:$PATH PKG_CONFIG_PATH=/xyz/abc/local/lib/x86_64-linux-gnu/pkgconfig CPPFLAGS=-I/xyz/abc/local/include ./configure --prefix=/xyz/abc/local/ --enable-btr-ifce=gdbus_bluez5
