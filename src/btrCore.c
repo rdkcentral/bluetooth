@@ -893,18 +893,18 @@ static BOOLEAN btrCore_IsDeviceRdkRcuByUuid(
     int Idx1;
 
     if (ui16Appearance == BTRCORE_REMOTE_CONTROL_APPEARANCE) {
-        BTRCORELOG_ERROR("Device appearance is remote control\n");
+        BTRCORELOG_DEBUG("Device appearance is remote control\n");
         return TRUE;
     }
 
     if (DevProfile == NULL) {
-        BTRCORELOG_ERROR("No Service UUID's Present\n");
+        BTRCORELOG_ERROR("No Service UUIDs Present\n");
         return FALSE;
     }
 
     for (Idx1 = 0; Idx1 < DevProfile->numberOfService; Idx1++) {
         if (!strncmp(DevProfile->profile[Idx1].profile_name, BTR_CORE_REMOTE_SERVICE_TEXT, strlen(BTR_CORE_REMOTE_SERVICE_TEXT))) {
-            BTRCORELOG_WARN("Detected remote based on UUID ...\n");
+            BTRCORELOG_WARN("Detected remote based on profile name/UUID ...\n");
             return TRUE;
         }
     }
