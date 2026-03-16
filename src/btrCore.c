@@ -886,6 +886,31 @@ static BOOLEAN btrCore_IsDeviceRdkRcu(
     return FALSE;
 }
 
+static BOOLEAN btrCore_IsDeviceRdkRcuByUuid(
+     stBTRCoreSupportedServiceList *DevProfile,
+     unsigned short ui16Appearance
+) {
+    int Idx1;
+
+    if (ui16Appearance == BTRCORE_REMOTE_CONTROL_APPEARANCE) {
+        BTRCORELOG_DEBUG("Device appearance is remote control\n");
+        return TRUE;
+    }
+
+    if (DevProfile == NULL) {
+        BTRCORELOG_ERROR("No Service UUIDs Present\n");
+        return FALSE;
+    }
+
+    for (Idx1 = 0; Idx1 < DevProfile->numberOfService; Idx1++) {
+        if (!strncmp(DevProfile->profile[Idx1].profile_name, BTR_CORE_REMOTE_SERVICE_TEXT, strlen(BTR_CORE_REMOTE_SERVICE_TEXT))) {
+            BTRCORELOG_WARN("Detected remote based on profile name/UUID ...\n");
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 static int
 btrCore_AddDeviceToScannedDevicesArr (
     stBTRCoreHdl*       apsthBTRCore,
@@ -2070,6 +2095,7 @@ btrCore_updateBatteryLevelsForConnectedDevices (
         BTRCORELOG_ERROR("Invalid arguments, can't update battery levels\n");
         return enBTRCoreInvalidArg;
     }
+
     *ui8NumberDevicesAvailable = 0;
     *bLowBatteryDeviceFound = FALSE;
     for (i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
@@ -2077,6 +2103,9 @@ btrCore_updateBatteryLevelsForConnectedDevices (
             (apsthBTRCore->stKnownDevicesArr[i].bDeviceConnected == 1) && 
             (btrCore_MapDevClassToDevType(apsthBTRCore->stKnownDevicesArr[i].enDeviceType) == enBTRCoreHID))
             {
+                if (btrCore_IsDeviceRdkRcuByUuid (&apsthBTRCore->stKnownDevicesArr[i].stDeviceProfile, apsthBTRCore->stKnownDevicesArr[i].ui16DevAppearanceBleSpec)) {
+                    continue;
+                }
                 (*ui8NumberDevicesAvailable)++;
                 enBTRCoreRetVal = BTRCore_GetDeviceBatteryLevel(apsthBTRCore, apsthBTRCore->stKnownDevicesArr[i].tDeviceId, enBTRCoreHID, &batteryLevel);
                 if (enBTRCoreRetVal == enBTRCoreSuccess)
@@ -2087,7 +2116,14 @@ btrCore_updateBatteryLevelsForConnectedDevices (
                     g_mutex_unlock(&apsthBTRCore->batteryLevelMutex);
                     if (prevBatteryLevel != apsthBTRCore->stKnownDevicesArr[i].ui8batteryLevel)
                     {
-                        BTRCORELOG_INFO("updating battery level for device mac,level: %s,%d\n", apsthBTRCore->stKnownDevicesArr[i].pcDeviceAddress, batteryLevel);
+                        BTRCORELOG_INFO("Battery level Updated : Confirmed name,class,appearance,modalias: %s,%u,%hu,v%04Xp%04Xd%04X - %d\n",
+                                         apsthBTRCore->stKnownDevicesArr[i].pcDeviceName,
+                                         apsthBTRCore->stKnownDevicesArr[i].ui32DevClassBtSpec,
+                                         apsthBTRCore->stKnownDevicesArr[i].ui16DevAppearanceBleSpec,
+                                         apsthBTRCore->stKnownDevicesArr[i].ui32ModaliasVendorId,
+                                         apsthBTRCore->stKnownDevicesArr[i].ui32ModaliasProductId,
+                                         apsthBTRCore->stKnownDevicesArr[i].ui32ModaliasDeviceId,
+                                         batteryLevel);
                     }
                     else
                     {
