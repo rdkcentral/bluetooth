@@ -1327,6 +1327,12 @@ btrCore_PopulateListOfPairedDevices (
         return enBTRCoreFailure;
     }
 
+	BTRCORELOG_INFO("Number of paired devices found: %d\n", pstBTPairedDeviceInfo->numberOfDevices);
+
+    if (pstBTPairedDeviceInfo->numberOfDevices == 0) {
+        BTRCORELOG_ERROR("No paired devices found in btrCore_PopulateListOfPairedDevices!\n");
+    }
+
     for (j_idx = 0; j_idx < BTRCORE_MAX_NUM_BT_DEVICES; j_idx++) {
         MEMSET_S(&knownDevicesArr[j_idx], sizeof(stBTRCoreBTDevice), 0, sizeof(stBTRCoreBTDevice));
     }
@@ -1452,6 +1458,7 @@ btrCore_PopulateListOfPairedDevices (
     
     g_free(pstBTPairedDeviceInfo);
     pstBTPairedDeviceInfo = NULL;
+	BTRCORELOG_INFO("btrCore_PopulateListOfPairedDevices done, apsthBTRCore->numOfPairedDevices = %d\n", apsthBTRCore->numOfPairedDevices);
     return retResult;
 }
 
