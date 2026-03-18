@@ -2754,7 +2754,7 @@ btrCore_OutTask (
                                         } else if ((leBTDevState == enBTRCoreDevStDisconnected) &&
                                                    (enBTRCoreHID == lenBTRCoreMapDevType) &&
                                                    (pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceCurrState == enBTRCoreDevStPaired)) {
-                                                   BTRCORELOG_INFO("HID device got connected during the pairing process and got disconnected before the connection succeeds ...\n");
+                                                   BTRCORELOG_DEBUG("HID device got connected during the pairing process and got disconnected before the connection succeeds ...\n");
                                                    pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].bDeviceConnected = FALSE;
                                         }
 
