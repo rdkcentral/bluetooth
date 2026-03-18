@@ -2751,6 +2751,11 @@ btrCore_OutTask (
                                             (pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceCurrState == enBTRCoreDevStPlaying)) {
                                             leBTDevState = enBTRCoreDevStLost;
                                             pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].bDeviceConnected = FALSE;
+                                        } else if ((leBTDevState == enBTRCoreDevStDisconnected) &&
+                                                   (enBTRCoreHID == lenBTRCoreMapDevType) &&
+                                                   (pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceCurrState == enBTRCoreDevStPaired)) {
+                                                   BTRCORELOG_DEBUG("HID device got connected during the pairing process and got disconnected before the connection succeeds ...\n");
+                                                   pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].bDeviceConnected = FALSE;
                                         }
 
                                         if((enBTRCoreHID == lenBTRCoreMapDevType) &&
