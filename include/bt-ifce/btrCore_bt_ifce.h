@@ -278,6 +278,7 @@ typedef enum _enBTDeviceState {
     enBTDevStConnected,
     enBTDevStDisconnected,
     enBTDevStPropChanged,
+    enBTDevStNameChanged,
     enBTDevStRSSIUpdate,
     enBTDevStClassAppUpdate,
     enBTDevStModaliasChanged,

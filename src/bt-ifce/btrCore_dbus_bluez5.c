@@ -8109,6 +8109,7 @@ btrCore_BTDBusConnectionFilterCb (
                     int bConnectEvent = 0; //TODO: Bad way to do this. Live with it for now
                     int bConnected = 0;
                     int bRssiEvent = 0; //TODO: Bad way to do this. Live with it for now
+                    int bNameEvent = 0;
                     int bClassOrAppearanceEvent = 0;
                     int bModaliasUpdate = 0;
                     short i16RSSI = 0;
@@ -8194,6 +8195,24 @@ btrCore_BTDBusConnectionFilterCb (
                                     }
                                     else {
                                         BTRCORELOG_ERROR ("Services; Not an Array\n");
+                                    }
+                                }
+                                else if (strcmp (pNameOfProperty, "Name") == 0) {
+                                    DBusMessageIter variant_i;
+                                    int dbus_type;
+                                    const char* pcName = NULL;
+
+                                    dbus_message_iter_next(&lDBusMsgParse);
+                                    dbus_message_iter_recurse(&lDBusMsgParse, &variant_i);
+                                    dbus_type = dbus_message_iter_get_arg_type (&variant_i);
+
+                                    if (dbus_type == DBUS_TYPE_STRING) {
+                                        dbus_message_iter_get_basic(&variant_i, &pcName);
+                                        if (pcName) {
+                                            strncpy(pstBTDeviceInfo->pcName, pcName, BT_MAX_STR_LEN - 1);
+                                            bNameEvent = 1;
+                                            BTRCORELOG_INFO("Received Name update %s for %s\n", pstBTDeviceInfo->pcName, pstBTDeviceInfo->pcAddress);
+                                        }
                                     }
                                 }
                                 else if (strcmp (pNameOfProperty, "Modalias") == 0) {
@@ -8333,7 +8352,11 @@ btrCore_BTDBusConnectionFilterCb (
                                  strncmp(pstlhBtIfce->pcLeDeviceAddress, pstBTDeviceInfo->pcAddress,
                                      ((BT_MAX_STR_LEN > strlen(pstBTDeviceInfo->pcAddress))?strlen(pstBTDeviceInfo->pcAddress):BT_MAX_STR_LEN))) {
 
-                            if (bClassOrAppearanceEvent)
+                            if (bNameEvent)
+                            {
+                                lenBtDevState = enBTDevStNameChanged;
+                            }
+                            else if (bClassOrAppearanceEvent)
                             {
                                 //we know that the device has already been added but a new class or appearance means that it is a dual mode device
                                 lenBtDevState = enBTDevStClassAppUpdate;

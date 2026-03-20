@@ -65,12 +65,14 @@ int b_rdk_logger_enabled = 0;
 #define BTRCORE_BATTERY_REFRESH_INTERVAL 300
 #define BATTERY_LEVEL_RETRY_ATTEMPTS 6
 #define BATTERY_LEVEL_NOT_FOUND_REFRESH_INTERVAL 5
+#define BTRCORE_HID_NAME_WAIT_TIMEOUT_SEC 7
 
 #define BTRCORE_REMOTE_CONTROL_APPEARANCE 0x0180
 #define BTRCORE_LE_HID_DEVICE_APPEARANCE 0x03c4
 #define BTRCORE_REMOTE_OUI_LENGTH 8
 #define BTRCORE_AMAZON_OUI_LENGTH 8
 #define BTRCORE_GOOGLE_OUI_LENGTH 8
+#define BTCORE_DEFAULT_CONTROLLER_NAME "Game Controller"
 
 static char * BTRCORE_REMOTE_OUI_VALUES[] = {
     "20:44:41", //LC103
@@ -143,6 +145,15 @@ typedef struct _stBTRCoreDevStateInfo {
 } stBTRCoreDevStateInfo;
 
 
+typedef struct _stBTRCorePendingHidNameInfo {
+    BOOLEAN                 bActive;
+    tBTRCoreDevId           btrCoreDevId;
+    enBTRCoreDeviceType     enBTRCoreDevType;
+    GThread*                pTimeoutThread;
+    stBTDeviceInfo          stBTDevInfo;
+} stBTRCorePendingHidNameInfo;
+
+
 typedef struct _stBTRCoreHdl {
 
     tBTRCoreAVMediaHdl              avMediaHdl;
@@ -198,7 +209,17 @@ typedef struct _stBTRCoreHdl {
     unsigned short                  batteryLevelRefreshInterval;
     GCond                           batteryLevelCond;
     BOOLEAN                         batteryLevelThreadExit;
+
+    GMutex                          hidNameWaitMutex;
+    GCond                           hidNameWaitCond;
+    BOOLEAN                         hidNameWaitInitialized;
+    stBTRCorePendingHidNameInfo     stPendingHidNameInfo[BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES];
 } stBTRCoreHdl;
+
+typedef struct _stBTRCoreHidNameTimeoutData {
+    stBTRCoreHdl*           pBTRCoreHdl;
+    tBTRCoreDevId           btrCoreDevId;
+} stBTRCoreHidNameTimeoutData;
 
 
 /* Static Function Prototypes */
@@ -238,6 +259,9 @@ static eBTRCoreMedElementType btrCore_GetMediaElementType (eBTRCoreAVMElementTyp
 static enBTRCoreRet btrCore_RunTaskAddOp (GAsyncQueue* apRunTaskGAq, enBTRCoreTaskOp aenRunTaskOp, enBTRCoreTaskProcessType aenRunTaskPT, void* apvRunTaskInData);
 static enBTRCoreRet btrCore_OutTaskAddOp (GAsyncQueue* apOutTaskGAq, enBTRCoreTaskOp aenOutTaskOp, enBTRCoreTaskProcessType aenOutTaskPT, void* apvOutTaskInData);
 static enBTRCoreRet btrCore_updateBatteryLevelsForConnectedDevices ( stBTRCoreHdl* apsthBTRCore, unsigned char * ui8NumberDevicesAvailable, BOOLEAN * bLowBatteryDeviceFound);
+static BOOLEAN btrCore_ClearPendingControllerNameInfo(stBTRCoreHdl* apsthBTRCore, tBTRCoreDevId aBTRCoreDevId);
+static BOOLEAN btrCore_IsPendingControllerNameInfo(stBTRCoreHdl* apsthBTRCore, tBTRCoreDevId aBTRCoreDevId);
+static gpointer btrCore_HidNameWaitTimeoutThread(gpointer apvUserData);
 
 /* Local Op Threads Prototypes */
 static gpointer btrCore_RunTask (gpointer apsthBTRCore);
@@ -447,6 +471,155 @@ btrCore_IsDevNameSameAsAddress (
       btrCore_ByteCompare(15) && btrCore_ByteCompare(16);
 
     return same;
+}
+
+static BOOLEAN
+btrCore_IsPendingControllerNameInfo (
+    stBTRCoreHdl*   apsthBTRCore,
+    tBTRCoreDevId   aBTRCoreDevId
+) {
+    int i = 0;
+    BOOLEAN lbPending = FALSE;
+
+    if (!apsthBTRCore)
+        return FALSE;
+
+    g_mutex_lock(&apsthBTRCore->hidNameWaitMutex);
+    for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
+        if (apsthBTRCore->stPendingHidNameInfo[i].bActive &&
+            (apsthBTRCore->stPendingHidNameInfo[i].btrCoreDevId == aBTRCoreDevId)) {
+            lbPending = TRUE;
+            break;
+        }
+    }
+    g_mutex_unlock(&apsthBTRCore->hidNameWaitMutex);
+
+    return lbPending;
+}
+
+static BOOLEAN
+btrCore_ClearPendingControllerNameInfo (
+    stBTRCoreHdl*   apsthBTRCore,
+    tBTRCoreDevId   aBTRCoreDevId
+) {
+    int i = 0;
+    BOOLEAN lbCleared = FALSE;
+    GThread* lpThread = NULL;
+
+    if (!apsthBTRCore)
+        return FALSE;
+
+    g_mutex_lock(&apsthBTRCore->hidNameWaitMutex);
+    for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
+        if (apsthBTRCore->stPendingHidNameInfo[i].bActive &&
+            (apsthBTRCore->stPendingHidNameInfo[i].btrCoreDevId == aBTRCoreDevId)) {
+            apsthBTRCore->stPendingHidNameInfo[i].bActive = FALSE;
+            g_cond_broadcast(&apsthBTRCore->hidNameWaitCond);
+            lpThread = apsthBTRCore->stPendingHidNameInfo[i].pTimeoutThread;
+            apsthBTRCore->stPendingHidNameInfo[i].pTimeoutThread = NULL;
+            lbCleared = TRUE;
+            break;
+        }
+    }
+    g_mutex_unlock(&apsthBTRCore->hidNameWaitMutex);
+
+    if (lpThread) {
+        g_thread_join(lpThread);
+    }
+
+    return lbCleared;
+}
+
+static gpointer
+btrCore_HidNameWaitTimeoutThread (
+    gpointer apvUserData
+) {
+    stBTRCoreHidNameTimeoutData* lpstTimeoutData = (stBTRCoreHidNameTimeoutData*)apvUserData;
+    stBTRCoreHdl* lpstlhBTRCore = NULL;
+    stBTDeviceInfo lstBTDeviceInfo;
+    stBTRCoreOTskInData lstOTskInData;
+    enBTRCoreDeviceType lenBTRCoreDevType = enBTRCoreUnknown;
+    gint64 li64DeadlineUs = 0;
+    tBTRCoreDevId btrCoreDevId;
+    int i = 0;
+    BOOLEAN lbFound = FALSE;
+    errno_t safec_rc = -1;
+
+    MEMSET_S(&lstBTDeviceInfo, sizeof(stBTDeviceInfo), 0, sizeof(stBTDeviceInfo));
+    MEMSET_S(&lstOTskInData, sizeof(stBTRCoreOTskInData), 0, sizeof(stBTRCoreOTskInData));
+
+    if (!lpstTimeoutData) {
+        return NULL;
+    }
+
+    lpstlhBTRCore = lpstTimeoutData->pBTRCoreHdl;
+    btrCoreDevId = lpstTimeoutData->btrCoreDevId;
+    g_free(lpstTimeoutData);
+    
+    if (!lpstlhBTRCore) {
+        return NULL;
+    }
+
+    li64DeadlineUs = g_get_monotonic_time() + (gint64)BTRCORE_HID_NAME_WAIT_TIMEOUT_SEC * G_USEC_PER_SEC;
+
+    g_mutex_lock(&lpstlhBTRCore->hidNameWaitMutex);
+    for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
+        if (lpstlhBTRCore->stPendingHidNameInfo[i].bActive &&
+            (lpstlhBTRCore->stPendingHidNameInfo[i].btrCoreDevId == btrCoreDevId)) {
+
+            /* Wait for cancellation signal or timeout - no g_main_loop required */
+            while (lpstlhBTRCore->stPendingHidNameInfo[i].bActive) {
+                if (!g_cond_wait_until(&lpstlhBTRCore->hidNameWaitCond,
+                                       &lpstlhBTRCore->hidNameWaitMutex,
+                                       li64DeadlineUs)) {
+                    break; /* deadline reached */
+                }
+            }
+
+            if (lpstlhBTRCore->stPendingHidNameInfo[i].bActive) {
+                /* Timeout fired before name arrived - use fallback name */
+                safec_rc = memcpy_s(&lstBTDeviceInfo,
+                                    sizeof(stBTDeviceInfo),
+                                    &lpstlhBTRCore->stPendingHidNameInfo[i].stBTDevInfo,
+                                    sizeof(stBTDeviceInfo));
+                ERR_CHK(safec_rc);
+                lenBTRCoreDevType = lpstlhBTRCore->stPendingHidNameInfo[i].enBTRCoreDevType;
+                lbFound = TRUE;
+            }
+            /* Always clear the slot before exiting */
+            lpstlhBTRCore->stPendingHidNameInfo[i].pTimeoutThread = NULL;
+            lpstlhBTRCore->stPendingHidNameInfo[i].bActive = FALSE;
+            break;
+        }
+    }
+    g_mutex_unlock(&lpstlhBTRCore->hidNameWaitMutex);
+
+    if (!lbFound) {
+        return NULL;
+    }
+
+    MEMSET_S(lstBTDeviceInfo.pcName, sizeof(lstBTDeviceInfo.pcName), 0, sizeof(lstBTDeviceInfo.pcName));
+    /* coverity[NO_EFFECT] - strcpy_s is better to use even if the null check is redundant */
+    safec_rc = strcpy_s(lstBTDeviceInfo.pcName, sizeof(lstBTDeviceInfo.pcName), BTCORE_DEFAULT_CONTROLLER_NAME);
+    ERR_CHK(safec_rc);
+
+    lstOTskInData.bTRCoreDevId      = btrCore_GenerateUniqueDeviceID(lstBTDeviceInfo.pcAddress);
+    lstOTskInData.enBTRCoreDevType  = lenBTRCoreDevType;
+    lstOTskInData.pstBTDevInfo      = &lstBTDeviceInfo;
+
+    BTRCORELOG_INFO("Name not updated within %d seconds for %s - sending discovery with fallback name %s\n",
+                    BTRCORE_HID_NAME_WAIT_TIMEOUT_SEC,
+                    lstBTDeviceInfo.pcAddress,
+                    lstBTDeviceInfo.pcName);
+
+    if (btrCore_OutTaskAddOp(lpstlhBTRCore->pGAQueueOutTask,
+                             enBTRCoreTaskOpProcess,
+                             enBTRCoreTaskPTcBDeviceDisc,
+                             &lstOTskInData) != enBTRCoreSuccess) {
+        BTRCORELOG_WARN("Failure btrCore_OutTaskAddOp enBTRCoreTaskOpProcess enBTRCoreTaskPTcBDeviceDisc from HID wait timeout\n");
+    }
+
+    return NULL;
 }
 
 static enBTRCoreDeviceClass
@@ -3394,6 +3567,9 @@ BTRCore_Init (
 
     g_mutex_init(&pstlhBTRCore->batteryLevelMutex);
     g_cond_init(&pstlhBTRCore->batteryLevelCond);
+    g_mutex_init(&pstlhBTRCore->hidNameWaitMutex);
+    g_cond_init(&pstlhBTRCore->hidNameWaitCond);
+    pstlhBTRCore->hidNameWaitInitialized = TRUE;
 
 
     pstlhBTRCore->curAdapterPath = BtrCore_BTGetAdapterPath(pstlhBTRCore->connHdl, NULL); //mikek hard code to default adapter for now
@@ -3511,6 +3687,30 @@ BTRCore_DeInit (
     pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
 
     BTRCORELOG_INFO ("hBTRCore   =   %8p\n", hBTRCore);
+
+    if (pstlhBTRCore->hidNameWaitInitialized) {
+        GThread* lapPendingThreads[BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES];
+        int      liNumPendingThreads = 0;
+
+        g_mutex_lock(&pstlhBTRCore->hidNameWaitMutex);
+        for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
+            if (pstlhBTRCore->stPendingHidNameInfo[i].pTimeoutThread) {
+                lapPendingThreads[liNumPendingThreads++] = pstlhBTRCore->stPendingHidNameInfo[i].pTimeoutThread;
+                pstlhBTRCore->stPendingHidNameInfo[i].pTimeoutThread = NULL;
+            }
+            pstlhBTRCore->stPendingHidNameInfo[i].bActive = FALSE;
+        }
+        g_cond_broadcast(&pstlhBTRCore->hidNameWaitCond);
+        g_mutex_unlock(&pstlhBTRCore->hidNameWaitMutex);
+
+        for (i = 0; i < liNumPendingThreads; i++) {
+            g_thread_join(lapPendingThreads[i]);
+        }
+
+        g_mutex_clear(&pstlhBTRCore->hidNameWaitMutex);
+        g_cond_clear(&pstlhBTRCore->hidNameWaitCond);
+        pstlhBTRCore->hidNameWaitInitialized = FALSE;
+    }
 
 
     /* Stop BTRCore Task Threads */
@@ -7111,11 +7311,13 @@ btrCore_BTDeviceStatusUpdateCb (
 ) {
     enBTRCoreRet         lenBTRCoreRet      = enBTRCoreFailure;
     enBTRCoreDeviceType  lenBTRCoreDevType  = enBTRCoreUnknown;
+    enBTRCoreDeviceClass lenBTRCoreDevClass = enBTRCore_DC_Unknown;
 
     BTRCORELOG_DEBUG ("enBTDeviceType = %d enBTDeviceState = %d apstBTDeviceInfo = %p\n", aeBtDeviceType, aeBtDeviceState, apstBTDeviceInfo);
 
     if (apstBTDeviceInfo) {
         lenBTRCoreDevType = btrCore_MapClassIDToDevType(apstBTDeviceInfo->ui32Class, aeBtDeviceType);
+        lenBTRCoreDevClass = btrCore_MapClassIDtoDevClass(apstBTDeviceInfo->ui32Class);
     }
 
     switch (aeBtDeviceState) {
@@ -7176,7 +7378,7 @@ btrCore_BTDeviceStatusUpdateCb (
                 strncpy(FoundDevice.pcDeviceAddress, apstBTDeviceInfo->pcAddress,    BD_NAME_LEN);
 
                 if(btrCore_IsDevNameSameAsAddress(&FoundDevice)) {
-                    if ((lenBTRCoreDevType == enBTRCoreSpeakers) || (lenBTRCoreDevType == enBTRCoreHeadSet) || (enBTRCoreHID == lenBTRCoreDevType)) {
+                    if ((lenBTRCoreDevType == enBTRCoreSpeakers) || (lenBTRCoreDevType == enBTRCoreHeadSet)) {
                         BTRCORELOG_INFO("pcName - %s pcAddress - %s DeviceType - %d skipCount - %lld\n",apstBTDeviceInfo->pcName,apstBTDeviceInfo->pcAddress,lenBTRCoreDevType,lpstlhBTRCore->skipDeviceDiscUpdate);
 
                         // NOTE: This increments across devices (not on a per device basis), if we have 5 devices which broadcast name as MAC address
@@ -7192,8 +7394,88 @@ btrCore_BTDeviceStatusUpdateCb (
                             BTRCORELOG_INFO("Skipping the update ...\n");
                         }
                     }
+                    else if ((lenBTRCoreDevClass == enBTRCore_DC_HID_Joystick) || (lenBTRCoreDevClass == enBTRCore_DC_HID_GamePad)) {
+                        int i = 0;
+                        int i32FreeIdx = -1;
+                        errno_t safec_rc = -1;
+                        stBTRCoreHidNameTimeoutData* lpstTimeoutData = NULL;
+                        g_mutex_lock(&lpstlhBTRCore->hidNameWaitMutex);
+                        for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
+                            // Already waiting for name update for this device, just update the device info and continue to wait
+                            if (lpstlhBTRCore->stPendingHidNameInfo[i].bActive &&
+                                (lpstlhBTRCore->stPendingHidNameInfo[i].btrCoreDevId == lBTRCoreDevId)) {
+                                safec_rc = memcpy_s(&lpstlhBTRCore->stPendingHidNameInfo[i].stBTDevInfo,
+                                                    sizeof(stBTDeviceInfo),
+                                                    apstBTDeviceInfo,
+                                                    sizeof(stBTDeviceInfo));
+                                ERR_CHK(safec_rc);
+                                lpstlhBTRCore->stPendingHidNameInfo[i].enBTRCoreDevType = lenBTRCoreDevType;
+                                g_mutex_unlock(&lpstlhBTRCore->hidNameWaitMutex);
+                                BTRCORELOG_INFO("Still waiting for name update for HID controller %s\n", apstBTDeviceInfo->pcAddress);
+                                break;
+                            }
+
+                            if ((i32FreeIdx == -1) && (!lpstlhBTRCore->stPendingHidNameInfo[i].bActive)) {
+                                i32FreeIdx = i;
+                            }
+                        }
+
+                        if (i == BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES) {
+                            if (i32FreeIdx != -1) {
+                                lpstlhBTRCore->stPendingHidNameInfo[i32FreeIdx].bActive           = TRUE;
+                                lpstlhBTRCore->stPendingHidNameInfo[i32FreeIdx].btrCoreDevId      = lBTRCoreDevId;
+                                lpstlhBTRCore->stPendingHidNameInfo[i32FreeIdx].enBTRCoreDevType  = lenBTRCoreDevType;
+                                safec_rc = memcpy_s(&lpstlhBTRCore->stPendingHidNameInfo[i32FreeIdx].stBTDevInfo,
+                                                    sizeof(stBTDeviceInfo),
+                                                    apstBTDeviceInfo,
+                                                    sizeof(stBTDeviceInfo));
+                                ERR_CHK(safec_rc);
+
+                                lpstTimeoutData = g_malloc0(sizeof(stBTRCoreHidNameTimeoutData));
+                                if (lpstTimeoutData) {
+                                    lpstTimeoutData->pBTRCoreHdl = lpstlhBTRCore;
+                                    lpstTimeoutData->btrCoreDevId = lBTRCoreDevId;
+                                    lpstlhBTRCore->stPendingHidNameInfo[i32FreeIdx].pTimeoutThread =
+                                        g_thread_try_new("hid-name-wait",
+                                                         btrCore_HidNameWaitTimeoutThread,
+                                                         lpstTimeoutData,
+                                                         NULL);
+
+                                    if (!lpstlhBTRCore->stPendingHidNameInfo[i32FreeIdx].pTimeoutThread) {
+                                        lpstlhBTRCore->stPendingHidNameInfo[i32FreeIdx].bActive = FALSE;
+                                        g_free(lpstTimeoutData);
+                                        lpstTimeoutData = NULL;
+                                        BTRCORELOG_WARN("Failed to schedule name wait timeout for HID controller %s\n", apstBTDeviceInfo->pcAddress);
+                                    }
+                                    else {
+                                        BTRCORELOG_INFO("Delaying discovery callback for HID controller %s for up to %d seconds while waiting for Name update\n",
+                                                        apstBTDeviceInfo->pcAddress,
+                                                        BTRCORE_HID_NAME_WAIT_TIMEOUT_SEC);
+                                    }
+                                }
+                                else {
+                                    lpstlhBTRCore->stPendingHidNameInfo[i32FreeIdx].bActive = FALSE;
+                                    BTRCORELOG_WARN("Out of memory while scheduling name wait timeout for HID controller %s\n", apstBTDeviceInfo->pcAddress);
+                                }
+                            }
+                            else {
+                                BTRCORELOG_WARN("No free pending slot for HID controller name wait for %s\n", apstBTDeviceInfo->pcAddress);
+                            }
+
+                            g_mutex_unlock(&lpstlhBTRCore->hidNameWaitMutex);
+                        }
+                    /* coverity[RESOURCE_LEAK] - lpstTimeoutData is always freed in the thread if created correctly and in this function if not */
+                    }
+                    else {
+                        (void)btrCore_ClearPendingControllerNameInfo(lpstlhBTRCore, lBTRCoreDevId);
+                    }
                 }
                 else {
+                    if (btrCore_ClearPendingControllerNameInfo(lpstlhBTRCore, lBTRCoreDevId)) {
+                        BTRCORELOG_INFO("Received valid device name for %s before timeout; sending discovery callback immediately\n",
+                                        apstBTDeviceInfo->pcAddress);
+                    }
+
                     if ((lenBTRCoreRet = btrCore_OutTaskAddOp(lpstlhBTRCore->pGAQueueOutTask, enBTRCoreTaskOpProcess, enBTRCoreTaskPTcBDeviceDisc,  &lstOTskInData)) != enBTRCoreSuccess) {
                         BTRCORELOG_WARN("Failure btrCore_OutTaskAddOp enBTRCoreTaskOpProcess enBTRCoreTaskPTcBDeviceDisc %d\n", lenBTRCoreRet);
                     }
@@ -7208,6 +7490,8 @@ btrCore_BTDeviceStatusUpdateCb (
 
         if (lpstlhBTRCore && apstBTDeviceInfo) {
             tBTRCoreDevId   lBTRCoreDevId     = btrCore_GenerateUniqueDeviceID(apstBTDeviceInfo->pcAddress);
+
+            (void)btrCore_ClearPendingControllerNameInfo(lpstlhBTRCore, lBTRCoreDevId);
 
             if (btrCore_GetKnownDeviceMac(lpstlhBTRCore, lBTRCoreDevId)) {
                 stBTRCoreOTskInData lstOTskInData;
@@ -7256,6 +7540,41 @@ btrCore_BTDeviceStatusUpdateCb (
         break;
     }
     case enBTDevStDisconnected: {
+        break;
+    }
+    case enBTDevStNameChanged: {
+        stBTRCoreHdl*   lpstlhBTRCore = (stBTRCoreHdl*)apUserData;
+
+        if (lpstlhBTRCore && apstBTDeviceInfo) {
+            tBTRCoreDevId   lBTRCoreDevId     = btrCore_GenerateUniqueDeviceID(apstBTDeviceInfo->pcAddress);
+            stBTRCoreBTDevice   FoundDevice;
+
+            MEMSET_S(&FoundDevice, sizeof(stBTRCoreBTDevice), 0, sizeof(stBTRCoreBTDevice));
+            strncpy(FoundDevice.pcDeviceName,    apstBTDeviceInfo->pcName,       BD_NAME_LEN);
+            strncpy(FoundDevice.pcDeviceAddress, apstBTDeviceInfo->pcAddress,    BD_NAME_LEN);
+
+            if (btrCore_IsPendingControllerNameInfo(lpstlhBTRCore, lBTRCoreDevId) && !btrCore_IsDevNameSameAsAddress(&FoundDevice)) {
+                stBTRCoreOTskInData lstDiscTskInData;
+
+                lstDiscTskInData.bTRCoreDevId      = lBTRCoreDevId;
+                lstDiscTskInData.enBTRCoreDevType  = lenBTRCoreDevType;
+                lstDiscTskInData.pstBTDevInfo      = apstBTDeviceInfo;
+
+                if (btrCore_ClearPendingControllerNameInfo(lpstlhBTRCore, lBTRCoreDevId)) {
+                    BTRCORELOG_INFO("Received Name update from BlueZ for %s within timeout; sending discovery callback with actual device name %s\n",
+                                    apstBTDeviceInfo->pcAddress,
+                                    apstBTDeviceInfo->pcName);
+
+                    if ((lenBTRCoreRet = btrCore_OutTaskAddOp(lpstlhBTRCore->pGAQueueOutTask,
+                                                              enBTRCoreTaskOpProcess,
+                                                              enBTRCoreTaskPTcBDeviceDisc,
+                                                              &lstDiscTskInData)) != enBTRCoreSuccess) {
+                        BTRCORELOG_WARN("Failure btrCore_OutTaskAddOp enBTRCoreTaskOpProcess enBTRCoreTaskPTcBDeviceDisc %d\n", lenBTRCoreRet);
+                    }
+                }
+            }
+        }
+
         break;
     }
     case enBTDevStPropChanged: {

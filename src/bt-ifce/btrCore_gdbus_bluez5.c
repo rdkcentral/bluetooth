@@ -4541,6 +4541,7 @@ btrCore_bluezSignalDeviceChangedCb (
     int bConnectEvent = 0; //TODO: Bad way to do this. Live with it for now
     int bConnected = 0;
     int bRssiEvent = 0; //TODO: Bad way to do this. Live with it for now
+    int bNameEvent = 0;
     short i16RSSI = 0;
 
 
@@ -4587,6 +4588,10 @@ btrCore_bluezSignalDeviceChangedCb (
             pstBTDeviceInfo->i32RSSI = i16RSSI;
             bRssiEvent = 1;
             BTRCORELOG_DEBUG ("Event - bi32Rssi = %d\n", pstBTDeviceInfo->i32RSSI);
+        }
+        else if (strcmp (g_param_spec_get_name(spec), "name") == 0) {
+            bNameEvent = 1;
+            BTRCORELOG_DEBUG ("Event - Name changed = %s\n", pstBTDeviceInfo->pcName);
         }
     }
 
@@ -4696,7 +4701,7 @@ btrCore_bluezSignalDeviceChangedCb (
                 lenBtDevState = enBTDevStRSSIUpdate;
             }
             else {
-                lenBtDevState = enBTDevStFound;
+                lenBtDevState = bNameEvent ? enBTDevStNameChanged : enBTDevStFound;
             }
 
             if (pstlhBtIfce->fpcBDevStatusUpdate) {
