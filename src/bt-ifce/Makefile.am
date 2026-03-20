@@ -20,6 +20,7 @@ SUBDIRS =
 
 INCLUDE_FILES = 
 
+
 if BTR_IFCE_DBUS_BLUEZ4
 BTRCORE_IFCE_SRCS = btrCore_dbus_bluez4.c
 BTRCORE_IFCE_BLUEZ_INC = $(DBUS_CFLAGS)
@@ -40,16 +41,16 @@ endif
 endif
 endif
 
-AM_CPPFLAGS = -Wall -Werror -I${top_srcdir}/include/logger -I${top_srcdir}/include/safec -I${top_srcdir}/include/bt-ifce $(BTRCORE_IFCE_BLUEZ_INC)
+AM_CPPFLAGS = -Wall -Werror -I${top_srcdir}/include/logger -I${top_srcdir}/include/safec -I${top_srcdir}/include/bt-ifce $(BTRCORE_IFCE_BLUEZ_INC) -I${top_srcdir}/include/telemetry
 
 if IS_LIBSYSWRAPPER_ENABLED
 AM_LDFLAGS = -lsecure_wrapper
 endif
- 
+
 lib_LTLIBRARIES = libbtrCoreIfce.la
 libbtrCoreIfce_la_SOURCES = $(BTRCORE_IFCE_SRCS)
-libbtrCoreIfce_la_CFLAGS = $(INCLUDE_FILES) $(GLIB_CFLAGS) $(LIBSYSWRAPPER_FLAG) $(SAFEC_CFLAGS)
-libbtrCoreIfce_la_LIBADD = $(GLIB_LIBS) $(BTR_CORE_LOGGER_LIBS) $(BTRCORE_IFCE_BLUEZ_LIB) $(UDEV_LIB) $(SAFEC_LFLAGS)
+libbtrCoreIfce_la_CFLAGS = $(INCLUDE_FILES) $(GLIB_CFLAGS) $(LIBSYSWRAPPER_FLAG) $(SAFEC_CFLAGS) $(TELEMETRY_CFLAGS)
+libbtrCoreIfce_la_LIBADD = $(GLIB_LIBS) $(BTR_CORE_LOGGER_LIBS) $(BTRCORE_IFCE_BLUEZ_LIB) $(UDEV_LIB) $(SAFEC_LFLAGS) $(TELEMETRY_MSGLIBS)
 
 if BTR_IFCE_GDBUS_BLUEZ5
 libbtrCoreIfce_la_CFLAGS += $(GIO_CFLAGS) $(GIO_UNIX_CFLAGS)

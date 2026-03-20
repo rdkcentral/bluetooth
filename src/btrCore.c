@@ -42,6 +42,7 @@
 
 /* Interface lib Headers */
 #include "btrCore_logger.h"
+#include "bt-telemetry.h"
 #include "safec_lib.h"
 
 /* Local Headers */
@@ -1052,6 +1053,31 @@ static BOOLEAN btrCore_IsDeviceRdkRcu(
         if(!strncmp(pcAddress, BTRCORE_REMOTE_OUI_VALUES[i], BTRCORE_REMOTE_OUI_LENGTH))
         {
             BTRCORELOG_DEBUG("Device OUI matches remote control\n");
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+static BOOLEAN btrCore_IsDeviceRdkRcuByUuid(
+     stBTRCoreSupportedServiceList *DevProfile,
+     unsigned short ui16Appearance
+) {
+    int Idx1;
+
+    if (ui16Appearance == BTRCORE_REMOTE_CONTROL_APPEARANCE) {
+        BTRCORELOG_DEBUG("Device appearance is remote control\n");
+        return TRUE;
+    }
+
+    if (DevProfile == NULL) {
+        BTRCORELOG_ERROR("No Service UUIDs Present\n");
+        return FALSE;
+    }
+
+    for (Idx1 = 0; Idx1 < DevProfile->numberOfService; Idx1++) {
+        if (!strncmp(DevProfile->profile[Idx1].profile_name, BTR_CORE_REMOTE_SERVICE_TEXT, strlen(BTR_CORE_REMOTE_SERVICE_TEXT))) {
+            BTRCORELOG_WARN("Detected remote based on profile name/UUID ...\n");
             return TRUE;
         }
     }
@@ -2242,6 +2268,7 @@ btrCore_updateBatteryLevelsForConnectedDevices (
         BTRCORELOG_ERROR("Invalid arguments, can't update battery levels\n");
         return enBTRCoreInvalidArg;
     }
+
     *ui8NumberDevicesAvailable = 0;
     *bLowBatteryDeviceFound = FALSE;
     for (i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
@@ -2249,6 +2276,9 @@ btrCore_updateBatteryLevelsForConnectedDevices (
             (apsthBTRCore->stKnownDevicesArr[i].bDeviceConnected == 1) && 
             (btrCore_MapDevClassToDevType(apsthBTRCore->stKnownDevicesArr[i].enDeviceType) == enBTRCoreHID))
             {
+                if (btrCore_IsDeviceRdkRcuByUuid (&apsthBTRCore->stKnownDevicesArr[i].stDeviceProfile, apsthBTRCore->stKnownDevicesArr[i].ui16DevAppearanceBleSpec)) {
+                    continue;
+                }
                 (*ui8NumberDevicesAvailable)++;
                 enBTRCoreRetVal = BTRCore_GetDeviceBatteryLevel(apsthBTRCore, apsthBTRCore->stKnownDevicesArr[i].tDeviceId, enBTRCoreHID, &batteryLevel);
                 if (enBTRCoreRetVal == enBTRCoreSuccess)
@@ -2259,7 +2289,14 @@ btrCore_updateBatteryLevelsForConnectedDevices (
                     g_mutex_unlock(&apsthBTRCore->batteryLevelMutex);
                     if (prevBatteryLevel != apsthBTRCore->stKnownDevicesArr[i].ui8batteryLevel)
                     {
-                        BTRCORELOG_INFO("updating battery level for device mac,level: %s,%d\n", apsthBTRCore->stKnownDevicesArr[i].pcDeviceAddress, batteryLevel);
+                        BTRCORELOG_INFO("Battery level Updated : Confirmed name,class,appearance,modalias: %s,%u,%hu,v%04Xp%04Xd%04X - %d\n",
+                                         apsthBTRCore->stKnownDevicesArr[i].pcDeviceName,
+                                         apsthBTRCore->stKnownDevicesArr[i].ui32DevClassBtSpec,
+                                         apsthBTRCore->stKnownDevicesArr[i].ui16DevAppearanceBleSpec,
+                                         apsthBTRCore->stKnownDevicesArr[i].ui32ModaliasVendorId,
+                                         apsthBTRCore->stKnownDevicesArr[i].ui32ModaliasProductId,
+                                         apsthBTRCore->stKnownDevicesArr[i].ui32ModaliasDeviceId,
+                                         batteryLevel);
                     }
                     else
                     {
@@ -2887,6 +2924,11 @@ btrCore_OutTask (
                                             (pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceCurrState == enBTRCoreDevStPlaying)) {
                                             leBTDevState = enBTRCoreDevStLost;
                                             pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].bDeviceConnected = FALSE;
+                                        } else if ((leBTDevState == enBTRCoreDevStDisconnected) &&
+                                                   (enBTRCoreHID == lenBTRCoreMapDevType) &&
+                                                   (pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceCurrState == enBTRCoreDevStPaired)) {
+                                                   BTRCORELOG_DEBUG("HID device got connected during the pairing process and got disconnected before the connection succeeds ...\n");
+                                                   pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].bDeviceConnected = FALSE;
                                         }
 
                                         if((enBTRCoreHID == lenBTRCoreMapDevType) &&
@@ -3284,7 +3326,15 @@ btrCore_OutTask (
                                 BTRCORELOG_INFO ("Unsupported device detected: %s\n", lpstBTDeviceInfo->pcModalias);
 
                                 //This is telemetry log. If we change this print,need to change and configure the telemetry string in xconf server.
-                                BTRCORELOG_ERROR ("Failed to pair a device name,class,apperance,modalias: %s,%u,%u,v%04Xp%04Xd%04X\n",
+                                char buffer[256];
+                                snprintf(buffer, sizeof(buffer), "%s,%u,%hu,v%04Xp%04Xd%04X",
+                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].pcDeviceName, pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32DevClassBtSpec,
+                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui16DevAppearanceBleSpec,
+                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
+                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId,
+                                    pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasDeviceId);
+                                telemetry_event_s("BTPairFail_split", buffer);
+                                BTRCORELOG_ERROR ("Failed to pair a device name,class,apperance,modalias: %s,%u,%hu,v%04Xp%04Xd%04X\n",
                                 pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].pcDeviceName, pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32DevClassBtSpec,
                                 pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui16DevAppearanceBleSpec,
                                 pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
@@ -3311,6 +3361,12 @@ btrCore_OutTask (
                                     }
                                     else {
                                         //This is telemetry log. If we change this print,need to change and configure the telemetry string in xconf server.
+                                        char buffer[128];
+                                        snprintf(buffer, sizeof(buffer), "v%04Xp%04Xd%04X",
+                                            pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
+                                            pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId,
+                                            pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasDeviceId);
+                                        telemetry_event_s("BT_INFO_NotSupp_split", buffer);
                                         BTRCORELOG_INFO ("Unsupport BT device detected v%04Xp%04Xd%04X\n",
                                         pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasVendorId,
                                         pstlhBTRCore->stScannedDevicesArr[i32LoopIdx].ui32ModaliasProductId,
@@ -3949,6 +4005,8 @@ BTRCore_GetAdapter (
 
     if (!pstlhBTRCore->curAdapterPath) {
         if ((pstlhBTRCore->curAdapterPath = BtrCore_BTGetAdapterPath(pstlhBTRCore->connHdl, NULL)) == NULL) { //mikek hard code to default adapter for now
+            //This is telemetry log. If we change this marker name, need to change and configure the telemetry marker in xconf server.
+            telemetry_event_d("BT_ERR_GetBTAdapterFail", 1);
             BTRCORELOG_ERROR ("Failed to get BT Adapter");
             return enBTRCoreInvalidAdapter;
         }
@@ -4658,6 +4716,8 @@ BTRCore_PairDevice (
                                     pDeviceAddress,
                                     pairingOp) < 0) {
         BTRCORELOG_ERROR ("Failed to pair a device\n");
+        //This is telemetry log. If we change this marker name, need to change and configure the telemetry marker in xconf server.
+        telemetry_event_d("BT_ERR_FailToPair", 1);
         return enBTRCorePairingFailed;
     }
 
@@ -5457,6 +5517,8 @@ enBTRCoreRet BTRCore_newBatteryLevelDevice (tBTRCoreHandle hBTRCore)
         }
         else
         {
+            //This is telemetry log. If we change this marker name, need to change and configure the telemetry marker in xconf server.
+            telemetry_event_d("BT_ERR_BatteryThreadFail", 1);
             BTRCORELOG_ERROR("Battery thread creation failed\n");
         }
         return enBTRCoreSuccess;
