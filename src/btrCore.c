@@ -5136,17 +5136,19 @@ BTRCore_ConnectDevice (
 }
 
 enBTRCoreRet btrCore_UpdateDeviceBlockState (
-    tBTRCoreHandle*         pstlhBTRCore,
+    tBTRCoreHandle*         hBTRCore,
     tBTRCoreDevId         aBTRCoreDevId,
     enBTRCoreDeviceType   aenBTRCoreDevType,
     int                   isBlocked
 ) {
 
-    if (!pstlhBTRCore || !pstlhBTRCore->connHdl) {
+    if (!hBTRCore) {
         BTRCORELOG_ERROR("Invalid BT Core Handle\n");
         return enBTRCoreInvalidArg;
     }
-
+	
+	pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
+	
     const char *pDeviceAddress = NULL;
     int i;
     enBTDeviceType enBTDevice = enBTDevUnknown;
