@@ -5154,6 +5154,7 @@ enBTRCoreRet btrCore_UpdateDeviceBlockState (
     for (i = 0; i < pstlhBTRCore->numOfPairedDevices; ++i) {
         if (pstlhBTRCore->stKnownDevicesArr[i].tDeviceId == aBTRCoreDevId) {
             pDeviceAddress = pstlhBTRCore->stKnownDevicesArr[i].pcDeviceAddress;
+            enBTDevice = pstlhBTRCore->stKnownDevicesArr[i].enDeviceType; 
             break;
         }
     }
