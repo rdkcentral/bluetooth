@@ -5150,20 +5150,20 @@ enBTRCoreRet btrCore_UpdateDeviceBlockState (
 	
 	pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
 	
-    const char *pDeviceAddress = NULL;
+    const char *pDevicePath = NULL;
     int i;
     enBTDeviceType enBTDevice = enBTDevUnknown;
 
     for (i = 0; i < pstlhBTRCore->numOfPairedDevices; ++i) {
         if (pstlhBTRCore->stKnownDevicesArr[i].tDeviceId == aBTRCoreDevId) {
-            pDeviceAddress = pstlhBTRCore->stKnownDevicesArr[i].pcDeviceAddress;
+            pDevicePath = pstlhBTRCore->stKnownDevicesArr[i].pcDevicePath;
             enBTDevice = pstlhBTRCore->stKnownDevicesArr[i].enDeviceType; 
             break;
         }
     }
 
-    if (!pDeviceAddress) {
-        BTRCORELOG_ERROR("Device ID %llu not found\n", aBTRCoreDevId);
+    if (!pDevicePath) {
+        BTRCORELOG_ERROR("Device ID %lld not found\n", aBTRCoreDevId);
         return enBTRCoreDeviceNotFound;
     }
 
@@ -5171,7 +5171,7 @@ enBTRCoreRet btrCore_UpdateDeviceBlockState (
     lunBtOpDevProp.enBtDeviceProp = enBTDevPropBlocked;
     int BlockDevice = isBlocked ? 1 : 0;
 
-    if (BtrCore_BTSetProp(pstlhBTRCore->connHdl, pDeviceAddress, enBTDevice, lunBtOpDevProp, &BlockDevice)) {
+    if (BtrCore_BTSetProp(pstlhBTRCore->connHdl, pDevicePath, enBTDevice, lunBtOpDevProp, &BlockDevice)) {
         BTRCORELOG_ERROR("Set Device Property enBTDevPropBlocked - FAILED\n");
         return enBTRCoreFailure;
     }
