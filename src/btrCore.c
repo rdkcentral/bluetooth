@@ -5142,6 +5142,7 @@ enBTRCoreRet btrCore_UpdateDeviceBlockState (
     int                   isBlocked
 ) {
 
+	stBTRCoreHdl*           pstlhBTRCore = NULL;
     if (!hBTRCore) {
         BTRCORELOG_ERROR("Invalid BT Core Handle\n");
         return enBTRCoreInvalidArg;
@@ -5168,7 +5169,7 @@ enBTRCoreRet btrCore_UpdateDeviceBlockState (
 
     unBTOpIfceProp lunBtOpDevProp;
     lunBtOpDevProp.enBtDeviceProp = enBTDevPropBlocked;
-    int BlockDevice = block ? 1 : 0;
+    int BlockDevice = isBlocked ? 1 : 0;
 
     if (BtrCore_BTSetProp(pstlhBTRCore->connHdl, pDeviceAddress, enBTDevice, lunBtOpDevProp, &BlockDevice)) {
         BTRCORELOG_ERROR("Set Device Property enBTDevPropBlocked - FAILED\n");
