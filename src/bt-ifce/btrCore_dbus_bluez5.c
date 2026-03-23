@@ -4799,6 +4799,7 @@ BtrCore_BTGetPairedDeviceInfo (
                                                 if (strcmp(dbusObject2, "Paired") == 0 && device_prop) {
                                                     if(adapter_path)
                                                        strncpy(&paths[d][0], adapter_path, (strlen(adapter_path) < BT_MAX_DEV_PATH_LEN) ? strlen(adapter_path) : BT_MAX_DEV_PATH_LEN - 1);
+//DummyPR
                                                     ++d;
                                                 }
                                             }
