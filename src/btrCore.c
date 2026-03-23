@@ -5163,7 +5163,7 @@ enBTRCoreRet btrCore_UpdateDeviceBlockState (
     }
 
     if (!pDeviceAddress) {
-        BTRCORELOG_ERROR("Device ID %lld not found\n", aBTRCoreDevId);
+        BTRCORELOG_ERROR("Device ID %llu not found\n", aBTRCoreDevId);
         return enBTRCoreDeviceNotFound;
     }
 
