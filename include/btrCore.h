@@ -1365,7 +1365,7 @@ BOOLEAN BTRCore_IsUnsupportedGamepad(unsigned int ui32Vendor, unsigned int ui32P
  * @retval enBTRCoreInvalidArg      Invalid argument provided.
  * @retval enBTRCoreDeviceNotFound  Device with given ID not found.
  */
-enBTRCoreRet btrCore_UpdateDeviceBlockState (tBTRCoreHandle* pstlhBTRCore, tBTRCoreDevId aBTRCoreDevId, enBTRCoreDeviceType   aenBTRCoreDevType, int isBlocked);
+enBTRCoreRet btrCore_UpdateDeviceBlockState (tBTRCoreHandle* hBTRCore, tBTRCoreDevId aBTRCoreDevId, enBTRCoreDeviceType   aenBTRCoreDevType, int isBlocked);
 
 // Outgoing callbacks Registration Interfaces
 /* BTRCore_RegisterDiscoveryCb - Callback to notify the application every time when a new device is found and added to discovery list */
