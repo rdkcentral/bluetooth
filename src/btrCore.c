@@ -5136,7 +5136,7 @@ BTRCore_ConnectDevice (
 }
 
 enBTRCoreRet btrCore_UpdateDeviceBlockState (
-    stBTRCoreHdl*         pstlhBTRCore,
+    tBTRCoreHandle*         pstlhBTRCore,
     tBTRCoreDevId         aBTRCoreDevId,
     enBTRCoreDeviceType   aenBTRCoreDevType,
     int                   isBlocked
