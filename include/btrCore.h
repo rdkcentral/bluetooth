@@ -1348,6 +1348,25 @@ enBTRCoreRet BTRCore_GetBluetoothVersion(char *version);
   */
 BOOLEAN BTRCore_IsUnsupportedGamepad(unsigned int ui32Vendor, unsigned int ui32Product, unsigned int ui32DeviceId);
 
+/**
+ * @brief  Updates the block state (blocked/unblocked) of a Bluetooth device.
+ *
+ * This API sets the device block state for the specified Bluetooth device using its device ID and type.
+ * It may be used to block or unblock a device from interacting with the Bluetooth core.
+ *
+ * @param[in] pstlhBTRCore      Pointer to the Bluetooth Core handle.
+ * @param[in] aBTRCoreDevId     Device ID of the target Bluetooth device.
+ * @param[in] aenBTRCoreDevType Device type of the target Bluetooth device.
+ * @param[in] isBlocked         Desired block state: 1 to block the device, 0 to unblock it.
+ *
+ * @return Returns the status of the operation.
+ * @retval enBTRCoreSuccess         Operation successful.
+ * @retval enBTRCoreFailure         Operation failed; see logs for details.
+ * @retval enBTRCoreInvalidArg      Invalid argument provided.
+ * @retval enBTRCoreDeviceNotFound  Device with given ID not found.
+ */
+enBTRCoreRet btrCore_UpdateDeviceBlockState (stBTRCoreHdl* pstlhBTRCore, tBTRCoreDevId aBTRCoreDevId, enBTRCoreDeviceType   aenBTRCoreDevType, int isBlocked);
+
 // Outgoing callbacks Registration Interfaces
 /* BTRCore_RegisterDiscoveryCb - Callback to notify the application every time when a new device is found and added to discovery list */
 enBTRCoreRet BTRCore_RegisterDiscoveryCb (tBTRCoreHandle  hBTRCore, fPtr_BTRCore_DeviceDiscCb afpcBBTRCoreDeviceDiscovery, void* apUserData);
