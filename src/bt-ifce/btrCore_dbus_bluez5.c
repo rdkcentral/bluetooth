@@ -215,7 +215,7 @@ static int btrCore_BTUnRegisterGattService (DBusConnection* apDBusConn, const ch
 static int btrCore_BTRegisterLeAdvGetProp (DBusConnection* apDBusConn, DBusMessage* apDBusMsg, stBtIfceHdl* apstlhBtIfce);
 static DBusMessage* btrCore_BTLEGattOps (DBusMessage* apDBusMsg, stBtIfceHdl* apstlhBtIfce, enBTOpIfceType  aenIfceType, enBTLeGattOp aenGattOp);
 static int btrCore_BTReleaseLEGattObjPath(char* apstObjPath, void* apvUserData);
-static bool btrCore_IsPathValid (char *path);
+static bool btrCore_IsPathValid (const char * path);
 /* Incoming Callbacks Prototypes */
 static DBusHandlerResult btrCore_BTDBusConnectionFilterCb (DBusConnection* apDBusConn, DBusMessage* apDBusMsg, void* apvUserData);
 static DBusHandlerResult btrCore_BTMediaEndpointHandlerCb (DBusConnection* apDBusConn, DBusMessage* apDBusMsg, void* apvUserData);
@@ -223,6 +223,16 @@ static DBusHandlerResult btrCore_BTAgentMessageHandlerCb  (DBusConnection* apDBu
 static DBusHandlerResult btrCore_BTLeGattEndpointHandlerCb(DBusConnection* apDBusConn, DBusMessage* apDBusMsg, void* apvUserData);
 static DBusHandlerResult btrCore_BTLeGattMessageHandlerCb (DBusConnection* apDBusConn, DBusMessage* apDBusMsg, void* apvUserData);
 
+static bool btrCore_IsPathValid(const char * path) {
+    if(!path) {
+        BTRCORELOG_ERROR ("path is NULL\n");
+        return false;
+    }
+
+    BTRCORELOG_INFO ("path value is: %s\n", path);
+
+    return strncmp(path, "/", strlen("/")) == 0;
+}
 
 static const DBusObjectPathVTable gDBusMediaEndpointVTable = {
     .message_function = btrCore_BTMediaEndpointHandlerCb,
@@ -3894,7 +3904,11 @@ BtrCore_BTGetProp (
         BTRCORELOG_ERROR ("Invalid Interface Property\n");
         return -1;
     }
-    
+
+	if (!btrCore_IsPathValid(apcBtOpIfcePath)) {
+        BTRCORELOG_ERROR("Invalid apcBtOpIfcePath\n");
+        return -1;
+    }
 
     lpDBusMsg = dbus_message_new_method_call(BT_DBUS_BLUEZ_PATH,
                                              apcBtOpIfcePath,
@@ -4683,7 +4697,6 @@ BtrCore_BTGetPairedDeviceInfo (
     DBusMessage*    lpDBusMsg   = NULL;
     DBusMessage*    lpDBusReply = NULL;
     DBusMessageIter rootIter;
-    DBusError       lDBusErr;
     bool            adapterFound = FALSE;
 
     char*           pdeviceInterface = BT_DBUS_BLUEZ_DEVICE_PATH;
@@ -4699,15 +4712,16 @@ BtrCore_BTGetPairedDeviceInfo (
     int             d = 0;
 
 
-    if (!apstBtIfceHdl || !apBtAdapter || !pPairedDeviceInfo)
+    if (!apstBtIfceHdl || !apBtAdapter || !pPairedDeviceInfo ||
+        !pstlhBtIfce || !pstlhBtIfce->pDBusConn) {
+        BTRCORELOG_ERROR ("NULL check failed.\n");
         return -1;
+    }
 
 
-    dbus_error_init(&lDBusErr);
     lpDBusReply = btrCore_BTSendMethodCall(pstlhBtIfce->pDBusConn, "/", DBUS_INTERFACE_OBJECT_MANAGER, "GetManagedObjects");
     if (!lpDBusReply) {
-        BTRCORELOG_ERROR ("org.bluez.Manager.ListAdapters returned an error: '%s'\n", lDBusErr.message);
-        dbus_error_free(&lDBusErr);
+        BTRCORELOG_ERROR ("GetManagedObjects call failed\n");
         return -1;
     }
 
@@ -4778,14 +4792,15 @@ BtrCore_BTGetPairedDeviceInfo (
                                             ++b;
                                         }
                                         else if (DBUS_TYPE_BOOLEAN == dbus_message_iter_get_arg_type(&innerDictEntryIter3)) {
-                                            bool *device_prop = FALSE;
+                                            dbus_bool_t device_prop = 0;
                                             dbus_message_iter_get_basic(&innerDictEntryIter3, &device_prop);
 
                                             if (dbusObject2) {
                                                 if (strcmp(dbusObject2, "Paired") == 0 && device_prop) {
-                                                    if(adapter_path)
+                                                    if ((adapter_path) && (adapter_path[0] != '\0') && (d < BT_MAX_NUM_DEVICE)) {
                                                        strncpy(&paths[d][0], adapter_path, (strlen(adapter_path) < BT_MAX_DEV_PATH_LEN) ? strlen(adapter_path) : BT_MAX_DEV_PATH_LEN - 1);
-                                                    ++d;
+                                                       ++d;
+                                                    }
                                                 }
                                             }
                                         }
@@ -4838,33 +4853,45 @@ BtrCore_BTGetPairedDeviceInfo (
     for ( i = 0; i < num; i++) {
         DBusPendingCall*    lpDBusPendC = NULL;
 
+        if (pPairedDeviceInfo->devicePath[i][0] == '\0') {
+            BTRCORELOG_INFO("Skipping empty device path at idx %d\n", i);
+            continue;
+        }
+
         lpDBusMsg = dbus_message_new_method_call(BT_DBUS_BLUEZ_PATH,
                                                  pPairedDeviceInfo->devicePath[i],
                                                  DBUS_INTERFACE_PROPERTIES,
                                                  "GetAll");
-        dbus_message_append_args(lpDBusMsg, DBUS_TYPE_STRING, &pdeviceInterface, DBUS_TYPE_INVALID);
 
-        dbus_error_init(&lDBusErr);
-
-        // Check if message creation was successful and the connection is not closed yet.
-        if (lpDBusMsg == NULL || pstlhBtIfce == NULL || pstlhBtIfce->pDBusConn == NULL) {
+        if (lpDBusMsg == NULL) {
             BTRCORELOG_ERROR ("Failed to create message ...\n");
+            return -1;
+        }
+
+        if (!dbus_message_append_args(lpDBusMsg, DBUS_TYPE_STRING, &pdeviceInterface, DBUS_TYPE_INVALID)) {
+            BTRCORELOG_ERROR ("Failed to append arguments to message ...\n");
+            dbus_message_unref(lpDBusMsg);
+            lpDBusMsg = NULL;
             return -1;
         }
 
         if (!dbus_connection_send_with_reply(pstlhBtIfce->pDBusConn, lpDBusMsg, &lpDBusPendC, -1)) {
             BTRCORELOG_ERROR ("failed to send message");
+            dbus_message_unref(lpDBusMsg);
+            lpDBusMsg = NULL;
             return -1;
         }
 
         dbus_connection_flush(pstlhBtIfce->pDBusConn);
         dbus_message_unref(lpDBusMsg);
+        lpDBusMsg = NULL;
         // CID 342201: Unused value (UNUSED_VALUE)
 
         if (lpDBusPendC != NULL) {
             dbus_pending_call_block(lpDBusPendC);
             lpDBusReply =  dbus_pending_call_steal_reply(lpDBusPendC);
             dbus_pending_call_unref(lpDBusPendC);
+            lpDBusPendC = NULL;
 
             if (lpDBusReply != NULL) {
                 stBTDeviceInfo  apstBTDeviceInfo;
@@ -4873,6 +4900,7 @@ BtrCore_BTGetPairedDeviceInfo (
                 if (0 != btrCore_BTParseDevice(lpDBusReply, &apstBTDeviceInfo)) {
                     BTRCORELOG_ERROR ("Parsing the device %s failed..\n", pPairedDeviceInfo->devicePath[i]);
                     dbus_message_unref(lpDBusReply);
+                    lpDBusReply = NULL;
                     return -1;
                 }
                 else {
@@ -4880,10 +4908,10 @@ BtrCore_BTGetPairedDeviceInfo (
                 }
 
                 dbus_message_unref(lpDBusReply);
+                lpDBusReply = NULL;
             }
         }
     }
-
 
     BTRCORELOG_TRACE ("Exiting\n");
 
@@ -5070,17 +5098,6 @@ BtrCore_BTFindServiceSupported (
     (void)dbus_type;
 
     return match;
-}
-
-static bool btrCore_IsPathValid(char *path) {
-    if(!path) {
-        BTRCORELOG_ERROR ("path is NULL\n");
-        return false;
-    }
-
-    BTRCORELOG_INFO ("path value is: %s\n", path);
-
-    return strncmp(path, "/", strlen("/")) == 0;
 }
 
 int
@@ -8106,6 +8123,7 @@ btrCore_BTDBusConnectionFilterCb (
                     int bConnectEvent = 0; //TODO: Bad way to do this. Live with it for now
                     int bConnected = 0;
                     int bRssiEvent = 0; //TODO: Bad way to do this. Live with it for now
+                    int bNameEvent = 0;
                     int bClassOrAppearanceEvent = 0;
                     int bModaliasUpdate = 0;
                     short i16RSSI = 0;
@@ -8191,6 +8209,24 @@ btrCore_BTDBusConnectionFilterCb (
                                     }
                                     else {
                                         BTRCORELOG_ERROR ("Services; Not an Array\n");
+                                    }
+                                }
+                                else if (strcmp (pNameOfProperty, "Name") == 0) {
+                                    DBusMessageIter variant_i;
+                                    int dbus_type;
+                                    const char* pcName = NULL;
+
+                                    dbus_message_iter_next(&lDBusMsgParse);
+                                    dbus_message_iter_recurse(&lDBusMsgParse, &variant_i);
+                                    dbus_type = dbus_message_iter_get_arg_type (&variant_i);
+
+                                    if (dbus_type == DBUS_TYPE_STRING) {
+                                        dbus_message_iter_get_basic(&variant_i, &pcName);
+                                        if (pcName) {
+                                            strncpy(pstBTDeviceInfo->pcName, pcName, BT_MAX_STR_LEN - 1);
+                                            bNameEvent = 1;
+                                            BTRCORELOG_INFO("Received Name update %s for %s\n", pstBTDeviceInfo->pcName, pstBTDeviceInfo->pcAddress);
+                                        }
                                     }
                                 }
                                 else if (strcmp (pNameOfProperty, "Modalias") == 0) {
@@ -8330,7 +8366,11 @@ btrCore_BTDBusConnectionFilterCb (
                                  strncmp(pstlhBtIfce->pcLeDeviceAddress, pstBTDeviceInfo->pcAddress,
                                      ((BT_MAX_STR_LEN > strlen(pstBTDeviceInfo->pcAddress))?strlen(pstBTDeviceInfo->pcAddress):BT_MAX_STR_LEN))) {
 
-                            if (bClassOrAppearanceEvent)
+                            if (bNameEvent)
+                            {
+                                lenBtDevState = enBTDevStNameChanged;
+                            }
+                            else if (bClassOrAppearanceEvent)
                             {
                                 //we know that the device has already been added but a new class or appearance means that it is a dual mode device
                                 lenBtDevState = enBTDevStClassAppUpdate;

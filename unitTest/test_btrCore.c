@@ -20,6 +20,7 @@
 /* Local Headers */
 #include "btrCore.h"
 #include "btrCore_service.h"
+#include "bt-telemetry.h"
 
 #include "mock_btrCore_avMedia.h"
 
@@ -69,6 +70,14 @@ typedef struct _stBTRCoreDevStateInfo {
     enBTRCoreDeviceState    eDevicePrevState;
     enBTRCoreDeviceState    eDeviceCurrState;
 } stBTRCoreDevStateInfo;
+
+typedef struct _stBTRCorePendingHidNameInfo {
+    BOOLEAN                 bActive;
+    tBTRCoreDevId           btrCoreDevId;
+    enBTRCoreDeviceType     enBTRCoreDevType;
+    GThread*                pTimeoutThread;
+    stBTDeviceInfo          stBTDevInfo;
+} stBTRCorePendingHidNameInfo;
 
 
 typedef struct _stBTRCoreHdl {
@@ -126,8 +135,18 @@ typedef struct _stBTRCoreHdl {
     unsigned short                  batteryLevelRefreshInterval;
     GCond                           batteryLevelCond;
     BOOLEAN                         batteryLevelThreadExit;
+
+
+    GMutex                          hidNameWaitMutex;
+    GCond                           hidNameWaitCond;
+    BOOLEAN                         hidNameWaitInitialized;
+    stBTRCorePendingHidNameInfo     stPendingHidNameInfo[BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES];
 } stBTRCoreHdl;
 
+typedef struct _stBTRCoreHidNameTimeoutData {
+    stBTRCoreHdl*           pBTRCoreHdl;
+    tBTRCoreDevId           btrCoreDevId;
+} stBTRCoreHidNameTimeoutData;
 
 void test_BTRCore_Init_NULL()
 {
@@ -3497,7 +3516,7 @@ _mock_BTGetPairedDeviceInfo3 (
     return 0;
 
 }
- 
+
 void test_BTRCore_GetListOfPairedDevices_should_GetPairedDevicesSuccessfully(void)
 {
     stBTRCoreHdl* hBTRCore = malloc(sizeof(stBTRCoreHdl)); 
@@ -6100,6 +6119,12 @@ void test_btrCore_BTDeviceStatusUpdateCb_DeviceLost(void) {
     stBTDeviceInfo* deviceInfo= (stBTDeviceInfo*)malloc(sizeof(stBTDeviceInfo));;
     int ret;
 
+    memset(btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(deviceInfo, 0, sizeof(stBTDeviceInfo));
+    g_mutex_init(&btrCoreHdl->hidNameWaitMutex);
+    g_cond_init(&btrCoreHdl->hidNameWaitCond);
+    btrCoreHdl->hidNameWaitInitialized = TRUE;
+
     // Set up the known device
     btrCoreHdl->numOfPairedDevices = 1;
     btrCoreHdl->stKnownDevicesArr[0].tDeviceId = 73588229205;
@@ -6124,6 +6149,8 @@ void test_btrCore_BTDeviceStatusUpdateCb_DeviceLost(void) {
     TEST_ASSERT_EQUAL(0, ret);
 
     printf("Test case for device lost passed!\n");
+    g_mutex_clear(&btrCoreHdl->hidNameWaitMutex);
+    g_cond_clear(&btrCoreHdl->hidNameWaitCond);
     free(btrCoreHdl);
     free(deviceInfo);
 }
@@ -6133,6 +6160,12 @@ void test_btrCore_BTDeviceStatusUpdateCb_enBTDevStPropChanged(void) {
     stBTRCoreHdl* btrCoreHdl = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
     stBTDeviceInfo* deviceInfo= (stBTDeviceInfo*)malloc(sizeof(stBTDeviceInfo));;
     int ret;
+
+    memset(btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(deviceInfo, 0, sizeof(stBTDeviceInfo));
+    g_mutex_init(&btrCoreHdl->hidNameWaitMutex);
+    g_cond_init(&btrCoreHdl->hidNameWaitCond);
+    btrCoreHdl->hidNameWaitInitialized = TRUE;
 
     // Set up the known device
     btrCoreHdl->numOfPairedDevices = 1;
@@ -6158,6 +6191,8 @@ void test_btrCore_BTDeviceStatusUpdateCb_enBTDevStPropChanged(void) {
     TEST_ASSERT_EQUAL(0, ret);
 
     printf("Test case for device lost passed!\n");
+    g_mutex_clear(&btrCoreHdl->hidNameWaitMutex);
+    g_cond_clear(&btrCoreHdl->hidNameWaitCond);
     free(btrCoreHdl);
     free(deviceInfo);
 }
@@ -6773,6 +6808,12 @@ void test_btrCore_BTDeviceStatusUpdateCb_DeviceLost_fail(void) {
     stBTDeviceInfo* deviceInfo= (stBTDeviceInfo*)malloc(sizeof(stBTDeviceInfo));;
     int ret;
 
+    memset(btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(deviceInfo, 0, sizeof(stBTDeviceInfo));
+    g_mutex_init(&btrCoreHdl->hidNameWaitMutex);
+    g_cond_init(&btrCoreHdl->hidNameWaitCond);
+    btrCoreHdl->hidNameWaitInitialized = TRUE;
+
     // Set up the known device
     // btrCoreHdl->numOfPairedDevices = 0;
     btrCoreHdl->numOfScannedDevices=2;
@@ -6797,6 +6838,8 @@ void test_btrCore_BTDeviceStatusUpdateCb_DeviceLost_fail(void) {
     TEST_ASSERT_EQUAL(0, ret);
 
     printf("Test case for device lost passed!\n");
+    g_mutex_clear(&btrCoreHdl->hidNameWaitMutex);
+    g_cond_clear(&btrCoreHdl->hidNameWaitCond);
     free(btrCoreHdl);
     free(deviceInfo);
 }
@@ -6805,6 +6848,12 @@ void test_btrCore_BTDeviceStatusUpdateCb_enBTDevStPropChanged1(void) {
     stBTRCoreHdl* btrCoreHdl = (stBTRCoreHdl*)malloc(sizeof(stBTRCoreHdl));
     stBTDeviceInfo* deviceInfo= (stBTDeviceInfo*)malloc(sizeof(stBTDeviceInfo));;
     int ret;
+
+    memset(btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(deviceInfo, 0, sizeof(stBTDeviceInfo));
+    g_mutex_init(&btrCoreHdl->hidNameWaitMutex);
+    g_cond_init(&btrCoreHdl->hidNameWaitCond);
+    btrCoreHdl->hidNameWaitInitialized = TRUE;
 
     // Set up the known device
   //  btrCoreHdl->numOfPairedDevices = 1;
@@ -6832,6 +6881,8 @@ void test_btrCore_BTDeviceStatusUpdateCb_enBTDevStPropChanged1(void) {
     TEST_ASSERT_EQUAL(0, ret);
 
     printf("Test case for device lost passed!\n");
+    g_mutex_clear(&btrCoreHdl->hidNameWaitMutex);
+    g_cond_clear(&btrCoreHdl->hidNameWaitCond);
     free(btrCoreHdl);
     free(deviceInfo);
 }
@@ -6853,6 +6904,151 @@ void test_btrCore_BTDeviceStatusUpdateCb_DeviceFound1(void) {
 
     printf("Test case for device found passed!\n");
 }
+
+/* Tests for the HID name-wait thread introduced in commit e60bfcf
+ * (RDKEMW-13897: XBOX gen3 controller takes time to discover).
+ *
+ * When an HID GamePad/Joystick is discovered with no valid name (device name
+ * equals its MAC address), a background thread is started that waits up to
+ * BTRCORE_HID_NAME_WAIT_TIMEOUT_SEC seconds for the name to arrive.
+ * The mutex and cond on the handle MUST be properly initialised before any
+ * code path that touches them is exercised.
+ */
+
+/* Verify that when an HID GamePad is found with no valid name the name-wait
+ * thread is started and can be cleanly cancelled by a subsequent Lost event. */
+void test_btrCore_BTDeviceStatusUpdateCb_HIDGamePadFoundNoName(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    /* Initialise mutex and cond so the HID-name-wait thread can use them */
+    g_mutex_init(&btrCoreHdl.hidNameWaitMutex);
+    g_cond_init(&btrCoreHdl.hidNameWaitCond);
+    btrCoreHdl.hidNameWaitInitialized = TRUE;
+
+    /* HID GamePad class (0x508 = enBTRCore_DC_HID_GamePad) with device name
+     * identical to the MAC address triggers the name-wait path. */
+    deviceInfo.ui32Class = enBTRCore_DC_HID_GamePad;
+    strncpy(deviceInfo.pcAddress, "AA:BB:CC:DD:EE:FF", sizeof(deviceInfo.pcAddress) - 1);
+    strncpy(deviceInfo.pcName,    "AA:BB:CC:DD:EE:FF", sizeof(deviceInfo.pcName)    - 1);
+
+    /* enBTDevStFound with name==address should start the name-wait thread */
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStFound, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    /* Cancel the wait by triggering enBTDevStLost for the same device.
+     * btrCore_ClearPendingControllerNameInfo() will signal the cond and
+     * join the thread, so this call blocks only briefly. */
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStLost, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    g_mutex_clear(&btrCoreHdl.hidNameWaitMutex);
+    g_cond_clear(&btrCoreHdl.hidNameWaitCond);
+}
+
+/* Same as above but with a Joystick class instead of GamePad. */
+void test_btrCore_BTDeviceStatusUpdateCb_HIDJoystickFoundNoName(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    g_mutex_init(&btrCoreHdl.hidNameWaitMutex);
+    g_cond_init(&btrCoreHdl.hidNameWaitCond);
+    btrCoreHdl.hidNameWaitInitialized = TRUE;
+
+    deviceInfo.ui32Class = enBTRCore_DC_HID_Joystick;
+    strncpy(deviceInfo.pcAddress, "11:22:33:44:55:66", sizeof(deviceInfo.pcAddress) - 1);
+    strncpy(deviceInfo.pcName,    "11:22:33:44:55:66", sizeof(deviceInfo.pcName)    - 1);
+
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStFound, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    /* Cancel via Lost event */
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStLost, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    g_mutex_clear(&btrCoreHdl.hidNameWaitMutex);
+    g_cond_clear(&btrCoreHdl.hidNameWaitCond);
+}
+
+/* Verify that a second Found event for the same HID device while a name-wait
+ * is already in progress simply updates the stored device info without
+ * spawning a duplicate thread, and the wait can still be cancelled cleanly. */
+void test_btrCore_BTDeviceStatusUpdateCb_HIDGamePadFoundDuplicate(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    g_mutex_init(&btrCoreHdl.hidNameWaitMutex);
+    g_cond_init(&btrCoreHdl.hidNameWaitCond);
+    btrCoreHdl.hidNameWaitInitialized = TRUE;
+
+    deviceInfo.ui32Class = enBTRCore_DC_HID_GamePad;
+    strncpy(deviceInfo.pcAddress, "CC:DD:EE:FF:00:11", sizeof(deviceInfo.pcAddress) - 1);
+    strncpy(deviceInfo.pcName,    "CC:DD:EE:FF:00:11", sizeof(deviceInfo.pcName)    - 1);
+
+    /* First Found - starts name-wait thread */
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStFound, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    /* Second Found for the same device - should update stored info and return */
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStFound, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    /* Cancel via Lost event - signals cond and joins thread */
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStLost, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    g_mutex_clear(&btrCoreHdl.hidNameWaitMutex);
+    g_cond_clear(&btrCoreHdl.hidNameWaitCond);
+}
+
+/* Verify the NameChanged path: when a valid name arrives for an HID GamePad
+ * that is pending a name-wait, the thread is cancelled early and a discovery
+ * callback is queued with the real device name. */
+void test_btrCore_BTDeviceStatusUpdateCb_HIDGamePadNameChanged(void) {
+    stBTRCoreHdl btrCoreHdl;
+    stBTDeviceInfo deviceInfo;
+    int ret;
+
+    memset(&btrCoreHdl, 0, sizeof(stBTRCoreHdl));
+    memset(&deviceInfo, 0, sizeof(stBTDeviceInfo));
+
+    g_mutex_init(&btrCoreHdl.hidNameWaitMutex);
+    g_cond_init(&btrCoreHdl.hidNameWaitCond);
+    btrCoreHdl.hidNameWaitInitialized = TRUE;
+
+    /* pGAQueueOutTask is left NULL; btrCore_OutTaskAddOp handles NULL gracefully */
+    deviceInfo.ui32Class = enBTRCore_DC_HID_GamePad;
+    strncpy(deviceInfo.pcAddress, "DD:EE:FF:00:11:22", sizeof(deviceInfo.pcAddress) - 1);
+    strncpy(deviceInfo.pcName,    "DD:EE:FF:00:11:22", sizeof(deviceInfo.pcName)    - 1);
+
+    /* Start the name-wait thread */
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStFound, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    /* Simulate the name arriving: set a valid name different from the address */
+    strncpy(deviceInfo.pcName, "Xbox Wireless Controller", sizeof(deviceInfo.pcName) - 1);
+
+    /* enBTDevStNameChanged should cancel the pending wait because name != address,
+     * signal the cond, and join the thread. */
+    ret = btrCore_BTDeviceStatusUpdateCb(enBTDevUnknown, enBTDevStNameChanged, &deviceInfo, &btrCoreHdl);
+    TEST_ASSERT_EQUAL(0, ret);
+
+    g_mutex_clear(&btrCoreHdl.hidNameWaitMutex);
+    g_cond_clear(&btrCoreHdl.hidNameWaitCond);
+}
+
 void test_btrCore_BTLeStatusUpdateCb_InvalidArg(void){
     int ret;
     ret = btrCore_BTLeStatusUpdateCb(0, NULL, NULL);
