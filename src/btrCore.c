@@ -74,6 +74,9 @@ int b_rdk_logger_enabled = 0;
 #define BTRCORE_GOOGLE_OUI_LENGTH 8
 #define BTCORE_DEFAULT_CONTROLLER_NAME "Game Controller"
 
+/* Prevent UAF during teardown */
+static gboolean gIsBtrCoreTerminating = FALSE;
+
 static char * BTRCORE_REMOTE_OUI_VALUES[] = {
     "20:44:41", //LC103
     "E8:0F:C8", //EC302
@@ -1482,6 +1485,15 @@ btrCore_PopulateListOfPairedDevices (
     stBTPairedDeviceInfo*   pstBTPairedDeviceInfo = NULL;
     stBTRCoreBTDevice       knownDevicesArr[BTRCORE_MAX_NUM_BT_DEVICES];
 
+    /* Prevent UAF when worker threads run during teardown */
+    if (gIsBtrCoreTerminating) {
+        BTRCORELOG_WARN("btrCore: ignoring PopulateListOfPairedDevices during termination\n");
+        return enBTRCoreFailure;
+    }
+
+    if (!apsthBTRCore) {
+       return enBTRCoreFailure;
+    }
 
     if ((pstBTPairedDeviceInfo = g_malloc0(sizeof(stBTPairedDeviceInfo))) == NULL)
         return enBTRCoreFailure;
@@ -3837,6 +3849,10 @@ BTRCore_DeInit (
         pstlhBTRCore->connHdl = NULL;
     }
 
+    /* Mark teardown so no other threads enter BTRCore */
+    gIsBtrCoreTerminating = TRUE;
+    __sync_synchronize();
+
     if (hBTRCore) {
         g_free(hBTRCore);
         hBTRCore = NULL;
@@ -3845,7 +3861,7 @@ BTRCore_DeInit (
     lenBTRCoreRet = ((lenExitStatusRunTask == enBTRCoreSuccess) &&
                      (lenExitStatusOutTask == enBTRCoreSuccess) &&
                      (lenBTRCoreRet == enBTRCoreSuccess)) ? enBTRCoreSuccess : enBTRCoreFailure;
-    BTRCORELOG_INFO ("Exit Status = %d\n", lenBTRCoreRet);
+    BTRCORELOG_INFO ("Exit Status = %d, gIsBtrCoreTerminating = %d\n", lenBTRCoreRet, gIsBtrCoreTerminating);
 
 
     return lenBTRCoreRet;
