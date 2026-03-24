@@ -74,6 +74,9 @@ int b_rdk_logger_enabled = 0;
 #define BTRCORE_GOOGLE_OUI_LENGTH 8
 #define BTCORE_DEFAULT_CONTROLLER_NAME "Game Controller"
 
+/* Prevent UAF during teardown */
+static gint gIsBtrCoreTerminating = 0;
+
 static char * BTRCORE_REMOTE_OUI_VALUES[] = {
     "20:44:41", //LC103
     "E8:0F:C8", //EC302
@@ -1482,6 +1485,15 @@ btrCore_PopulateListOfPairedDevices (
     stBTPairedDeviceInfo*   pstBTPairedDeviceInfo = NULL;
     stBTRCoreBTDevice       knownDevicesArr[BTRCORE_MAX_NUM_BT_DEVICES];
 
+    /* Prevent UAF when worker threads run during teardown */
+    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
+        BTRCORELOG_WARN("btrCore: Ignoring PopulateListOfPairedDevices during termination\n");
+        return enBTRCoreFailure;
+    }
+
+    if (!apsthBTRCore) {
+        return enBTRCoreFailure;
+    }
 
     if ((pstBTPairedDeviceInfo = g_malloc0(sizeof(stBTPairedDeviceInfo))) == NULL)
         return enBTRCoreFailure;
@@ -3522,6 +3534,9 @@ BTRCore_Init (
         BTRCORELOG_ERROR ("Insufficient memory - enBTRCoreInitFailure\n");
         return enBTRCoreInitFailure;
     }
+
+    g_atomic_int_set(&gIsBtrCoreTerminating, 0);
+
     MEMSET_S(pstlhBTRCore, sizeof(stBTRCoreHdl), 0, sizeof(stBTRCoreHdl));
 
 
@@ -3684,6 +3699,10 @@ BTRCore_DeInit (
         return enBTRCoreNotInitialized;
     }
 
+    /* Mark teardown so no other threads enter BTRCore */
+    g_atomic_int_set(&gIsBtrCoreTerminating, 1);
+    __sync_synchronize();
+
     pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
 
     BTRCORELOG_INFO ("hBTRCore   =   %8p\n", hBTRCore);
@@ -3845,7 +3864,8 @@ BTRCore_DeInit (
     lenBTRCoreRet = ((lenExitStatusRunTask == enBTRCoreSuccess) &&
                      (lenExitStatusOutTask == enBTRCoreSuccess) &&
                      (lenBTRCoreRet == enBTRCoreSuccess)) ? enBTRCoreSuccess : enBTRCoreFailure;
-    BTRCORELOG_INFO ("Exit Status = %d\n", lenBTRCoreRet);
+    BTRCORELOG_INFO ("Exit Status = %d, gIsBtrCoreTerminating = %d\n", lenBTRCoreRet,
+                      g_atomic_int_get(&gIsBtrCoreTerminating));
 
 
     return lenBTRCoreRet;
