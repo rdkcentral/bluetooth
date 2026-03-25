@@ -1505,6 +1505,7 @@ btrCore_PopulateListOfPairedDevices (
     }
 
     /* Initially stBTRCoreKnownDevice List is populated from pstBTPairedDeviceInfo(bluez i/f) directly *********/  
+    /* Dummy change */
     if (!apsthBTRCore->numOfPairedDevices) { 
         apsthBTRCore->numOfPairedDevices = pstBTPairedDeviceInfo->numberOfDevices;
         btrCore_MapKnownDeviceListFromPairedDeviceInfo (knownDevicesArr, pstBTPairedDeviceInfo); 
