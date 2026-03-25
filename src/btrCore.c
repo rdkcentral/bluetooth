@@ -74,6 +74,12 @@ int b_rdk_logger_enabled = 0;
 #define BTRCORE_GOOGLE_OUI_LENGTH 8
 #define BTCORE_DEFAULT_CONTROLLER_NAME "Game Controller"
 
+/* Prevent UAF during teardown */
+static volatile gint gIsBtrCoreTerminating = 0;
+
+/* Track active instance generation - helps to check if current handle is same as that of terminated handle. */
+static gint gBtrCoreGenerationCounter = 0;
+
 static char * BTRCORE_REMOTE_OUI_VALUES[] = {
     "20:44:41", //LC103
     "E8:0F:C8", //EC302
@@ -214,6 +220,7 @@ typedef struct _stBTRCoreHdl {
     GCond                           hidNameWaitCond;
     BOOLEAN                         hidNameWaitInitialized;
     stBTRCorePendingHidNameInfo     stPendingHidNameInfo[BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES];
+    gint                            generation;
 } stBTRCoreHdl;
 
 typedef struct _stBTRCoreHidNameTimeoutData {
@@ -277,6 +284,27 @@ STATIC  int btrCore_BTDeviceAuthenticationCb (enBTDeviceType  aeBtDeviceType, st
 STATIC  enBTRCoreRet btrCore_BTMediaStatusUpdateCb (stBTRCoreAVMediaStatusUpdate* apMediaStreamStatus, const char*  apBtdevAddr, void* apUserData);
 #endif
 STATIC  enBTRCoreRet btrCore_BTLeStatusUpdateCb (stBTRCoreLeGattInfo* apstBtrLeInfo, const char*  apcBtdevAddr, void* apvUserData);
+
+#ifdef UNIT_TEST
+gint btrCore_AddAndGetCurrGenForTest(void) {
+    /* Return the incremented (current) generation */
+    return g_atomic_int_add(&gBtrCoreGenerationCounter, 1) + 1;
+}
+
+gint btrCore_GetTerminatorForTest(void) {
+    return g_atomic_int_get(&gIsBtrCoreTerminating);
+}
+
+void btrCore_ResetTerminatorForTest(void) {
+    g_atomic_int_set(&gIsBtrCoreTerminating, 0);
+    gint val = g_atomic_int_get(&gIsBtrCoreTerminating);
+}
+
+void btrCore_SetTerminatorForTest(void) {
+    g_atomic_int_set(&gIsBtrCoreTerminating, 1);
+    gint val = g_atomic_int_get(&gIsBtrCoreTerminating);
+}
+#endif
 
 /* Static Function Definition */
 static void
@@ -1189,8 +1217,8 @@ btrCore_AddDeviceToScannedDevicesArr (
 
         if(0 != apstBTDeviceInfo->saServices[count].len)
         {
-            lstFoundDevice.stAdServiceData[count].len = apstBTDeviceInfo->saServices[count].len;
-            MEMCPY_S(lstFoundDevice.stAdServiceData[count].pcData,lstFoundDevice.stAdServiceData[count].len, apstBTDeviceInfo->saServices[count].pcData, BTRCORE_MAX_SERVICE_DATA_LEN);
+            lstFoundDevice.stAdServiceData[count].len = (apstBTDeviceInfo->saServices[count].len < BTRCORE_MAX_SERVICE_DATA_LEN) ? apstBTDeviceInfo->saServices[count].len : BTRCORE_MAX_SERVICE_DATA_LEN;
+            MEMCPY_S(lstFoundDevice.stAdServiceData[count].pcData, BTRCORE_MAX_SERVICE_DATA_LEN, apstBTDeviceInfo->saServices[count].pcData, lstFoundDevice.stAdServiceData[count].len);
 
             BTRCORELOG_TRACE ("ServiceData from %s\n", __FUNCTION__);
             for (int i =0; i < apstBTDeviceInfo->saServices[count].len; i++){
@@ -1482,9 +1510,21 @@ btrCore_PopulateListOfPairedDevices (
     stBTPairedDeviceInfo*   pstBTPairedDeviceInfo = NULL;
     stBTRCoreBTDevice       knownDevicesArr[BTRCORE_MAX_NUM_BT_DEVICES];
 
+    if (!apsthBTRCore) {
+        BTRCORELOG_WARN("apsthBTRCore is null\n");
+        return enBTRCoreNotInitialized;
+    }
 
-    if ((pstBTPairedDeviceInfo = g_malloc0(sizeof(stBTPairedDeviceInfo))) == NULL)
+    /* Prevent UAF when worker threads run during teardown */
+    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
+        BTRCORELOG_WARN("btrCore: Ignoring PopulateListOfPairedDevices during termination\n");
         return enBTRCoreFailure;
+    }
+
+    if ((pstBTPairedDeviceInfo = g_malloc0(sizeof(stBTPairedDeviceInfo))) == NULL) {
+        BTRCORELOG_WARN("btrCore: gmalloc0 failed\n");
+        return enBTRCoreFailure;
+    }
 
 
     pstBTPairedDeviceInfo->numberOfDevices = 0;
@@ -3524,6 +3564,10 @@ BTRCore_Init (
     }
     MEMSET_S(pstlhBTRCore, sizeof(stBTRCoreHdl), 0, sizeof(stBTRCoreHdl));
 
+    /* Assign a new generation for this instance */
+    pstlhBTRCore->generation = g_atomic_int_add(&gBtrCoreGenerationCounter, 1)+1;
+
+    g_atomic_int_set(&gIsBtrCoreTerminating, 0);
 
     pstlhBTRCore->connHdl = BtrCore_BTInitGetConnection();
     if (!pstlhBTRCore->connHdl) {
@@ -3687,6 +3731,11 @@ BTRCore_DeInit (
     pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
 
     BTRCORELOG_INFO ("hBTRCore   =   %8p\n", hBTRCore);
+
+    /* Only end global teardown if this is the active generation */
+    if (pstlhBTRCore->generation == g_atomic_int_get(&gBtrCoreGenerationCounter)) {
+        g_atomic_int_set(&gIsBtrCoreTerminating, 1);
+    }
 
     if (pstlhBTRCore->hidNameWaitInitialized) {
         GThread* lapPendingThreads[BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES];
