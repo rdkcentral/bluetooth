@@ -3905,7 +3905,7 @@ BtrCore_BTGetProp (
         return -1;
     }
 
-	if (!btrCore_IsPathValid(apcBtOpIfcePath)) {
+    if (!btrCore_IsPathValid(apcBtOpIfcePath)) {
         BTRCORELOG_ERROR("Invalid apcBtOpIfcePath\n");
         return -1;
     }
