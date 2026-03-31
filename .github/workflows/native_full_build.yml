@@ -1,0 +1,61 @@
+name: BT-Core Coverity Incremental Analysis Scan
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            gcc \
+            g++ \
+            make \
+            libglib2.0-dev \
+            libdbus-1-dev \
+            libgstreamer1.0-dev \
+            libbluetooth-dev
+
+    - name: download bluez
+      run: |
+        git clone https://github.com/bluez/bluez.git
+        git -C bluez checkout tags/5.48
+        mkdir -p include/bluetooth/audio/
+        mv bluez/profiles/audio/a2dp-codecs.h include/bluetooth/audio/a2dp-codecs.h
+        mv bluez/android/ipc.h include/bluetooth/audio/ipc.h
+        mv bluez/lib/bluetooth.h include/bluetooth/bluetooth.h
+
+      - name: Bootstrap autotools
+        run: |
+          libtoolize --force
+          aclocal
+          autoheader
+          automake --force-missing --add-missing
+          autoconf
+
+      - name: Configure Bluetooth build
+        run: |
+          CFLAGS="-Wno-error" \
+          CXXFLAGS="-Wno-error" \
+          ./configure \
+            --disable-telemetry
+
+      - name: Build Bluetooth module
+        run: |
+          make -j$(nproc)
