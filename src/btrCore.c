@@ -284,6 +284,7 @@ btrCore_InitDataSt (
     stBTRCoreHdl*   apsthBTRCore
 ) {
     int i;
+    int coveCheck = 10;
 
 
     apsthBTRCore->avMediaHdl    = NULL;
@@ -3495,6 +3496,11 @@ BTRCore_Init (
     const char* pDebugConfig = NULL;
     const char* BTRCORE_DEBUG_ACTUAL_PATH    = "/etc/debug.ini";
     const char* BTRCORE_DEBUG_OVERRIDE_PATH  = "/opt/debug.ini";
+
+    //Coverity testing check
+    int* p = new int [10];
+    delete[] p;
+    p[0] = 10; // Coverity bug: use of deleted memory
 
     /* Init the logger */
     if (access(BTRCORE_DEBUG_OVERRIDE_PATH, F_OK) != -1 ) {
