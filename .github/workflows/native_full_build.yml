@@ -1,0 +1,114 @@
+name: BT-Core Coverity Incremental Analysis Scan
+
+on:
+  pull_request:
+    branches: [ develop ]
+  push:
+    branches: [ develop ]
+
+jobs:
+  native-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ----------------------------------------
+      # Checkout
+      # ----------------------------------------
+      - name: Checkout Bluetooth source
+        uses: actions/checkout@v4
+
+      # ----------------------------------------
+      # System dependencies
+      # ----------------------------------------
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf automake libtool pkg-config \
+            gcc g++ make \
+            libglib2.0-dev libdbus-1-dev libbluetooth-dev
+
+      # ----------------------------------------
+      # Telemetry stub (NO external repos)
+      # ----------------------------------------
+      - name: Build telemetry stub library
+        run: |
+          git clone https://github.com/rdkcentral/telemetry.git
+
+          mkdir -p ${GITHUB_WORKSPACE}/external/include
+
+          cp telemetry/include/telemetry_busmessage_sender.h \
+             ${GITHUB_WORKSPACE}/external/include/
+
+          cp telemetry/include/telemetry2_0.h \
+             ${GITHUB_WORKSPACE}/external/include/
+
+          mkdir -p ${GITHUB_WORKSPACE}/external/lib
+
+          cat << 'EOF' > telemetry_stub.c
+          int t2_init(void) { return 0; }
+          int t2_event_s(const char* n, const char* v) { return 0; }
+          int t2_event_f(const char* n, float v) { return 0; }
+          int t2_event_d(const char* n, double v) { return 0; }
+          EOF
+
+          gcc -shared -fPIC telemetry_stub.c \
+            -o ${GITHUB_WORKSPACE}/external/lib/libtelemetry_msgsender.so
+
+      # ----------------------------------------
+      # Legacy BlueZ audio headers (for avMedia)
+      # ----------------------------------------
+      - name: Install BlueZ audio headers
+        run: |
+          git clone https://github.com/bluez/bluez.git
+          git -C bluez checkout tags/4.101
+
+          mkdir -p ${GITHUB_WORKSPACE}/external/include/bluetooth/audio
+          mkdir -p ${GITHUB_WORKSPACE}/external/include/bluetooth
+
+          cp bluez/audio/ipc.h \
+            ${GITHUB_WORKSPACE}/external/include/bluetooth/audio/ipc.h
+
+          git -C bluez checkout tags/5.48
+
+          cp bluez/profiles/audio/a2dp-codecs.h \
+            ${GITHUB_WORKSPACE}/external/include/bluetooth/audio/a2dp-codecs.h
+          cp bluez/lib/bluetooth.h \
+            ${GITHUB_WORKSPACE}/external/include/bluetooth/bluetooth.h
+
+          # Required by modern GCC
+          sed -i '1i#include <stdbool.h>\n' \
+            ${GITHUB_WORKSPACE}/external/include/bluetooth/audio/ipc.h
+
+      # ----------------------------------------
+      # Autotools bootstrap
+      # ----------------------------------------
+      - name: Bootstrap autotools
+        run: |
+          libtoolize --force
+          aclocal
+          autoheader
+          automake --force-missing --add-missing
+          autoconf
+
+      # ----------------------------------------
+      # Configure Bluetooth
+      # ----------------------------------------
+      - name: Configure Bluetooth
+        run: |
+          CPPFLAGS="-I${GITHUB_WORKSPACE}/external/include" \
+          LDFLAGS="-L${GITHUB_WORKSPACE}/external/lib" \
+          CFLAGS="-Wno-error" \
+          CXXFLAGS="-Wno-error" \
+          ac_cv_header_telemetry_busmessage_sender_h=yes \
+          ./configure
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/external/lib
+
+      # ----------------------------------------
+      # Build production libraries (explicit order)
+      # ----------------------------------------
+      - name: Build Bluetooth libraries
+        run: |
+          make -C src/bt-ifce -j$(nproc)
+          make -C src -j$(nproc)
