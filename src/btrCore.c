@@ -1192,6 +1192,7 @@ btrCore_AddDeviceToScannedDevicesArr (
             lstFoundDevice.stAdServiceData[count].len = apstBTDeviceInfo->saServices[count].len;
             MEMCPY_S(lstFoundDevice.stAdServiceData[count].pcData,lstFoundDevice.stAdServiceData[count].len, apstBTDeviceInfo->saServices[count].pcData, BTRCORE_MAX_SERVICE_DATA_LEN);
 
+
             BTRCORELOG_TRACE ("ServiceData from %s\n", __FUNCTION__);
             for (int i =0; i < apstBTDeviceInfo->saServices[count].len; i++){
                 BTRCORELOG_TRACE ("ServiceData[%d] = [%x]\n ", i, lstFoundDevice.stAdServiceData[count].pcData[i]);
