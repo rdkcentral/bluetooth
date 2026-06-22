@@ -1,0 +1,41 @@
+name: BT-Core Component Build in Native Environment
+
+on:
+  push:
+    branches: [ develop ]
+  merge_group:
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  native-build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/rdkcentral/docker-rdk-ci:latest
+
+    steps:
+      # ----------------------------------------
+      # Checkout
+      # ----------------------------------------
+      - name: Checkout source
+        uses: actions/checkout@v6
+
+      # ----------------------------------------
+      # Setup scripts permission
+      # ----------------------------------------
+      - name: Make scripts executable
+        run: |
+          chmod +x build_dependencies.sh
+          chmod +x cov_build.sh
+
+      # ----------------------------------------
+      # Install dependencies
+      # ----------------------------------------
+      - name: Run bt-core dependency setup
+        run: ./build_dependencies.sh
+
+      # ----------------------------------------
+      # Build project
+      # ----------------------------------------
+      - name: Run bt-core native build
+        run: ./cov_build.sh
