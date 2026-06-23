@@ -3,7 +3,6 @@ name: BT-Core Component Build in Native Environment
 on:
   push:
     branches: [ develop ]
-  merge_group:
   pull_request:
     branches: [ develop ]
 
