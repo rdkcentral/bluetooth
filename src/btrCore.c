@@ -5135,6 +5135,49 @@ BTRCore_ConnectDevice (
     return enBTRCoreSuccess;
 }
 
+enBTRCoreRet btrCore_UpdateDeviceBlockState (
+    tBTRCoreHandle        hBTRCore,
+    tBTRCoreDevId         aBTRCoreDevId,
+    enBTRCoreDeviceType   aenBTRCoreDevType,
+    int                   isBlocked
+) {
+
+	stBTRCoreHdl*           pstlhBTRCore = NULL;
+    if (!hBTRCore) {
+        BTRCORELOG_ERROR("Invalid BT Core Handle\n");
+        return enBTRCoreInvalidArg;
+    }
+	
+	pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
+	
+    const char *pDevicePath = NULL;
+    int i;
+    enBTDeviceType enBTDevice = enBTDevUnknown;
+
+    for (i = 0; i < pstlhBTRCore->numOfPairedDevices; ++i) {
+        if (pstlhBTRCore->stKnownDevicesArr[i].tDeviceId == aBTRCoreDevId) {
+            pDevicePath = pstlhBTRCore->stKnownDevicesArr[i].pcDevicePath;
+            enBTDevice = pstlhBTRCore->stKnownDevicesArr[i].enDeviceType; 
+            break;
+        }
+    }
+
+    if (!pDevicePath) {
+        BTRCORELOG_ERROR("Device ID %lld not found\n", aBTRCoreDevId);
+        return enBTRCoreDeviceNotFound;
+    }
+
+    unBTOpIfceProp lunBtOpDevProp;
+    lunBtOpDevProp.enBtDeviceProp = enBTDevPropBlocked;
+    int BlockDevice = isBlocked ? 1 : 0;
+
+    if (BtrCore_BTSetProp(pstlhBTRCore->connHdl, pDevicePath, enBTDevice, lunBtOpDevProp, &BlockDevice)) {
+        BTRCORELOG_ERROR("Set Device Property enBTDevPropBlocked - FAILED\n");
+        return enBTRCoreFailure;
+    }
+
+    return enBTRCoreSuccess;
+}
 
 enBTRCoreRet
 BTRCore_DisconnectDevice (
