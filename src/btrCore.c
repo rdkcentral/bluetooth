@@ -7258,7 +7258,7 @@ btrCore_BTAdapterStatusUpdateCb (
         return -1;
     }
 
-    memset(&lstAdapterInfo, 0, sizeof(stBTRCoreAdapter));
+    memset(&lstAdapterInfo, 0, 10*sizeof(stBTRCoreAdapter));
     lstAdapterInfo.adapter_number = atoi(apstBTAdapterInfo->pcPath + pathlen-1);
 
     BTRCORELOG_INFO ("adapter number = %d, path = %s, discovering = %d\n",
