@@ -1364,6 +1364,13 @@ enBTRCoreRet BTRCore_RegisterConnectionIntimationCb (tBTRCoreHandle hBTRCore, fP
 /* BTRCore_RegisterConnectionAuthenticationCallback - callback for receiving a connection request from another device */
 enBTRCoreRet BTRCore_RegisterConnectionAuthenticationCb (tBTRCoreHandle hBTRCore, fPtr_BTRCore_ConnAuthCb afpcBBTRCoreConnAuth, void* apUserData);
 
+#ifdef UNIT_TEST
+gint btrCore_AddAndGetCurrGenForTest(void);
+gint btrCore_GetTerminatorForTest(void);
+void btrCore_SetTerminatorForTest(void);
+void btrCore_ResetTerminatorForTest(void);
+#endif
+
 /* @} */    //BLUETOOTH_APIS
 
 #ifdef __cplusplus
