@@ -74,6 +74,9 @@ int b_rdk_logger_enabled = 0;
 #define BTRCORE_GOOGLE_OUI_LENGTH 8
 #define BTCORE_DEFAULT_CONTROLLER_NAME "Game Controller"
 
+/* Prevent UAF during teardown */
+static volatile gint gIsBtrCoreTerminating = 0;
+
 static char * BTRCORE_REMOTE_OUI_VALUES[] = {
     "20:44:41", //LC103
     "E8:0F:C8", //EC302
@@ -1482,10 +1485,21 @@ btrCore_PopulateListOfPairedDevices (
     stBTPairedDeviceInfo*   pstBTPairedDeviceInfo = NULL;
     stBTRCoreBTDevice       knownDevicesArr[BTRCORE_MAX_NUM_BT_DEVICES];
 
+    if (!apsthBTRCore) {
+        BTRCORELOG_WARN("apsthBTRCore is null\n");
+        return enBTRCoreNotInitialized;
+    }
 
-    if ((pstBTPairedDeviceInfo = g_malloc0(sizeof(stBTPairedDeviceInfo))) == NULL)
+    /* Prevent UAF when worker threads run during teardown */
+    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
+        BTRCORELOG_WARN("btrCore: Ignoring PopulateListOfPairedDevices during termination\n");
         return enBTRCoreFailure;
+    }
 
+    if ((pstBTPairedDeviceInfo = g_malloc0(sizeof(stBTPairedDeviceInfo))) == NULL) {
+        BTRCORELOG_WARN("btrCore: g_malloc0 failed\n")
+        return enBTRCoreFailure;
+    }
 
     pstBTPairedDeviceInfo->numberOfDevices = 0;
     for (i_idx = 0; i_idx < BT_MAX_NUM_DEVICE; i_idx++) {
@@ -3524,6 +3538,8 @@ BTRCore_Init (
     }
     MEMSET_S(pstlhBTRCore, sizeof(stBTRCoreHdl), 0, sizeof(stBTRCoreHdl));
 
+    /* Reset the variable indicating btrCore is initialized, not terminating */
+    g_atomic_int_set(&gIsBtrCoreTerminating, 0);
 
     pstlhBTRCore->connHdl = BtrCore_BTInitGetConnection();
     if (!pstlhBTRCore->connHdl) {
@@ -3687,6 +3703,9 @@ BTRCore_DeInit (
     pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
 
     BTRCORELOG_INFO ("hBTRCore   =   %8p\n", hBTRCore);
+
+    /* Set Terminating variable when deinit is in progress. */
+    g_atomic_int_set(&gIsBtrCoreTerminating, 1);
 
     if (pstlhBTRCore->hidNameWaitInitialized) {
         GThread* lapPendingThreads[BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES];
