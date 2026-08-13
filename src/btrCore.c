@@ -1490,7 +1490,7 @@ btrCore_PopulateListOfPairedDevices (
         return enBTRCoreNotInitialized;
     }
 
-    /* Prevent UAF when during teardown is in progress */
+    /* Prevent UAF during teardown is in progress */
     if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
         BTRCORELOG_WARN("btrCore: Ignoring PopulateListOfPairedDevices during termination\n");
         return enBTRCoreFailure;
@@ -1695,6 +1695,17 @@ btrCore_GetDeviceInfo (
     unsigned int            ui32NumOfDevices        = 0;
     unsigned int            ui32LoopIdx             = 0;
 
+    if (!apsthBTRCore) {
+        BTRCORELOG_WARN("apsthBTRCore is null\n");
+        return enBTRCoreNotInitialized;
+    }
+
+    /* Prevent UAF during teardown is in progress */
+    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
+        BTRCORELOG_WARN("btrCore: Ignoring btrCore_GetDeviceInfo during termination\n");
+        return enBTRCoreFailure;
+    }
+
     if (!apsthBTRCore->numOfPairedDevices) {
         BTRCORELOG_INFO ("Possibly the list is not populated; like booted and connecting\n");
         btrCore_PopulateListOfPairedDevices(apsthBTRCore, apsthBTRCore->curAdapterPath);    /* Keep the list upto date */
@@ -1862,6 +1873,17 @@ btrCore_GetDeviceInfoKnown (
 ) {
     unsigned int            ui32NumOfDevices        = 0;
     unsigned int            ui32LoopIdx             = 0;
+
+    if (!apsthBTRCore) {
+        BTRCORELOG_WARN("apsthBTRCore is null\n");
+        return enBTRCoreNotInitialized;
+    }
+
+    /* Prevent UAF during teardown is in progress */
+    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
+        BTRCORELOG_WARN("btrCore: Ignoring btrCore_GetDeviceInfoKnown during termination\n");
+        return enBTRCoreFailure;
+    }
 
     if (!apsthBTRCore->numOfPairedDevices) {
         BTRCORELOG_INFO ("Possibly the list is not populated; like booted and connecting\n");
@@ -4658,6 +4680,12 @@ BTRCore_PairDevice (
         return enBTRCoreNotInitialized;
     }
 
+    /* Prevent UAF during teardown is in progress */
+    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
+        BTRCORELOG_WARN("btrCore: Ignoring accessing stBTRCoreHdl_p during termination\n");
+        return enBTRCoreFailure;
+    }
+
     pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
 
     if (aBTRCoreDevId < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES) {
@@ -4770,6 +4798,12 @@ BTRCore_UnPairDevice (
         return enBTRCoreNotInitialized;
     }
 
+    /* Prevent UAF during teardown is in progress */
+    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
+        BTRCORELOG_WARN("btrCore: Ignoring accessing hBTRCore during termination\n");
+        return enBTRCoreFailure;
+    }
+
     pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
 
     if ((lenBTRCoreRet = btrCore_GetDeviceInfoKnown(pstlhBTRCore, aBTRCoreDevId, aenBTRCoreDevType,
@@ -4837,6 +4871,12 @@ BTRCore_GetListOfPairedDevices (
     else if (!pListOfDevices) {
         BTRCORELOG_ERROR ("enBTRCoreInvalidArg\n");
         return enBTRCoreInvalidArg;
+    }
+
+    /* Prevent UAF during teardown is in progress */
+    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
+        BTRCORELOG_WARN("btrCore: Ignoring hBTRCore access during termination\n");
+        return enBTRCoreFailure;
     }
 
     pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
@@ -5045,6 +5085,12 @@ BTRCore_IsDeviceConnectable (
     if (!hBTRCore) {
         BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
         return enBTRCoreNotInitialized;
+    }
+
+    /* Prevent UAF during teardown is in progress */
+    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
+        BTRCORELOG_WARN("btrCore: ignoring accessing hBTRCore while termination\n");
+        return enBTRCoreFailure;
     }
 
     pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
@@ -5419,6 +5465,12 @@ enBTRCoreRet BTRCore_refreshLEActionListForGamepads(tBTRCoreHandle hBTRCore)
         return enBTRCoreNotInitialized;
     }
 
+    /* Prevent UAF during teardown is in progress */
+    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
+        BTRCORELOG_WARN("btrCore: Ignoring BTRCore_refreshLEActionListForGamepads during termination\n");
+        return enBTRCoreFailure;
+    }
+
     if (btrCore_PopulateListOfPairedDevices(pstlhBTRCore, pstlhBTRCore->curAdapterPath) == enBTRCoreSuccess) {
         for (i32DevIdx = 0; i32DevIdx < pstlhBTRCore->numOfPairedDevices; i32DevIdx++) {
             //only refresh action list for LE gamepads
@@ -5481,6 +5533,12 @@ enBTRCoreRet BTRCore_clearLEActionListForGamepads(tBTRCoreHandle hBTRCore)
     {
         BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
         return enBTRCoreNotInitialized;
+    }
+
+    /* Prevent UAF during teardown is in progress */
+    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
+        BTRCORELOG_WARN("btrCore: Ignoring BTRCore_clearLEActionListForGamepads during termination\n");
+        return enBTRCoreFailure;
     }
 
     if (btrCore_PopulateListOfPairedDevices(pstlhBTRCore, pstlhBTRCore->curAdapterPath) == enBTRCoreSuccess) {
