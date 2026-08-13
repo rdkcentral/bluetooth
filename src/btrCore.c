@@ -75,7 +75,7 @@ int b_rdk_logger_enabled = 0;
 #define BTCORE_DEFAULT_CONTROLLER_NAME "Game Controller"
 
 /* Prevent UAF during teardown */
-static volatile gint gIsBtrCoreTerminating = 0;
+static gint gIsBtrCoreTerminating = 0;
 
 static char * BTRCORE_REMOTE_OUI_VALUES[] = {
     "20:44:41", //LC103
