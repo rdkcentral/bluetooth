@@ -4350,7 +4350,7 @@ void test_BTRCore_SetAdvertisementInfo_NullAdvtType(void) {
     tBTRCoreHandle hBTRCore = (tBTRCoreHandle)1; // Mock handle
     char advtBeaconName[] = "BeaconName";
 
-    /* Invalid handle value - should never be deferenced */
+    /* Invalid handle value - should never be dereferenced */
     enBTRCoreRet result = BTRCore_SetAdvertisementInfo(hBTRCore, NULL, advtBeaconName);
 
     TEST_ASSERT_EQUAL(enBTRCoreFailure, result);
@@ -4360,7 +4360,7 @@ void test_BTRCore_SetAdvertisementInfo_NullAdvtBeaconName(void) {
     tBTRCoreHandle hBTRCore = (tBTRCoreHandle)1; // Mock handle
     char advtType[] = "Type";
 
-    /* Invalid handle value - should never be deferenced */
+    /* Invalid handle value - should never be dereferenced */
     enBTRCoreRet result = BTRCore_SetAdvertisementInfo(hBTRCore, advtType, NULL);
 
     TEST_ASSERT_EQUAL(enBTRCoreFailure, result);
@@ -4401,7 +4401,7 @@ void test_BTRCore_SetManufacturerData_NullHandle(void) {
 
 void test_BTRCore_SetManufacturerData_NullDeviceDetails(void) {
     tBTRCoreHandle handle = (tBTRCoreHandle)1;
-    /* Invalid handle value - should never be deferenced */
+    /* Invalid handle value - should never be dereferenced */
     enBTRCoreRet ret = BTRCore_SetManufacturerData(handle, 1234, NULL, 3);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, ret);
 }
@@ -4497,7 +4497,7 @@ void test_BTRCore_SetServiceInfo_NullUUID(void) {
     tBTRCoreHandle hBTRCore = (tBTRCoreHandle)1; // Mock handle
     BOOLEAN aServiceType = TRUE;
 
-    /* Invalid handle value - should never be deferenced */
+    /* Invalid handle value - should never be dereferenced */
     enBTRCoreRet result = BTRCore_SetServiceInfo(hBTRCore, NULL, aServiceType);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, result);
 }
@@ -4586,7 +4586,7 @@ void test_BTRCore_SetGattInfo_NullParentUUID(void) {
     char value[] = "value";
     enBTRCoreLeProp element = enBTRCoreLePropGUUID;
 
-    /* Invalid handle value - should never be deferenced */
+    /* Invalid handle value - should never be dereferenced */
     enBTRCoreRet result = BTRCore_SetGattInfo(hBTRCore, NULL, UUID, flags, value, element);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, result);
 }
@@ -4598,7 +4598,7 @@ void test_BTRCore_SetGattInfo_NullUUID(void) {
     char value[] = "value";
     enBTRCoreLeProp element = enBTRCoreLePropGUUID;
 
-    /* Invalid handle value - should never be deferenced */
+    /* Invalid handle value - should never be dereferenced */
     enBTRCoreRet result = BTRCore_SetGattInfo(hBTRCore, parentUUID, NULL, flags, value, element);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, result);
 }
@@ -4610,7 +4610,7 @@ void test_BTRCore_SetGattInfo_NullValue(void) {
     unsigned short flags = 0;
     enBTRCoreLeProp element = enBTRCoreLePropGUUID;
 
-    /* Invalid handle value - should never be deferenced */
+    /* Invalid handle value - should never be dereferenced */
     enBTRCoreRet result = BTRCore_SetGattInfo(hBTRCore, parentUUID, UUID, flags, NULL, element);
     TEST_ASSERT_EQUAL(enBTRCoreFailure, result);
 }
@@ -4622,7 +4622,7 @@ void test_BTRCore_SetPropertyValue_hBTRCore_NULL(void) {
 
 void test_BTRCore_SetPropertyValue_aValue_NULL(void) {
     tBTRCoreHandle hBTRCore = (tBTRCoreHandle)1;
-    /* Invalid handle value - should never be deferenced */
+    /* Invalid handle value - should never be dereferenced */
     enBTRCoreRet ret = BTRCore_SetPropertyValue(hBTRCore, "UUID", NULL, enBTRCoreLePropGValue);
     TEST_ASSERT_EQUAL(enBTRCoreInvalidArg, ret);
 }

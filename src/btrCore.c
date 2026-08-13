@@ -297,12 +297,10 @@ gint btrCore_GetTerminatorForTest(void) {
 
 void btrCore_ResetTerminatorForTest(void) {
     g_atomic_int_set(&gIsBtrCoreTerminating, 0);
-    gint val = g_atomic_int_get(&gIsBtrCoreTerminating);
 }
 
 void btrCore_SetTerminatorForTest(void) {
     g_atomic_int_set(&gIsBtrCoreTerminating, 1);
-    gint val = g_atomic_int_get(&gIsBtrCoreTerminating);
 }
 #endif
 
@@ -1516,7 +1514,7 @@ btrCore_PopulateListOfPairedDevices (
     }
 
     /* Prevent UAF when worker threads run during teardown */
-    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
+    if((apsthBTRCore->generation != g_atomic_int_get(&gBtrCoreGenerationCounter)) || g_atomic_int_get(&gIsBtrCoreTerminating)) {
         BTRCORELOG_WARN("btrCore: Ignoring PopulateListOfPairedDevices during termination\n");
         return enBTRCoreFailure;
     }
