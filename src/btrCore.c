@@ -1490,7 +1490,7 @@ btrCore_PopulateListOfPairedDevices (
         return enBTRCoreNotInitialized;
     }
 
-    /* Prevent UAF when worker threads run during teardown */
+    /* Prevent UAF when during teardown is in progress */
     if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
         BTRCORELOG_WARN("btrCore: Ignoring PopulateListOfPairedDevices during termination\n");
         return enBTRCoreFailure;
