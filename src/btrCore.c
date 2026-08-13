@@ -1497,7 +1497,7 @@ btrCore_PopulateListOfPairedDevices (
     }
 
     if ((pstBTPairedDeviceInfo = g_malloc0(sizeof(stBTPairedDeviceInfo))) == NULL) {
-        BTRCORELOG_WARN("btrCore: g_malloc0 failed\n")
+        BTRCORELOG_WARN("btrCore: g_malloc0 failed\n");
         return enBTRCoreFailure;
     }
 
@@ -3702,10 +3702,10 @@ BTRCore_DeInit (
 
     pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
 
-    BTRCORELOG_INFO ("hBTRCore   =   %8p\n", hBTRCore);
-
     /* Set Terminating variable when deinit is in progress. */
     g_atomic_int_set(&gIsBtrCoreTerminating, 1);
+
+    BTRCORELOG_INFO ("hBTRCore   =   %8p\n", hBTRCore);
 
     if (pstlhBTRCore->hidNameWaitInitialized) {
         GThread* lapPendingThreads[BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES];
