@@ -77,6 +77,29 @@ int b_rdk_logger_enabled = 0;
 /* Prevent UAF during teardown */
 static gint gIsBtrCoreTerminating = 0;
 
+/* Protects BTRCore lifetime.
+ * Public APIs take reader lock.
+ * DeInit takes writer lock before freeing hBTRCore.
+ */
+static GRWLock gBtrCoreLifeLock;
+
+#define BTRCORE_API_ENTER()                                      \
+    do {                                                         \
+        BTRCORELOG_WARN ("ReadLock for gBtrCoreLifeLock, from %s\n", __FUNCTION__); \
+        g_rw_lock_reader_lock(&gBtrCoreLifeLock);                \
+        if (g_atomic_int_get(&gIsBtrCoreTerminating)) {          \
+            BTRCORELOG_ERROR ("Termination is in progress, from %s\n", __FUNCTION__); \
+            g_rw_lock_reader_unlock(&gBtrCoreLifeLock);          \
+            return enBTRCoreNotInitialized;                      \
+        }                                                        \
+    } while (0)
+
+#define BTRCORE_API_EXIT()                                       \
+    do {                                                         \
+        BTRCORELOG_WARN ("ReadUnlock for gBtrCoreLifeLock, from %s\n", __FUNCTION__)   \
+        g_rw_lock_reader_unlock(&gBtrCoreLifeLock)               \
+    } while (0)
+
 static char * BTRCORE_REMOTE_OUI_VALUES[] = {
     "20:44:41", //LC103
     "E8:0F:C8", //EC302
@@ -1485,19 +1508,18 @@ btrCore_PopulateListOfPairedDevices (
     stBTPairedDeviceInfo*   pstBTPairedDeviceInfo = NULL;
     stBTRCoreBTDevice       knownDevicesArr[BTRCORE_MAX_NUM_BT_DEVICES];
 
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
+
     if (!apsthBTRCore) {
         BTRCORELOG_WARN("apsthBTRCore is null\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreNotInitialized;
-    }
-
-    /* Prevent UAF during teardown is in progress */
-    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
-        BTRCORELOG_WARN("btrCore: Ignoring PopulateListOfPairedDevices during termination\n");
-        return enBTRCoreFailure;
     }
 
     if ((pstBTPairedDeviceInfo = g_malloc0(sizeof(stBTPairedDeviceInfo))) == NULL) {
         BTRCORELOG_WARN("btrCore: g_malloc0 failed\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreFailure;
     }
 
@@ -1511,6 +1533,7 @@ btrCore_PopulateListOfPairedDevices (
         BTRCORELOG_ERROR ("Failed to populate List Of Paired Devices\n");
         g_free(pstBTPairedDeviceInfo);
         pstBTPairedDeviceInfo = NULL;
+        BTRCORE_API_EXIT();
         return enBTRCoreFailure;
     }
 
@@ -1639,6 +1662,7 @@ btrCore_PopulateListOfPairedDevices (
     
     g_free(pstBTPairedDeviceInfo);
     pstBTPairedDeviceInfo = NULL;
+    BTRCORE_API_EXIT();
     return retResult;
 }
 
@@ -1695,15 +1719,13 @@ btrCore_GetDeviceInfo (
     unsigned int            ui32NumOfDevices        = 0;
     unsigned int            ui32LoopIdx             = 0;
 
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
+
     if (!apsthBTRCore) {
         BTRCORELOG_WARN("apsthBTRCore is null\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreNotInitialized;
-    }
-
-    /* Prevent UAF during teardown is in progress */
-    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
-        BTRCORELOG_WARN("btrCore: Ignoring btrCore_GetDeviceInfo during termination\n");
-        return enBTRCoreFailure;
     }
 
     if (!apsthBTRCore->numOfPairedDevices) {
@@ -1807,6 +1829,7 @@ btrCore_GetDeviceInfo (
 
     if (!ui32NumOfDevices) {
         BTRCORELOG_ERROR ("There is no device paried/scanned for this adapter\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreFailure;
     }
 
@@ -1832,6 +1855,7 @@ btrCore_GetDeviceInfo (
 
     if (!(*appcBTRCoreBTDevicePath) || !strlen(*appcBTRCoreBTDevicePath)) {
         BTRCORELOG_ERROR ("Failed to find device in paired/scanned devices list\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreDeviceNotFound;
     }
 
@@ -1857,6 +1881,7 @@ btrCore_GetDeviceInfo (
         break;
     }
 
+    BTRCORE_API_EXIT();
     return enBTRCoreSuccess;
 }
 
@@ -1874,15 +1899,13 @@ btrCore_GetDeviceInfoKnown (
     unsigned int            ui32NumOfDevices        = 0;
     unsigned int            ui32LoopIdx             = 0;
 
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
+
     if (!apsthBTRCore) {
         BTRCORELOG_WARN("apsthBTRCore is null\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreNotInitialized;
-    }
-
-    /* Prevent UAF during teardown is in progress */
-    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
-        BTRCORELOG_WARN("btrCore: Ignoring btrCore_GetDeviceInfoKnown during termination\n");
-        return enBTRCoreFailure;
     }
 
     if (!apsthBTRCore->numOfPairedDevices) {
@@ -1894,6 +1917,7 @@ btrCore_GetDeviceInfoKnown (
     ui32NumOfDevices = apsthBTRCore->numOfPairedDevices;
     if (!ui32NumOfDevices) {
         BTRCORELOG_ERROR ("There is no device paried for this adapter\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreFailure;
     }
 
@@ -1917,6 +1941,7 @@ btrCore_GetDeviceInfoKnown (
 
     if (!(*appcBTRCoreBTDevicePath) || !strlen(*appcBTRCoreBTDevicePath)) {
         BTRCORELOG_ERROR ("Failed to find device in paired devices list\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreDeviceNotFound;
     }
 
@@ -1939,6 +1964,7 @@ btrCore_GetDeviceInfoKnown (
         break;
     }
 
+    BTRCORE_API_EXIT();
     return enBTRCoreSuccess;
 }
 
@@ -3560,6 +3586,8 @@ BTRCore_Init (
     }
     MEMSET_S(pstlhBTRCore, sizeof(stBTRCoreHdl), 0, sizeof(stBTRCoreHdl));
 
+    g_rw_lock_init(&gBtrCoreLifeLock);
+
     /* Reset the variable indicating btrCore is initialized, not terminating */
     g_atomic_int_set(&gIsBtrCoreTerminating, 0);
 
@@ -3727,6 +3755,10 @@ BTRCore_DeInit (
     /* Set Terminating variable when deinit is in progress. */
     g_atomic_int_set(&gIsBtrCoreTerminating, 1);
 
+    /* Wait for all in-flight API users to exit before freeing
+       the core handle. */
+    g_rw_lock_writer_lock(&gBtrCoreLifeLock);
+
     BTRCORELOG_INFO ("hBTRCore   =   %8p\n", hBTRCore);
 
     if (pstlhBTRCore->hidNameWaitInitialized) {
@@ -3882,6 +3914,9 @@ BTRCore_DeInit (
         g_free(hBTRCore);
         hBTRCore = NULL;
     }
+
+    g_rw_lock_writer_unlock(&gBtrCoreLifeLock);
+    g_rw_lock_clear(&gBtrCoreLifeLock);
 
     lenBTRCoreRet = ((lenExitStatusRunTask == enBTRCoreSuccess) &&
                      (lenExitStatusOutTask == enBTRCoreSuccess) &&
@@ -4675,15 +4710,13 @@ BTRCore_PairDevice (
     int                     ispairable = 1;
     int                     PairableMode = 0;
 
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
+
     if (!hBTRCore) {
         BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreNotInitialized;
-    }
-
-    /* Prevent UAF during teardown is in progress */
-    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
-        BTRCORELOG_WARN("btrCore: Ignoring accessing stBTRCoreHdl_p during termination\n");
-        return enBTRCoreFailure;
     }
 
     pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
@@ -4707,6 +4740,7 @@ BTRCore_PairDevice (
 
     if (!pstScannedDev || !pDeviceAddress || !strlen(pDeviceAddress)) {
         BTRCORELOG_ERROR ("Failed to find device in Scanned devices list\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreDeviceNotFound;
     }
 
@@ -4726,6 +4760,7 @@ BTRCore_PairDevice (
 
         if (BtrCore_BTSetProp(pstlhBTRCore->connHdl, pstlhBTRCore->curAdapterPath, enBTAdapter, lunBtOpAdapProp, &ispairable)) {
             BTRCORELOG_ERROR ("Set Adapter Property enBTAdPropPairable - FAILED\n");
+            BTRCORE_API_EXIT();
             return enBTRCoreFailure;
         }
       
@@ -4744,12 +4779,14 @@ BTRCore_PairDevice (
 
         if (BtrCore_BTGetProp(pstlhBTRCore->connHdl, pstlhBTRCore->curAdapterPath, enBTAdapter, lunBtOpAdapProp, &PairableMode)) {
              BTRCORELOG_ERROR ("Get Adapter Property enBTAdPropPairable - FAILED\n");
+             BTRCORE_API_EXIT();
              return enBTRCoreFailure;
         }
 
         if (PairableMode == 0) {
             if (BtrCore_BTSetProp(pstlhBTRCore->connHdl, pstlhBTRCore->curAdapterPath, enBTAdapter, lunBtOpAdapProp, &ispairable)) {
                 BTRCORELOG_ERROR ("Set Adapter Property enBTAdPropPairable - FAILED\n");
+                BTRCORE_API_EXIT();
                 return enBTRCoreFailure;
             } else {
                 BTRCORELOG_INFO ("Set Adapter Pairable Mode Success\n");
@@ -4765,6 +4802,7 @@ BTRCore_PairDevice (
         BTRCORELOG_ERROR ("Failed to pair a device\n");
         //This is telemetry log. If we change this marker name, need to change and configure the telemetry marker in xconf server.
         telemetry_event_d("BT_ERR_FailToPair", 1);
+        BTRCORE_API_EXIT();
         return enBTRCorePairingFailed;
     }
 
@@ -4772,6 +4810,7 @@ BTRCore_PairDevice (
     btrCore_PopulateListOfPairedDevices(pstlhBTRCore, pstlhBTRCore->curAdapterPath);
 
     BTRCORELOG_INFO ("Pairing Success\n");
+    BTRCORE_API_EXIT();
     return enBTRCoreSuccess;
 }
 
@@ -4792,16 +4831,14 @@ BTRCore_UnPairDevice (
     enBTRCoreDeviceType     aenBTRCoreDevType = enBTRCoreUnknown;
     stBTRCoreBTDevice       pstScannedDevice;
 
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
+
     /* We can enhance the BTRCore with passcode support later point in time */
     if (!hBTRCore) {
         BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreNotInitialized;
-    }
-
-    /* Prevent UAF during teardown is in progress */
-    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
-        BTRCORELOG_WARN("btrCore: Ignoring accessing hBTRCore during termination\n");
-        return enBTRCoreFailure;
     }
 
     pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
@@ -4809,6 +4846,7 @@ BTRCore_UnPairDevice (
     if ((lenBTRCoreRet = btrCore_GetDeviceInfoKnown(pstlhBTRCore, aBTRCoreDevId, aenBTRCoreDevType,
                                                     &lenBTDeviceType, &pstKnownDevice, &lpstKnownDevStInfo, &pDeviceAddress)) != enBTRCoreSuccess) {
         BTRCORELOG_ERROR ("Failed to Get Device Information\n");
+        BTRCORE_API_EXIT();
         return lenBTRCoreRet;
     }
 
@@ -4832,6 +4870,7 @@ BTRCore_UnPairDevice (
                                     pDeviceAddress,
                                     enBTAdpOpRemovePairedDev) != 0) {
         BTRCORELOG_ERROR ("Failed to unpair a device\n");
+        BTRCORE_API_EXIT();
         return enBTRCorePairingFailed;
     }
 
@@ -4852,6 +4891,7 @@ BTRCore_UnPairDevice (
     }
 
     BTRCORELOG_INFO ("UnPairing Success\n");
+    BTRCORE_API_EXIT();
     return enBTRCoreSuccess;
 }
 
@@ -4864,19 +4904,18 @@ BTRCore_GetListOfPairedDevices (
     stBTRCoreHdl*   pstlhBTRCore = NULL;
     int             i32DevIdx = 0;
 
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
+
     if (!hBTRCore) {
         BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreNotInitialized;
     }
     else if (!pListOfDevices) {
         BTRCORELOG_ERROR ("enBTRCoreInvalidArg\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreInvalidArg;
-    }
-
-    /* Prevent UAF during teardown is in progress */
-    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
-        BTRCORELOG_WARN("btrCore: Ignoring hBTRCore access during termination\n");
-        return enBTRCoreFailure;
     }
 
     pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
@@ -4888,9 +4927,11 @@ BTRCore_GetListOfPairedDevices (
             MEMCPY_S(&pListOfDevices->devices[i32DevIdx],sizeof(pListOfDevices->devices[0]), &pstlhBTRCore->stKnownDevicesArr[i32DevIdx], sizeof(stBTRCoreBTDevice));
         }
         g_mutex_unlock(&pstlhBTRCore->batteryLevelMutex);
+        BTRCORE_API_EXIT();
         return enBTRCoreSuccess;
     }
 
+    BTRCORE_API_EXIT();
     return enBTRCoreFailure;
 }
 enBTRCoreRet
@@ -5081,16 +5122,13 @@ BTRCore_IsDeviceConnectable (
     const char*         pDeviceMac = NULL;
     stBTRCoreBTDevice*  pstKnownDevice = NULL;
 
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
 
     if (!hBTRCore) {
         BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreNotInitialized;
-    }
-
-    /* Prevent UAF during teardown is in progress */
-    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
-        BTRCORELOG_WARN("btrCore: ignoring accessing hBTRCore while termination\n");
-        return enBTRCoreFailure;
     }
 
     pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
@@ -5103,6 +5141,7 @@ BTRCore_IsDeviceConnectable (
 
     if (!pstlhBTRCore->numOfPairedDevices) {
         BTRCORELOG_ERROR ("There is no device paired for this adapter\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreFailure;
     }
 
@@ -5117,16 +5156,19 @@ BTRCore_IsDeviceConnectable (
 
     if (!pDeviceMac || !strlen(pDeviceMac)) {
         BTRCORELOG_ERROR ("Failed to find device in paired devices list\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreDeviceNotFound;
     }
 
 
     if (BtrCore_BTIsDeviceConnectable(pstlhBTRCore->connHdl, pDeviceMac) != 0) {
         BTRCORELOG_ERROR ("Device NOT CONNECTABLE\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreFailure;
     }
 
     BTRCORELOG_INFO ("Device CONNECTABLE\n");
+    BTRCORE_API_EXIT();
     return enBTRCoreSuccess;
 }
 
@@ -5459,16 +5501,15 @@ enBTRCoreRet BTRCore_refreshLEActionListForGamepads(tBTRCoreHandle hBTRCore)
     FILE*           lpcBtmgmtCmd = NULL;
     int             i32DevIdx = 0;
     stBTRCoreHdl*   pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
+
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
+
     if (!pstlhBTRCore)
     {
         BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreNotInitialized;
-    }
-
-    /* Prevent UAF during teardown is in progress */
-    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
-        BTRCORELOG_WARN("btrCore: Ignoring BTRCore_refreshLEActionListForGamepads during termination\n");
-        return enBTRCoreFailure;
     }
 
     if (btrCore_PopulateListOfPairedDevices(pstlhBTRCore, pstlhBTRCore->curAdapterPath) == enBTRCoreSuccess) {
@@ -5519,6 +5560,7 @@ enBTRCoreRet BTRCore_refreshLEActionListForGamepads(tBTRCoreHandle hBTRCore)
             }
         }
     }
+    BTRCORE_API_EXIT();
     return enBTRCoreSuccess;
 }
 
@@ -5529,16 +5571,15 @@ enBTRCoreRet BTRCore_clearLEActionListForGamepads(tBTRCoreHandle hBTRCore)
     FILE*           lpcBtmgmtCmd = NULL;
     int             i32DevIdx = 0;
     stBTRCoreHdl*   pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
+
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
+
     if (!pstlhBTRCore)
     {
         BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
+        BTRCORE_API_EXIT();
         return enBTRCoreNotInitialized;
-    }
-
-    /* Prevent UAF during teardown is in progress */
-    if(g_atomic_int_get(&gIsBtrCoreTerminating)) {
-        BTRCORELOG_WARN("btrCore: Ignoring BTRCore_clearLEActionListForGamepads during termination\n");
-        return enBTRCoreFailure;
     }
 
     if (btrCore_PopulateListOfPairedDevices(pstlhBTRCore, pstlhBTRCore->curAdapterPath) == enBTRCoreSuccess) {
@@ -5571,6 +5612,7 @@ enBTRCoreRet BTRCore_clearLEActionListForGamepads(tBTRCoreHandle hBTRCore)
             }
         }
     }
+    BTRCORE_API_EXIT();
     return enBTRCoreSuccess;
 }
 
