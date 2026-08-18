@@ -96,8 +96,8 @@ static GRWLock gBtrCoreLifeLock;
 
 #define BTRCORE_API_EXIT()                                       \
     do {                                                         \
-        BTRCORELOG_WARN ("ReadUnlock for gBtrCoreLifeLock, from %s\n", __FUNCTION__)   \
-        g_rw_lock_reader_unlock(&gBtrCoreLifeLock)               \
+        BTRCORELOG_WARN ("ReadUnlock for gBtrCoreLifeLock, from %s\n", __FUNCTION__);   \
+        g_rw_lock_reader_unlock(&gBtrCoreLifeLock);              \
     } while (0)
 
 static char * BTRCORE_REMOTE_OUI_VALUES[] = {
