@@ -131,7 +131,6 @@ typedef struct _stBTRCoreTaskGAqData {
     void*                       pvBTRCoreTskInData;
 } stBTRCoreTaskGAqData;
 
-
 typedef struct _stBTRCoreOTskInData {
     tBTRCoreDevId       bTRCoreDevId;
     enBTRCoreDeviceType enBTRCoreDevType;
@@ -142,6 +141,14 @@ typedef struct _stBTRCoreOTskInData {
 typedef struct _stBTRCoreDevStateInfo {
     enBTRCoreDeviceState    eDevicePrevState;
     enBTRCoreDeviceState    eDeviceCurrState;
+    enBTRCoreConnectError   eDeviceConnectError;
+    /* Failure reason reported by bluez via the AutoConnectError property,
+     * which covers self-triggered reconnects (LE kernel auto-connect,
+     * classic HID/A2DP policy-driven reconnect) as well as explicit ones.
+     * Kept separate from eDeviceConnectError, which is set only from the
+     * explicit Connect()/Pair() D-Bus reply, so the explicit result always
+     * wins in BTRCore_GetDeviceConnectError. */
+    enBTRCoreConnectError   eDeviceAutoConnectError;
 } stBTRCoreDevStateInfo;
 
 
@@ -271,6 +278,8 @@ static gpointer btrCore_BatteryLevelThread( gpointer apsthBTRCore);
 /* Incoming Callbacks Prototypes */
 STATIC  int btrCore_BTAdapterStatusUpdateCb (enBTAdapterProp aeBtAdapterProp, stBTAdapterInfo* apstBTAdapterInfo,  void* apUserData);
 STATIC  int btrCore_BTDeviceStatusUpdateCb (enBTDeviceType aeBtDeviceType, enBTDeviceState aeBtDeviceState, stBTDeviceInfo* apstBTDeviceInfo,  void* apUserData);
+STATIC  void btrCore_BTConnectErrorCb (const char* apDevPath, enBTDeviceConnectError aenError, void* apUserData);
+STATIC  void btrCore_BTAutoConnectErrorCb (const char* apDevPath, enBTDeviceConnectError aenError, void* apUserData);
 STATIC  int btrCore_BTDeviceConnectionIntimationCb (enBTDeviceType  aeBtDeviceType, stBTDeviceInfo* apstBTDeviceInfo, unsigned int aui32devPassKey, unsigned char ucIsReqConfirmation, void* apUserData);
 STATIC  int btrCore_BTDeviceAuthenticationCb (enBTDeviceType  aeBtDeviceType, stBTDeviceInfo* apstBTDeviceInfo, void* apUserData);
 #ifndef LE_MODE
@@ -326,6 +335,8 @@ btrCore_InitDataSt (
 
         apsthBTRCore->stScannedDevStInfoArr[i].eDevicePrevState = enBTRCoreDevStInitialized;
         apsthBTRCore->stScannedDevStInfoArr[i].eDeviceCurrState = enBTRCoreDevStInitialized;
+        apsthBTRCore->stScannedDevStInfoArr[i].eDeviceConnectError = enBTRCoreConnectErrorUnknown;
+        apsthBTRCore->stScannedDevStInfoArr[i].eDeviceAutoConnectError = enBTRCoreConnectErrorUnknown;
     }
 
     apsthBTRCore->numOfScannedDevices = 0;
@@ -348,6 +359,8 @@ btrCore_InitDataSt (
 
         apsthBTRCore->stKnownDevStInfoArr[i].eDevicePrevState = enBTRCoreDevStInitialized;
         apsthBTRCore->stKnownDevStInfoArr[i].eDeviceCurrState = enBTRCoreDevStInitialized;
+        apsthBTRCore->stKnownDevStInfoArr[i].eDeviceConnectError = enBTRCoreConnectErrorUnknown;
+        apsthBTRCore->stKnownDevStInfoArr[i].eDeviceAutoConnectError = enBTRCoreConnectErrorUnknown;
     }
 
     /* Callback Info */
@@ -1600,6 +1613,8 @@ btrCore_PopulateListOfPairedDevices (
                 MEMCPY_S(&apsthBTRCore->stKnownDevicesArr[i_idx - count],sizeof(apsthBTRCore->stKnownDevicesArr[0]), &knownDevicesArr[i_idx], sizeof(stBTRCoreBTDevice));
                 apsthBTRCore->stKnownDevStInfoArr[i_idx - count].eDevicePrevState = apsthBTRCore->stKnownDevStInfoArr[i_idx].eDevicePrevState;
                 apsthBTRCore->stKnownDevStInfoArr[i_idx - count].eDeviceCurrState = apsthBTRCore->stKnownDevStInfoArr[i_idx].eDeviceCurrState;
+                apsthBTRCore->stKnownDevStInfoArr[i_idx - count].eDeviceConnectError = apsthBTRCore->stKnownDevStInfoArr[i_idx].eDeviceConnectError;
+                    apsthBTRCore->stKnownDevStInfoArr[i_idx - count].eDeviceAutoConnectError = apsthBTRCore->stKnownDevStInfoArr[i_idx].eDeviceAutoConnectError;
             }
             else {
                 count++; 
@@ -1612,9 +1627,11 @@ btrCore_PopulateListOfPairedDevices (
         for (i_idx = 0; i_idx < pstBTPairedDeviceInfo->numberOfDevices; i_idx++) {
             if (!pairedDev_index_array[i_idx]) {
                 MEMCPY_S(&apsthBTRCore->stKnownDevicesArr[apsthBTRCore->numOfPairedDevices],sizeof(apsthBTRCore->stKnownDevicesArr[0]), &knownDevicesArr[i_idx], sizeof(stBTRCoreBTDevice));
+                    apsthBTRCore->stKnownDevStInfoArr[apsthBTRCore->numOfPairedDevices].eDeviceAutoConnectError = enBTRCoreConnectErrorUnknown;
                 if (apsthBTRCore->stKnownDevStInfoArr[apsthBTRCore->numOfPairedDevices].eDeviceCurrState != enBTRCoreDevStConnected) {
                     apsthBTRCore->stKnownDevStInfoArr[apsthBTRCore->numOfPairedDevices].eDevicePrevState = enBTRCoreDevStInitialized;
                     apsthBTRCore->stKnownDevStInfoArr[apsthBTRCore->numOfPairedDevices].eDeviceCurrState = enBTRCoreDevStPaired;
+                    apsthBTRCore->stKnownDevStInfoArr[apsthBTRCore->numOfPairedDevices].eDeviceConnectError = enBTRCoreConnectErrorUnknown;
                     apsthBTRCore->stKnownDevicesArr[apsthBTRCore->numOfPairedDevices].bDeviceConnected   = FALSE;
                     apsthBTRCore->stKnownDevicesArr[apsthBTRCore->numOfPairedDevices].bFound             = TRUE; // Paired Now
                 }
@@ -3019,6 +3036,19 @@ btrCore_OutTask (
                                     }
                                     else if (pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceCurrState == enBTRCoreDevStConnected) {
                                         pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].bDeviceConnected = TRUE;
+
+                                        /* Device is healthy again - clear any stale failure
+                                         * reason (explicit or self-triggered auto-reconnect)
+                                         * so it isn't mistaken for the current state. */
+                                        if ((pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceConnectError != enBTRCoreConnectErrorUnknown) ||
+                                            (pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceAutoConnectError != enBTRCoreConnectErrorUnknown)) {
+                                            BTRCORELOG_INFO ("Device connected - clearing stale connect errors idx=%d explicit=%d auto=%d\n",
+                                                             i32KnownDevIdx,
+                                                             pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceConnectError,
+                                                             pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceAutoConnectError);
+                                        }
+                                        pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceConnectError = enBTRCoreConnectErrorUnknown;
+                                        pstlhBTRCore->stKnownDevStInfoArr[i32KnownDevIdx].eDeviceAutoConnectError = enBTRCoreConnectErrorUnknown;
                                     }
 
                                     pstlhBTRCore->stDevStatusCbInfo.ui32VendorId       = pstlhBTRCore->stKnownDevicesArr[i32KnownDevIdx].ui32ModaliasVendorId;
@@ -3618,6 +3648,18 @@ BTRCore_Init (
 
     if(BtrCore_BTRegisterDevStatusUpdateCb(pstlhBTRCore->connHdl, &btrCore_BTDeviceStatusUpdateCb, pstlhBTRCore)) {
         BTRCORELOG_ERROR ("Failed to Register Device Status CB - enBTRCoreInitFailure\n");
+        BTRCore_DeInit((tBTRCoreHandle)pstlhBTRCore);
+        return enBTRCoreInitFailure;
+    }
+
+    if(BtrCore_BTRegisterConnectErrorCb(pstlhBTRCore->connHdl, &btrCore_BTConnectErrorCb, pstlhBTRCore)) {
+        BTRCORELOG_ERROR ("Failed to Register Connect Error CB - enBTRCoreInitFailure\n");
+        BTRCore_DeInit((tBTRCoreHandle)pstlhBTRCore);
+        return enBTRCoreInitFailure;
+    }
+
+    if(BtrCore_BTRegisterAutoConnectErrorCb(pstlhBTRCore->connHdl, &btrCore_BTAutoConnectErrorCb, pstlhBTRCore)) {
+        BTRCORELOG_ERROR ("Failed to Register Auto Connect Error CB - enBTRCoreInitFailure\n");
         BTRCore_DeInit((tBTRCoreHandle)pstlhBTRCore);
         return enBTRCoreInitFailure;
     }
@@ -5106,7 +5148,9 @@ BTRCore_ConnectDevice (
 
     // TODO: Implement a Device State Machine and Check whether the device is in a Connectable State
     // before making the connect call
-    if (BtrCore_BTConnectDevice(pstlhBTRCore->connHdl, lpcBTRCoreBTDevicePath, lenBTDeviceType) != 0) {
+    lpstBTRCoreDevStateInfo->eDeviceConnectError = enBTRCoreConnectErrorUnknown;
+    if (BtrCore_BTConnectDevice(pstlhBTRCore->connHdl, lpcBTRCoreBTDevicePath,
+                                lenBTDeviceType) != 0) {
         BTRCORELOG_ERROR ("Connect to device failed - %llu\n", aBTRCoreDevId);
         return enBTRCoreFailure;
     }
@@ -5133,6 +5177,67 @@ BTRCore_ConnectDevice (
 
     BTRCORELOG_DEBUG ("Ret - %d - %llu\n", lenBTRCoreRet, aBTRCoreDevId);
     return enBTRCoreSuccess;
+}
+
+enBTRCoreRet
+BTRCore_GetDeviceConnectError (
+    tBTRCoreHandle hBTRCore,
+    tBTRCoreDevId aBTRCoreDevId,
+    enBTRCoreDeviceType aenBTRCoreDevType,
+    enBTRCoreConnectError* apenConnectError
+) {
+    stBTRCoreHdl* pstlhBTRCore = hBTRCore;
+    unsigned int ui32LoopIdx = 0;
+
+    if (!pstlhBTRCore)
+        return enBTRCoreNotInitialized;
+    if (!apenConnectError)
+        return enBTRCoreInvalidArg;
+
+    *apenConnectError = enBTRCoreConnectErrorUnknown;
+    (void)aenBTRCoreDevType;
+
+    for (ui32LoopIdx = 0; ui32LoopIdx < pstlhBTRCore->numOfPairedDevices; ui32LoopIdx++) {
+        if (aBTRCoreDevId == pstlhBTRCore->stKnownDevicesArr[ui32LoopIdx].tDeviceId) {
+            /* Explicit Connect()/Pair() result takes priority - it's directly
+             * correlated to the caller's own request. Fall back to the
+             * self-triggered auto-reconnect reason only if no explicit
+             * result is available, so callers still get a meaningful
+             * answer instead of Unknown. */
+            *apenConnectError = pstlhBTRCore->stKnownDevStInfoArr[ui32LoopIdx].eDeviceConnectError;
+            BTRCORELOG_DEBUG("Known list device=%llu explicitErr=%d autoErr=%d\n",
+                             aBTRCoreDevId, *apenConnectError,
+                             pstlhBTRCore->stKnownDevStInfoArr[ui32LoopIdx].eDeviceAutoConnectError);
+            if (*apenConnectError == enBTRCoreConnectErrorUnknown) {
+                *apenConnectError = pstlhBTRCore->stKnownDevStInfoArr[ui32LoopIdx].eDeviceAutoConnectError;
+                BTRCORELOG_DEBUG("Explicit error unknown - using auto-connect error=%d\n",
+                                 *apenConnectError);
+            }
+            BTRCORELOG_INFO("Connect error read from known list device=%llu error=%d\n",
+                            aBTRCoreDevId, *apenConnectError);
+            return enBTRCoreSuccess;
+        }
+    }
+
+    for (ui32LoopIdx = 0; ui32LoopIdx < pstlhBTRCore->numOfScannedDevices; ui32LoopIdx++) {
+        if (aBTRCoreDevId == pstlhBTRCore->stScannedDevicesArr[ui32LoopIdx].tDeviceId) {
+            *apenConnectError = pstlhBTRCore->stScannedDevStInfoArr[ui32LoopIdx].eDeviceConnectError;
+            BTRCORELOG_DEBUG("Scanned list device=%llu explicitErr=%d autoErr=%d\n",
+                             aBTRCoreDevId, *apenConnectError,
+                             pstlhBTRCore->stScannedDevStInfoArr[ui32LoopIdx].eDeviceAutoConnectError);
+            if (*apenConnectError == enBTRCoreConnectErrorUnknown) {
+                *apenConnectError = pstlhBTRCore->stScannedDevStInfoArr[ui32LoopIdx].eDeviceAutoConnectError;
+                BTRCORELOG_DEBUG("Explicit error unknown - using auto-connect error=%d\n",
+                                 *apenConnectError);
+            }
+            BTRCORELOG_INFO("Connect error read from scanned list device=%llu error=%d\n",
+                            aBTRCoreDevId, *apenConnectError);
+            return enBTRCoreSuccess;
+        }
+    }
+
+    BTRCORELOG_WARN("Connect error device not found device=%llu\n", aBTRCoreDevId);
+    return enBTRCoreDeviceNotFound;
 }
 
 
@@ -7301,6 +7406,80 @@ btrCore_BTAdapterStatusUpdateCb (
     return 0;
 }
 
+
+STATIC  void
+btrCore_BTConnectErrorCb (
+    const char* apDevPath,
+    enBTDeviceConnectError aenError,
+    void* apUserData
+) {
+    stBTRCoreHdl* pstlhBTRCore = apUserData;
+    int i;
+
+    if (!pstlhBTRCore || !apDevPath) {
+        BTRCORELOG_ERROR ("Invalid arg - hdl=%p path=%p\n", apUserData, apDevPath);
+        return;
+    }
+
+    BTRCORELOG_DEBUG ("Explicit connect error cb path=%s error=%d\n", apDevPath, aenError);
+
+    for (i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
+        if (!strcmp(pstlhBTRCore->stKnownDevicesArr[i].pcDevicePath, apDevPath)) {
+            pstlhBTRCore->stKnownDevStInfoArr[i].eDeviceConnectError = (enBTRCoreConnectError)aenError;
+            BTRCORELOG_INFO("Connect error stored in known list path=%s error=%d\n",
+                            apDevPath, aenError);
+            return;
+        }
+    }
+    for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
+        if (!strcmp(pstlhBTRCore->stScannedDevicesArr[i].pcDevicePath, apDevPath)) {
+            pstlhBTRCore->stScannedDevStInfoArr[i].eDeviceConnectError = (enBTRCoreConnectError)aenError;
+            BTRCORELOG_INFO("Connect error stored in scanned list path=%s error=%d\n",
+                            apDevPath, aenError);
+            return;
+        }
+    }
+
+    BTRCORELOG_WARN ("Connect error device not in known/scanned list path=%s error=%d\n",
+                     apDevPath, aenError);
+}
+
+STATIC  void
+btrCore_BTAutoConnectErrorCb (
+    const char* apDevPath,
+    enBTDeviceConnectError aenError,
+    void* apUserData
+) {
+    stBTRCoreHdl* pstlhBTRCore = apUserData;
+    int i;
+
+    if (!pstlhBTRCore || !apDevPath) {
+        BTRCORELOG_ERROR ("Invalid arg - hdl=%p path=%p\n", apUserData, apDevPath);
+        return;
+    }
+
+    BTRCORELOG_DEBUG ("Auto-connect error cb path=%s error=%d\n", apDevPath, aenError);
+
+    for (i = 0; i < BTRCORE_MAX_NUM_BT_DEVICES; i++) {
+        if (!strcmp(pstlhBTRCore->stKnownDevicesArr[i].pcDevicePath, apDevPath)) {
+            pstlhBTRCore->stKnownDevStInfoArr[i].eDeviceAutoConnectError = (enBTRCoreConnectError)aenError;
+            BTRCORELOG_INFO("Auto-connect error stored in known list path=%s error=%d\n",
+                            apDevPath, aenError);
+            return;
+        }
+    }
+    for (i = 0; i < BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES; i++) {
+        if (!strcmp(pstlhBTRCore->stScannedDevicesArr[i].pcDevicePath, apDevPath)) {
+            pstlhBTRCore->stScannedDevStInfoArr[i].eDeviceAutoConnectError = (enBTRCoreConnectError)aenError;
+            BTRCORELOG_INFO("Auto-connect error stored in scanned list path=%s error=%d\n",
+                            apDevPath, aenError);
+            return;
+        }
+    }
+
+    BTRCORELOG_WARN ("Auto-connect error device not in known/scanned list path=%s error=%d\n",
+                     apDevPath, aenError);
+}
 
 STATIC  int
 btrCore_BTDeviceStatusUpdateCb (
