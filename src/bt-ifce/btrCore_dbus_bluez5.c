@@ -33,6 +33,7 @@
 #include <stdbool.h>
 #include <limits.h>
 #include <ctype.h>
+#include <errno.h>
 #include <libudev.h>
 /* External Library Headers */
 #include <dbus/dbus.h>
@@ -111,6 +112,12 @@ typedef struct _stBTMediaInfo {
 typedef struct _stBtIfceHdl {
 
     DBusConnection*                         pDBusConn;
+
+    fPtr_BtrCore_BTConnectErrorCb           fpcBConnectError;
+    void*                                   pcBConnectErrorUserData;
+
+    fPtr_BtrCore_BTAutoConnectErrorCb       fpcBAutoConnectError;
+    void*                                   pcBAutoConnectErrorUserData;
 
     char*                                   pcBTAgentPath;
     char*                                   pcBTDAdapterPath;
@@ -1074,6 +1081,151 @@ btrCore_BTPendingCallCheckReply (
     }
 
     dbus_pending_call_unref(apDBusPendC);   //Free pending call handle
+}
+
+typedef struct _stBTPairReplyContext {
+    stBtIfceHdl* pstBtIfce;
+    char         pcDevicePath[BT_MAX_DEV_PATH_LEN];
+} stBTPairReplyContext;
+
+static void
+btrCore_BTPairDeviceReply (
+    DBusPendingCall*    apDBusPendC,
+    void*               apvUserData
+) {
+    stBTPairReplyContext* lpstContext = apvUserData;
+    DBusMessage* lpDBusReply = dbus_pending_call_steal_reply(apDBusPendC);
+    DBusError lDBusErr;
+
+    if (lpstContext && lpDBusReply &&
+        dbus_message_get_type(lpDBusReply) == DBUS_MESSAGE_TYPE_ERROR) {
+        dbus_error_init(&lDBusErr);
+        if (dbus_set_error_from_message(&lDBusErr, lpDBusReply) == TRUE) {
+            BTRCORELOG_ERROR ("Pair reply path=%s error=%s\n",
+                              lpstContext->pcDevicePath,
+                              dbus_message_get_error_name(lpDBusReply));
+            if (lDBusErr.name && !strcmp(lDBusErr.name, "org.bluez.Error.AuthenticationFailed") &&
+                lpstContext->pstBtIfce->fpcBConnectError) {
+                lpstContext->pstBtIfce->fpcBConnectError(lpstContext->pcDevicePath,
+                                                         enBTDevPairErrorAuthenticationFailed,
+                                                         lpstContext->pstBtIfce->pcBConnectErrorUserData);
+            }
+            btrCore_BTHandleDusError(&lDBusErr, __LINE__, __FUNCTION__);
+        }
+    }
+
+    if (lpDBusReply)
+        dbus_message_unref(lpDBusReply);
+    dbus_pending_call_unref(apDBusPendC);
+    free(lpstContext);
+}
+
+static enBTDeviceConnectError
+btrCore_BTMapConnectError (
+    const char* apError
+) {
+    if (!apError)
+        return enBTDevConnErrorUnknown;
+    if (strstr(apError, "permission-denied") || strstr(apError, "Permission denied"))
+        return enBTDevConnErrorPermissionDenied;
+    if (strstr(apError, "connection-refused") || strstr(apError, "Connection refused"))
+        return enBTDevConnErrorRefused;
+    if (strstr(apError, "connection-timeout") || strstr(apError, "Connection timed out"))
+        return enBTDevConnErrorTimedOut;
+    if (strstr(apError, "connection-host-down") || strstr(apError, "Host is down"))
+        return enBTDevConnErrorHostDown;
+    return enBTDevConnErrorUnknown;
+}
+
+/* Source tags mirrored from bluez src/device.h AUTO_CONNECT_ERR_SOURCE_*.
+ * Kept as local constants so this file doesn't need a bluez header. */
+#define BT_AUTO_CONNECT_ERR_SOURCE_NONE        0
+#define BT_AUTO_CONNECT_ERR_SOURCE_MGMT_STATUS 1
+#define BT_AUTO_CONNECT_ERR_SOURCE_ERRNO       2
+
+/* MGMT_STATUS_* values that matter here (lib/mgmt.h in bluez) */
+#define BT_MGMT_STATUS_CONNECT_FAILED 0x04 /* page timeout -> host-down */
+#define BT_MGMT_STATUS_AUTH_FAILED    0x05
+#define BT_MGMT_STATUS_TIMEOUT        0x08
+
+static enBTDeviceConnectError
+btrCore_BTMapAutoConnectError (
+    unsigned char aui8Source,
+    int           ai32Value
+) {
+    if (aui8Source == BT_AUTO_CONNECT_ERR_SOURCE_MGMT_STATUS) {
+        switch (ai32Value) {
+        case BT_MGMT_STATUS_CONNECT_FAILED: return enBTDevConnErrorHostDown;
+        case BT_MGMT_STATUS_TIMEOUT:        return enBTDevConnErrorTimedOut;
+        case BT_MGMT_STATUS_AUTH_FAILED:    return enBTDevPairErrorAuthenticationFailed;
+        default:
+            BTRCORELOG_DEBUG ("Unmapped mgmt status %d\n", ai32Value);
+            return enBTDevConnErrorUnknown;
+        }
+    }
+    else if (aui8Source == BT_AUTO_CONNECT_ERR_SOURCE_ERRNO) {
+        switch (ai32Value) {
+        case EACCES:      return enBTDevConnErrorPermissionDenied;
+        case ECONNREFUSED:return enBTDevConnErrorRefused;
+        case ETIMEDOUT:   return enBTDevConnErrorTimedOut;
+        case EHOSTDOWN:   return enBTDevConnErrorHostDown;
+        default:
+            BTRCORELOG_DEBUG ("Unmapped errno %d\n", ai32Value);
+            return enBTDevConnErrorUnknown;
+        }
+    }
+
+    BTRCORELOG_WARN ("Unknown AutoConnectError source %u value %d\n", aui8Source, ai32Value);
+    return enBTDevConnErrorUnknown;
+}
+
+typedef struct _stBTConnectReplyContext {
+    stBtIfceHdl*                            pstBtIfce;
+    char                                    pcDevicePath[BT_MAX_DEV_PATH_LEN];
+} stBTConnectReplyContext;
+
+static void
+btrCore_BTConnectDeviceReply (
+    DBusPendingCall* apDBusPendC,
+    void*            apvUserData
+) {
+    stBTConnectReplyContext* lpstContext = apvUserData;
+    DBusMessage* lpDBusReply = dbus_pending_call_steal_reply(apDBusPendC);
+    DBusError lDBusErr;
+
+    if (lpstContext && lpDBusReply &&
+        dbus_message_get_type(lpDBusReply) == DBUS_MESSAGE_TYPE_ERROR) {
+        enBTDeviceConnectError lenConnectError = btrCore_BTMapConnectError(
+            dbus_message_get_error_name(lpDBusReply));
+        BTRCORELOG_INFO("Connect reply path=%s error=%s mapped=%d\n",
+                        lpstContext->pcDevicePath,
+                        dbus_message_get_error_name(lpDBusReply),
+                        lenConnectError);
+        dbus_error_init(&lDBusErr);
+        if (dbus_set_error_from_message(&lDBusErr, lpDBusReply)) {
+            enBTDeviceConnectError lenError = btrCore_BTMapConnectError(lDBusErr.message);
+            if (lenError != enBTDevConnErrorUnknown)
+                lenConnectError = lenError;
+            BTRCORELOG_INFO("Connect reply message=%s mapped=%d\n",
+                            lDBusErr.message, lenConnectError);
+            dbus_error_free(&lDBusErr);
+        }
+        if (lpstContext->pstBtIfce->fpcBConnectError)
+            lpstContext->pstBtIfce->fpcBConnectError(lpstContext->pcDevicePath,
+                                                     lenConnectError,
+                                                     lpstContext->pstBtIfce->pcBConnectErrorUserData);
+    } else if (lpstContext && lpstContext->pstBtIfce->fpcBConnectError) {
+        BTRCORELOG_INFO("Connect reply without error path=%s\n",
+                        lpstContext->pcDevicePath);
+        lpstContext->pstBtIfce->fpcBConnectError(lpstContext->pcDevicePath,
+                                                 enBTDevConnErrorUnknown,
+                                                 lpstContext->pstBtIfce->pcBConnectErrorUserData);
+    }
+
+    if (lpDBusReply)
+        dbus_message_unref(lpDBusReply);
+    dbus_pending_call_unref(apDBusPendC);
+    free(lpstContext);
 }
 
 
@@ -4358,7 +4510,6 @@ BtrCore_BTStartDiscovery (
     return 0;
 }
 
-
 int
 BtrCore_BTStopDiscovery (
     void*       apstBtIfceHdl,
@@ -5414,6 +5565,12 @@ BtrCore_BTPerformAdapterOp (
 
             if (!lpDBusReply) {
                 BTRCORELOG_ERROR ("Pairing failed...\n");
+                if (lDBusErr.name && !strcmp(lDBusErr.name, "org.bluez.Error.AuthenticationFailed") &&
+                    pstlhBtIfce->fpcBConnectError) {
+                    pstlhBtIfce->fpcBConnectError(deviceObjectPath,
+                                                  enBTDevPairErrorAuthenticationFailed,
+                                                  pstlhBtIfce->pcBConnectErrorUserData);
+                }
                 btrCore_BTHandleDusError(&lDBusErr, __LINE__, __FUNCTION__);
                 return -1;
             }
@@ -5426,10 +5583,28 @@ BtrCore_BTPerformAdapterOp (
          * So, let us use the device pairing alone to be unblocked and wait for response.
          */
             DBusPendingCall*    lpDBusPendC = NULL;
+            stBTPairReplyContext* lpstPairContext = NULL;
+
+            lpstPairContext = calloc(1, sizeof(*lpstPairContext));
+            if (!lpstPairContext) {
+                dbus_message_unref(lpDBusMsg);
+                return -1;
+            }
+            lpstPairContext->pstBtIfce = pstlhBtIfce;
+            strncpy(lpstPairContext->pcDevicePath, deviceObjectPath, sizeof(lpstPairContext->pcDevicePath) - 1);
+
             if (!dbus_connection_send_with_reply(pstlhBtIfce->pDBusConn, lpDBusMsg, &lpDBusPendC, -1)) { //Send and expect lpDBusReply using pending call object
                 BTRCORELOG_ERROR ("failed to send message!\n");
+                free(lpstPairContext);
+                dbus_message_unref(lpDBusMsg);
+                return -1;
             }
-            dbus_pending_call_set_notify(lpDBusPendC, btrCore_BTPendingCallCheckReply, NULL, NULL);
+            if (!lpDBusPendC ||
+                !dbus_pending_call_set_notify(lpDBusPendC, btrCore_BTPairDeviceReply, lpstPairContext, NULL)) {
+                free(lpstPairContext);
+                dbus_message_unref(lpDBusMsg);
+                return -1;
+            }
 
             dbus_connection_flush(pstlhBtIfce->pDBusConn);
             dbus_message_unref(lpDBusMsg);
@@ -5495,6 +5670,8 @@ BtrCore_BTConnectDevice (
 ) {
     stBtIfceHdl*    pstlhBtIfce = (stBtIfceHdl*)apstBtIfceHdl;
     DBusMessage*    lpDBusMsg   = NULL;
+    DBusPendingCall* lpDBusPendC = NULL;
+    stBTConnectReplyContext* lpstContext = NULL;
     dbus_bool_t     lDBusOp;
 
     if (!apstBtIfceHdl || !apDevPath)
@@ -5511,11 +5688,31 @@ BtrCore_BTConnectDevice (
         return -1;
     }
 
-    lDBusOp = dbus_connection_send(pstlhBtIfce->pDBusConn, lpDBusMsg, NULL);
+    lpstContext = calloc(1, sizeof(*lpstContext));
+    if (!lpstContext) {
+        dbus_message_unref(lpDBusMsg);
+        return -1;
+    }
+    lpstContext->pstBtIfce = pstlhBtIfce;
+    strncpy(lpstContext->pcDevicePath, apDevPath, sizeof(lpstContext->pcDevicePath) - 1);
+
+    lDBusOp = dbus_connection_send_with_reply(pstlhBtIfce->pDBusConn,
+                                               lpDBusMsg, &lpDBusPendC,
+                                               DBUS_TIMEOUT_USE_DEFAULT);
     dbus_message_unref(lpDBusMsg);
 
-    if (!lDBusOp) {
+    if (!lDBusOp || !lpDBusPendC) {
         BTRCORELOG_ERROR ("Not enough memory for message send\n");
+        free(lpstContext);
+        return -1;
+    }
+
+    if (!dbus_pending_call_set_notify(lpDBusPendC,
+                                      btrCore_BTConnectDeviceReply,
+                                      lpstContext, NULL)) {
+        dbus_pending_call_cancel(lpDBusPendC);
+        dbus_pending_call_unref(lpDBusPendC);
+        free(lpstContext);
         return -1;
     }
 
@@ -5590,23 +5787,6 @@ BtrCore_BTEnableEnhancedRetransmissionMode (
 #endif
     if (lfpBtErtm == NULL) {
         BTRCORELOG_ERROR ("Failed to run BTEnableEnhancedRetransmissionMode command\n");
-    }
-    else {
-        if (fgets(lcpBtErtmOp, sizeof(lcpBtErtmOp)-1, lfpBtErtm) == NULL) {
-            BTRCORELOG_INFO ("Success  - Output of BtErtm\n");
-            i32OpRet = 0;
-        }
-        else {
-            BTRCORELOG_WARN ("Failed Output of BtErtm =  %s\n", lcpBtErtmOp);
-            if (!strstr(lcpBtErtmOp, "Permission denied")) {
-                BTRCORELOG_WARN ("Check path =  %s\n", lcpBtErtmIp);
-            }
-        }
-#ifdef LIBSYSWRAPPER_BUILD
-        v_secure_pclose(lfpBtErtm);
-#else
-        pclose(lfpBtErtm);
-#endif
     }
 
     return i32OpRet;
@@ -7811,6 +7991,38 @@ BtrCore_BTRegisterDevStatusUpdateCb (
     return 0;
 }
 
+int
+BtrCore_BTRegisterConnectErrorCb (
+    void* apBtIfceHdl,
+    fPtr_BtrCore_BTConnectErrorCb afpcBConnectError,
+    void* apUserData
+) {
+    stBtIfceHdl* pstlhBtIfce = apBtIfceHdl;
+
+    if (!pstlhBtIfce || !afpcBConnectError)
+        return -1;
+
+    pstlhBtIfce->fpcBConnectError = afpcBConnectError;
+    pstlhBtIfce->pcBConnectErrorUserData = apUserData;
+    return 0;
+}
+
+int
+BtrCore_BTRegisterAutoConnectErrorCb (
+    void* apBtIfceHdl,
+    fPtr_BtrCore_BTAutoConnectErrorCb afpcBAutoConnectError,
+    void* apUserData
+) {
+    stBtIfceHdl* pstlhBtIfce = apBtIfceHdl;
+
+    if (!pstlhBtIfce || !afpcBAutoConnectError)
+        return -1;
+
+    pstlhBtIfce->fpcBAutoConnectError = afpcBAutoConnectError;
+    pstlhBtIfce->pcBAutoConnectErrorUserData = apUserData;
+    return 0;
+}
+
 
 int
 BtrCore_BTRegisterMediaStatusUpdateCb (
@@ -8126,6 +8338,9 @@ btrCore_BTDBusConnectionFilterCb (
                     int bNameEvent = 0;
                     int bClassOrAppearanceEvent = 0;
                     int bModaliasUpdate = 0;
+                    int bAutoConnectErrorEvent = 0;
+                    unsigned char ui8AutoConnectErrorSource = 0;
+                    int i32AutoConnectErrorValue = 0;
                     short i16RSSI = 0;
                     unsigned short ui16Appearance = 0;
                     unsigned int ui32Class = 0;
@@ -8262,6 +8477,42 @@ btrCore_BTDBusConnectionFilterCb (
                                     dbus_message_iter_get_basic(&lDBusMsgPropertyValue, &ui32Class);
                                     BTRCORELOG_INFO("Received new Class %d", ui32Class);
                                 }
+                                else if (strcmp (pNameOfProperty, "AutoConnectError") == 0) {
+                                    DBusMessageIter lDBusMsgStruct;
+                                    unsigned char   ui8Val = 0;
+                                    dbus_int32_t    i32Val = 0;
+
+                                    dbus_message_iter_next(&lDBusMsgParse);
+                                    dbus_message_iter_recurse(&lDBusMsgParse, &lDBusMsgPropertyValue);
+
+                                    if (dbus_message_iter_get_arg_type(&lDBusMsgPropertyValue) != DBUS_TYPE_STRUCT) {
+                                        BTRCORELOG_ERROR ("AutoConnectError unexpected type %d\n",
+                                                          dbus_message_iter_get_arg_type(&lDBusMsgPropertyValue));
+                                    }
+                                    else {
+                                        dbus_message_iter_recurse(&lDBusMsgPropertyValue, &lDBusMsgStruct);
+                                            if (dbus_message_iter_get_arg_type(&lDBusMsgStruct) != DBUS_TYPE_BYTE) {
+                                                BTRCORELOG_ERROR ("AutoConnectError source has unexpected type %d\n",
+                                                                  dbus_message_iter_get_arg_type(&lDBusMsgStruct));
+                                            }
+                                            else {
+                                                dbus_message_iter_get_basic(&lDBusMsgStruct, &ui8Val);
+                                                dbus_message_iter_next(&lDBusMsgStruct);
+
+                                                if (dbus_message_iter_get_arg_type(&lDBusMsgStruct) != DBUS_TYPE_INT32) {
+                                                    BTRCORELOG_ERROR ("AutoConnectError value has unexpected type %d\n",
+                                                                      dbus_message_iter_get_arg_type(&lDBusMsgStruct));
+                                                }
+                                                else {
+                                                    dbus_message_iter_get_basic(&lDBusMsgStruct, &i32Val);
+                                                    ui8AutoConnectErrorSource = ui8Val;
+                                                    i32AutoConnectErrorValue  = i32Val;
+                                                    bAutoConnectErrorEvent    = 1;
+                                                    BTRCORELOG_DEBUG ("AutoConnectError source=%u value=%d\n", ui8Val, i32Val);
+                                                }
+                                            }
+                                    }
+                                }
                                 /* Can listen on below events if required
                                 Name
                                 Alias
@@ -8283,6 +8534,29 @@ btrCore_BTDBusConnectionFilterCb (
                                 */
                             }
                             dbus_message_iter_next(&lDBusMsgIterDict);
+                        }
+                    }
+
+                    /* Connect/reconnect failure reported by bluez via property change -
+                     * covers explicit and self-triggered (auto-reconnect) attempts. */
+                    if (bAutoConnectErrorEvent) {
+                        if (!ui8AutoConnectErrorSource) {
+                            BTRCORELOG_DEBUG ("AutoConnectError cleared path=%s\n", pui8DevPath);
+                        }
+                        else if (!pstlhBtIfce->fpcBAutoConnectError) {
+                            BTRCORELOG_WARN ("AutoConnectError cb not registered path=%s source=%u value=%d\n",
+                                            pui8DevPath, ui8AutoConnectErrorSource, i32AutoConnectErrorValue);
+                        }
+                        else {
+                            enBTDeviceConnectError lenAutoConnErr = btrCore_BTMapAutoConnectError(
+                                ui8AutoConnectErrorSource, i32AutoConnectErrorValue);
+                            BTRCORELOG_INFO ("AutoConnectError path=%s source=%u value=%d mapped=%d\n",
+                                            pui8DevPath, ui8AutoConnectErrorSource,
+                                            i32AutoConnectErrorValue, lenAutoConnErr);
+                                if (lenAutoConnErr != enBTDevConnErrorUnknown)
+                                    pstlhBtIfce->fpcBAutoConnectError(pui8DevPath,
+                                                lenAutoConnErr,
+                                                pstlhBtIfce->pcBAutoConnectErrorUserData);
                         }
                     }
 

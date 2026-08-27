@@ -916,6 +916,7 @@ enBTRCoreRet BTRCore_IsDeviceConnectable (tBTRCoreHandle hBTRCore, tBTRCoreDevId
  * @retval  Returns enBTRCoreSuccess on success, appropriate error code otherwise.
  */
 enBTRCoreRet BTRCore_ConnectDevice (tBTRCoreHandle hBTRCore, tBTRCoreDevId aBTRCoreDevId, enBTRCoreDeviceType aenBTRCoreDevType);
+enBTRCoreRet BTRCore_GetDeviceConnectError (tBTRCoreHandle hBTRCore, tBTRCoreDevId aBTRCoreDevId, enBTRCoreDeviceType aenBTRCoreDevType, enBTRCoreConnectError* apenConnectError);
 
 /**
  * @brief  This method gracefully disconnects all connected profiles and then terminates  connection.

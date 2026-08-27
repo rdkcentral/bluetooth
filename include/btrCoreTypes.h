@@ -61,6 +61,15 @@ typedef enum _enBTRCoreRet {
     enBTRCoreSuccess
 } enBTRCoreRet;
 
+typedef enum _enBTRCoreConnectError {
+    enBTRCoreConnectErrorUnknown = 0,
+    enBTRCoreConnectErrorPermissionDenied,
+    enBTRCoreConnectErrorRefused,
+    enBTRCoreConnectErrorTimedOut,
+    enBTRCoreConnectErrorHostDown,
+    enBTRCorePairErrorAuthenticationFailed
+} enBTRCoreConnectError;
+
 /* @} */ // End of group BLUETOOTH_TYPES
 
 #endif // __BTR_CORE_TYPES_H__
