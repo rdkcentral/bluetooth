@@ -77,10 +77,7 @@ int b_rdk_logger_enabled = 0;
 /* Prevent UAF during teardown */
 static gint gIsBtrCoreTerminating = 0;
 
-/* Protects BTRCore lifetime.
- * Public APIs take reader lock.
- * DeInit takes writer lock before freeing hBTRCore.
- */
+/* Guards against new public API entry once teardown begin */
 #define BTRCORE_API_ENTER()                                      \
     do {                                                         \
         if (g_atomic_int_get(&gIsBtrCoreTerminating)) {          \
