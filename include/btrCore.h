@@ -308,6 +308,19 @@ typedef struct _stBTRCoreDevStatusCBInfo {
     unsigned int            ui32DeviceId;
 } stBTRCoreDevStatusCBInfo;
 
+typedef struct _stBTRCoreConnectionFailureCBInfo {
+    tBTRCoreDevId           deviceId;
+    BD_NAME                 deviceName;
+    char                    deviceAddress[BTRCORE_MAX_STR_LEN];
+    enBTRCoreDeviceType     eDeviceType;
+    enBTRCoreDeviceClass    eDeviceClass;
+    enBTRCoreConnectError   eDeviceConnectError;
+    unsigned char           isPaired;
+    unsigned char           isConnected;
+    unsigned int            ui32DevClassBtSpec;
+    unsigned short          ui16DevAppearanceBleSpec;
+} stBTRCoreConnectionFailureCBInfo;
+
 typedef struct _stBTRCoreSupportedService {
     unsigned int    uuid_value;
     BD_NAME         profile_name;
@@ -500,6 +513,7 @@ typedef struct _stBTRCoreDiscoveryCBInfo {
 /* Fptr Callbacks types */
 typedef enBTRCoreRet (*fPtr_BTRCore_DeviceDiscCb) (stBTRCoreDiscoveryCBInfo* astBTRCoreDiscoveryCbInfo, void* apvUserData);
 typedef enBTRCoreRet (*fPtr_BTRCore_StatusCb) (stBTRCoreDevStatusCBInfo* apstDevStatusCbInfo, void* apvUserData);
+typedef enBTRCoreRet (*fPtr_BTRCore_ConnectionFailureCb) (stBTRCoreConnectionFailureCBInfo* apstConnectionFailureCbInfo, void* apvUserData);
 typedef enBTRCoreRet (*fPtr_BTRCore_MediaStatusCb) (stBTRCoreMediaStatusCBInfo* apstMediaStatusCbInfo, void* apvUserData);
 typedef enBTRCoreRet (*fPtr_BTRCore_ConnIntimCb) (stBTRCoreConnCBInfo* apstConnCbInfo, int* api32ConnInIntimResp, void* apvUserData);
 typedef enBTRCoreRet (*fPtr_BTRCore_ConnAuthCb) (stBTRCoreConnCBInfo* apstConnCbInfo, int* api32ConnInAuthResp, void* apvUserData);
@@ -1355,6 +1369,7 @@ enBTRCoreRet BTRCore_RegisterDiscoveryCb (tBTRCoreHandle  hBTRCore, fPtr_BTRCore
 
 /* BTRCore_RegisterStatusCallback - callback for unsolicited status changes */
 enBTRCoreRet BTRCore_RegisterStatusCb (tBTRCoreHandle hBTRCore, fPtr_BTRCore_StatusCb afpcBBTRCoreStatus, void* apUserData);
+enBTRCoreRet BTRCore_RegisterConnectionFailureCb (tBTRCoreHandle hBTRCore, fPtr_BTRCore_ConnectionFailureCb afpcBBTRCoreConnectionFailure, void* apUserData);
 
 /* BTRCore_RegisterMediaStatusCallback - callback for media state changes */
 enBTRCoreRet BTRCore_RegisterMediaStatusCb (tBTRCoreHandle hBTRCore, fPtr_BTRCore_MediaStatusCb afpcBBTRCoreMediaStatus, void* apUserData);

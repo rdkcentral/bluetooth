@@ -118,6 +118,7 @@ typedef enum _enBTRCoreTaskProcessType {
     enBTRCoreTaskPTcBDeviceStatus,
     enBTRCoreTaskPTcBMediaStatus,
     enBTRCoreTaskPTcBDevOpInfoStatus,
+    enBTRCoreTaskPTcBConnectionFailure,
     enBTRCoreTaskPTcBConnIntim,
     enBTRCoreTaskPTcBConnAuth,
     enBTRCoreTaskPTcBModaliasUpdate,
@@ -187,17 +188,20 @@ typedef struct _stBTRCoreHdl {
 
     stBTRCoreDiscoveryCBInfo        stDiscoveryCbInfo;
     stBTRCoreDevStatusCBInfo        stDevStatusCbInfo;
+    stBTRCoreConnectionFailureCBInfo stConnectionFailureCbInfo;
     stBTRCoreMediaStatusCBInfo      stMediaStatusCbInfo;
     stBTRCoreConnCBInfo             stConnCbInfo;
 
     fPtr_BTRCore_DeviceDiscCb       fpcBBTRCoreDeviceDisc;
     fPtr_BTRCore_StatusCb           fpcBBTRCoreStatus;
+    fPtr_BTRCore_ConnectionFailureCb fpcBBTRCoreConnectionFailure;
     fPtr_BTRCore_MediaStatusCb      fpcBBTRCoreMediaStatus;
     fPtr_BTRCore_ConnIntimCb        fpcBBTRCoreConnIntim; 
     fPtr_BTRCore_ConnAuthCb         fpcBBTRCoreConnAuth;
 
     void*                           pvcBDevDiscUserData;
     void*                           pvcBStatusUserData;
+    void*                           pvcBConnectionFailureUserData;
     void*                           pvcBMediaStatusUserData;
     void*                           pvcBConnIntimUserData;
     void*                           pvcBConnAuthUserData;
@@ -372,12 +376,14 @@ btrCore_InitDataSt (
 
     apsthBTRCore->fpcBBTRCoreDeviceDisc     = NULL;
     apsthBTRCore->fpcBBTRCoreStatus         = NULL;
+    apsthBTRCore->fpcBBTRCoreConnectionFailure = NULL;
     apsthBTRCore->fpcBBTRCoreMediaStatus    = NULL;
     apsthBTRCore->fpcBBTRCoreConnIntim      = NULL;
     apsthBTRCore->fpcBBTRCoreConnAuth       = NULL;
 
     apsthBTRCore->pvcBDevDiscUserData       = NULL;
     apsthBTRCore->pvcBStatusUserData        = NULL;
+    apsthBTRCore->pvcBConnectionFailureUserData = NULL;
     apsthBTRCore->pvcBMediaStatusUserData   = NULL;
     apsthBTRCore->pvcBConnIntimUserData     = NULL;
     apsthBTRCore->pvcBConnAuthUserData      = NULL;
@@ -2245,6 +2251,13 @@ btrCore_OutTaskAddOp (
             MEMCPY_S(lpstOutTaskGAqData->pvBTRCoreTskInData,sizeof(stBTRCoreDevStatusCBInfo), (stBTRCoreDevStatusCBInfo*)apvOutTaskInData, sizeof(stBTRCoreDevStatusCBInfo));
         }
     }
+    else if (lpstOutTaskGAqData->enBTRCoreTskPT == enBTRCoreTaskPTcBConnectionFailure) {
+        if ((apvOutTaskInData) &&
+            (lpstOutTaskGAqData->pvBTRCoreTskInData = g_malloc0(sizeof(stBTRCoreConnectionFailureCBInfo)))) {
+            MEMCPY_S(lpstOutTaskGAqData->pvBTRCoreTskInData, sizeof(stBTRCoreConnectionFailureCBInfo),
+                     (stBTRCoreConnectionFailureCBInfo*)apvOutTaskInData, sizeof(stBTRCoreConnectionFailureCBInfo));
+        }
+    }
     else if (lpstOutTaskGAqData->enBTRCoreTskPT == enBTRCoreTaskPTcBConnIntim) {
     }
     else if (lpstOutTaskGAqData->enBTRCoreTskPT == enBTRCoreTaskPTcBConnAuth) {
@@ -3304,6 +3317,24 @@ btrCore_OutTask (
                         if (pstlhBTRCore->fpcBBTRCoreStatus) {
                             if ((lenBTRCoreRet = pstlhBTRCore->fpcBBTRCoreStatus(&pstlhBTRCore->stDevStatusCbInfo, pstlhBTRCore->pvcBStatusUserData)) != enBTRCoreSuccess) {
                                 BTRCORELOG_ERROR ("Failure fpcBBTRCoreStatus Ret = %d\n", lenBTRCoreRet);
+                            }
+                        }
+
+                        g_free(lpstOutTskInData);
+                        lpstOutTskInData = NULL;
+                    }
+                }
+                else if (lenOutTskPTCur == enBTRCoreTaskPTcBConnectionFailure) {
+                    if (lpstOutTskInData) {
+                        stBTRCoreConnectionFailureCBInfo* lpstConnectionFailureCbInfo = (stBTRCoreConnectionFailureCBInfo*)lpstOutTskInData;
+                        MEMCPY_S(&pstlhBTRCore->stConnectionFailureCbInfo, sizeof(pstlhBTRCore->stConnectionFailureCbInfo),
+                                 lpstConnectionFailureCbInfo, sizeof(stBTRCoreConnectionFailureCBInfo));
+
+                        if (pstlhBTRCore->fpcBBTRCoreConnectionFailure) {
+                            if ((lenBTRCoreRet = pstlhBTRCore->fpcBBTRCoreConnectionFailure(
+                                    &pstlhBTRCore->stConnectionFailureCbInfo,
+                                    pstlhBTRCore->pvcBConnectionFailureUserData)) != enBTRCoreSuccess) {
+                                BTRCORELOG_ERROR ("Failure fpcBBTRCoreConnectionFailure Ret = %d\n", lenBTRCoreRet);
                             }
                         }
 
@@ -7251,6 +7282,27 @@ BTRCore_RegisterStatusCb (
     return enBTRCoreSuccess;
 }
 
+enBTRCoreRet
+BTRCore_RegisterConnectionFailureCb (
+    tBTRCoreHandle                   hBTRCore,
+    fPtr_BTRCore_ConnectionFailureCb afpcBBTRCoreConnectionFailure,
+    void*                            apUserData
+) {
+    stBTRCoreHdl* pstlhBTRCore = NULL;
+
+    if (!hBTRCore || !afpcBBTRCoreConnectionFailure)
+        return enBTRCoreInvalidArg;
+
+    pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
+    if (!pstlhBTRCore->fpcBBTRCoreConnectionFailure) {
+        pstlhBTRCore->fpcBBTRCoreConnectionFailure = afpcBBTRCoreConnectionFailure;
+        pstlhBTRCore->pvcBConnectionFailureUserData = apUserData;
+        BTRCORELOG_INFO ("Connection Failure Callback Registered Successfully\n");
+    }
+
+    return enBTRCoreSuccess;
+}
+
 
 enBTRCoreRet
 BTRCore_RegisterMediaStatusCb (
@@ -7408,6 +7460,44 @@ btrCore_BTAdapterStatusUpdateCb (
 
 
 STATIC  void
+btrCore_BTNotifyConnectError (
+    stBTRCoreHdl* pstlhBTRCore,
+    stBTRCoreBTDevice* apstBTRCoreBTDevice,
+    stBTRCoreDevStateInfo* apstBTRCoreDevStateInfo,
+    unsigned char aui8IsPaired,
+    enBTDeviceConnectError aenError
+) {
+    stBTRCoreConnectionFailureCBInfo lstConnectionFailureCbInfo;
+
+    if (!pstlhBTRCore || !apstBTRCoreBTDevice || !apstBTRCoreDevStateInfo)
+        return;
+
+    if (aenError == enBTDevConnErrorUnknown)
+        return;
+
+    MEMSET_S(&lstConnectionFailureCbInfo, sizeof(lstConnectionFailureCbInfo), 0, sizeof(lstConnectionFailureCbInfo));
+
+    lstConnectionFailureCbInfo.deviceId           = apstBTRCoreBTDevice->tDeviceId;
+    lstConnectionFailureCbInfo.eDeviceType        = btrCore_MapDevClassToDevType(apstBTRCoreBTDevice->enDeviceType);
+    lstConnectionFailureCbInfo.eDeviceClass       = apstBTRCoreBTDevice->enDeviceType;
+    lstConnectionFailureCbInfo.eDeviceConnectError = (enBTRCoreConnectError)aenError;
+    lstConnectionFailureCbInfo.isPaired           = aui8IsPaired;
+    lstConnectionFailureCbInfo.isConnected        = apstBTRCoreBTDevice->bDeviceConnected;
+    lstConnectionFailureCbInfo.ui32DevClassBtSpec = apstBTRCoreBTDevice->ui32DevClassBtSpec;
+    lstConnectionFailureCbInfo.ui16DevAppearanceBleSpec = apstBTRCoreBTDevice->ui16DevAppearanceBleSpec;
+    snprintf(lstConnectionFailureCbInfo.deviceName, sizeof(lstConnectionFailureCbInfo.deviceName), "%s", apstBTRCoreBTDevice->pcDeviceName);
+    snprintf(lstConnectionFailureCbInfo.deviceAddress, sizeof(lstConnectionFailureCbInfo.deviceAddress), "%s", apstBTRCoreBTDevice->pcDeviceAddress);
+
+    if (btrCore_OutTaskAddOp(pstlhBTRCore->pGAQueueOutTask,
+                             enBTRCoreTaskOpProcess,
+                             enBTRCoreTaskPTcBConnectionFailure,
+                             &lstConnectionFailureCbInfo) != enBTRCoreSuccess) {
+        BTRCORELOG_WARN("Failure queueing connection failure callback device=%llu error=%d\n",
+                        apstBTRCoreBTDevice->tDeviceId, aenError);
+    }
+}
+
+STATIC  void
 btrCore_BTConnectErrorCb (
     const char* apDevPath,
     enBTDeviceConnectError aenError,
@@ -7428,6 +7518,8 @@ btrCore_BTConnectErrorCb (
             pstlhBTRCore->stKnownDevStInfoArr[i].eDeviceConnectError = (enBTRCoreConnectError)aenError;
             BTRCORELOG_INFO("Connect error stored in known list path=%s error=%d\n",
                             apDevPath, aenError);
+            btrCore_BTNotifyConnectError(pstlhBTRCore, &pstlhBTRCore->stKnownDevicesArr[i],
+                                         &pstlhBTRCore->stKnownDevStInfoArr[i], 1, aenError);
             return;
         }
     }
@@ -7436,6 +7528,8 @@ btrCore_BTConnectErrorCb (
             pstlhBTRCore->stScannedDevStInfoArr[i].eDeviceConnectError = (enBTRCoreConnectError)aenError;
             BTRCORELOG_INFO("Connect error stored in scanned list path=%s error=%d\n",
                             apDevPath, aenError);
+            btrCore_BTNotifyConnectError(pstlhBTRCore, &pstlhBTRCore->stScannedDevicesArr[i],
+                                         &pstlhBTRCore->stScannedDevStInfoArr[i], 0, aenError);
             return;
         }
     }
@@ -7465,6 +7559,8 @@ btrCore_BTAutoConnectErrorCb (
             pstlhBTRCore->stKnownDevStInfoArr[i].eDeviceAutoConnectError = (enBTRCoreConnectError)aenError;
             BTRCORELOG_INFO("Auto-connect error stored in known list path=%s error=%d\n",
                             apDevPath, aenError);
+            btrCore_BTNotifyConnectError(pstlhBTRCore, &pstlhBTRCore->stKnownDevicesArr[i],
+                                         &pstlhBTRCore->stKnownDevStInfoArr[i], 1, aenError);
             return;
         }
     }
@@ -7473,6 +7569,8 @@ btrCore_BTAutoConnectErrorCb (
             pstlhBTRCore->stScannedDevStInfoArr[i].eDeviceAutoConnectError = (enBTRCoreConnectError)aenError;
             BTRCORELOG_INFO("Auto-connect error stored in scanned list path=%s error=%d\n",
                             apDevPath, aenError);
+            btrCore_BTNotifyConnectError(pstlhBTRCore, &pstlhBTRCore->stScannedDevicesArr[i],
+                                         &pstlhBTRCore->stScannedDevStInfoArr[i], 0, aenError);
             return;
         }
     }
