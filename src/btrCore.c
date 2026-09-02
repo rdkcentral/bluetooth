@@ -81,8 +81,6 @@ static gint gIsBtrCoreTerminating = 0;
  * Public APIs take reader lock.
  * DeInit takes writer lock before freeing hBTRCore.
  */
-static GRWLock gBtrCoreLifeLock;
-
 #define BTRCORE_API_ENTER()                                      \
     do {                                                         \
         if (g_atomic_int_get(&gIsBtrCoreTerminating)) {          \
@@ -3565,8 +3563,6 @@ BTRCore_Init (
     }
     MEMSET_S(pstlhBTRCore, sizeof(stBTRCoreHdl), 0, sizeof(stBTRCoreHdl));
 
-    g_rw_lock_init(&gBtrCoreLifeLock);
-
     /* Reset the variable indicating btrCore is initialized, not terminating */
     g_atomic_int_set(&gIsBtrCoreTerminating, 0);
 
@@ -3734,10 +3730,6 @@ BTRCore_DeInit (
     /* Set Terminating variable when deinit is in progress. */
     g_atomic_int_set(&gIsBtrCoreTerminating, 1);
 
-    /* Wait for all in-flight API users to exit before freeing
-       the core handle. */
-    g_rw_lock_writer_lock(&gBtrCoreLifeLock);
-
     BTRCORELOG_INFO ("hBTRCore   =   %8p\n", hBTRCore);
 
     if (pstlhBTRCore->hidNameWaitInitialized) {
@@ -3893,9 +3885,6 @@ BTRCore_DeInit (
         g_free(hBTRCore);
         hBTRCore = NULL;
     }
-
-    g_rw_lock_writer_unlock(&gBtrCoreLifeLock);
-    g_rw_lock_clear(&gBtrCoreLifeLock);
 
     lenBTRCoreRet = ((lenExitStatusRunTask == enBTRCoreSuccess) &&
                      (lenExitStatusOutTask == enBTRCoreSuccess) &&
