@@ -321,6 +321,11 @@ typedef struct _stBTRCoreConnectionFailureCBInfo {
     unsigned short          ui16DevAppearanceBleSpec;
 } stBTRCoreConnectionFailureCBInfo;
 
+typedef struct _stBTRCorePairingFailureCBInfo {
+    tBTRCoreDevId           deviceId;
+    enBTRCoreConnectError   eDevicePairingError;
+} stBTRCorePairingFailureCBInfo;
+
 typedef struct _stBTRCoreSupportedService {
     unsigned int    uuid_value;
     BD_NAME         profile_name;
@@ -514,6 +519,7 @@ typedef struct _stBTRCoreDiscoveryCBInfo {
 typedef enBTRCoreRet (*fPtr_BTRCore_DeviceDiscCb) (stBTRCoreDiscoveryCBInfo* astBTRCoreDiscoveryCbInfo, void* apvUserData);
 typedef enBTRCoreRet (*fPtr_BTRCore_StatusCb) (stBTRCoreDevStatusCBInfo* apstDevStatusCbInfo, void* apvUserData);
 typedef enBTRCoreRet (*fPtr_BTRCore_ConnectionFailureCb) (stBTRCoreConnectionFailureCBInfo* apstConnectionFailureCbInfo, void* apvUserData);
+typedef enBTRCoreRet (*fPtr_BTRCore_PairingFailureCb) (stBTRCorePairingFailureCBInfo* apstPairingFailureCbInfo, void* apvUserData);
 typedef enBTRCoreRet (*fPtr_BTRCore_MediaStatusCb) (stBTRCoreMediaStatusCBInfo* apstMediaStatusCbInfo, void* apvUserData);
 typedef enBTRCoreRet (*fPtr_BTRCore_ConnIntimCb) (stBTRCoreConnCBInfo* apstConnCbInfo, int* api32ConnInIntimResp, void* apvUserData);
 typedef enBTRCoreRet (*fPtr_BTRCore_ConnAuthCb) (stBTRCoreConnCBInfo* apstConnCbInfo, int* api32ConnInAuthResp, void* apvUserData);
@@ -931,6 +937,7 @@ enBTRCoreRet BTRCore_IsDeviceConnectable (tBTRCoreHandle hBTRCore, tBTRCoreDevId
  */
 enBTRCoreRet BTRCore_ConnectDevice (tBTRCoreHandle hBTRCore, tBTRCoreDevId aBTRCoreDevId, enBTRCoreDeviceType aenBTRCoreDevType);
 enBTRCoreRet BTRCore_GetDeviceConnectError (tBTRCoreHandle hBTRCore, tBTRCoreDevId aBTRCoreDevId, enBTRCoreDeviceType aenBTRCoreDevType, enBTRCoreConnectError* apenConnectError);
+enBTRCoreRet BTRCore_GetDevicePairingError (tBTRCoreHandle hBTRCore, tBTRCoreDevId aBTRCoreDevId, enBTRCoreConnectError* apenPairingError);
 
 /**
  * @brief  This method gracefully disconnects all connected profiles and then terminates  connection.
@@ -1370,6 +1377,7 @@ enBTRCoreRet BTRCore_RegisterDiscoveryCb (tBTRCoreHandle  hBTRCore, fPtr_BTRCore
 /* BTRCore_RegisterStatusCallback - callback for unsolicited status changes */
 enBTRCoreRet BTRCore_RegisterStatusCb (tBTRCoreHandle hBTRCore, fPtr_BTRCore_StatusCb afpcBBTRCoreStatus, void* apUserData);
 enBTRCoreRet BTRCore_RegisterConnectionFailureCb (tBTRCoreHandle hBTRCore, fPtr_BTRCore_ConnectionFailureCb afpcBBTRCoreConnectionFailure, void* apUserData);
+enBTRCoreRet BTRCore_RegisterPairingFailureCb (tBTRCoreHandle hBTRCore, fPtr_BTRCore_PairingFailureCb afpcBBTRCorePairingFailure, void* apUserData);
 
 /* BTRCore_RegisterMediaStatusCallback - callback for media state changes */
 enBTRCoreRet BTRCore_RegisterMediaStatusCb (tBTRCoreHandle hBTRCore, fPtr_BTRCore_MediaStatusCb afpcBBTRCoreMediaStatus, void* apUserData);

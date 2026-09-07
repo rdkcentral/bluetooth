@@ -218,6 +218,10 @@ typedef void (*fPtr_BtrCore_BTConnectErrorCb)(const char* apDevPath,
                                               enBTDeviceConnectError aenError,
                                               void* apUserData);
 
+typedef void (*fPtr_BtrCore_BTPairErrorCb)(const char* apDevPath,
+                                           enBTDeviceConnectError aenError,
+                                           void* apUserData);
+
 /* Reported for BlueZ connect/reconnect failures. */
 typedef void (*fPtr_BtrCore_BTAutoConnectErrorCb)(const char* apDevPath,
                                                   enBTDeviceConnectError aenError,
@@ -1553,6 +1557,7 @@ int   BtrCore_BTGetBluetoothVersion (char* version);
 int   BtrCore_BTRegisterAdapterStatusUpdateCb (void* apBtConn, fPtr_BtrCore_BTAdapterStatusUpdateCb afpcBAdapterStatusUpdate, void* apUserData);
 int   BtrCore_BTRegisterDevStatusUpdateCb (void* apBtConn, fPtr_BtrCore_BTDevStatusUpdateCb afpcBDevStatusUpdate, void* apUserData);
 int   BtrCore_BTRegisterConnectErrorCb (void* apBtConn, fPtr_BtrCore_BTConnectErrorCb afpcBConnectError, void* apUserData);
+int   BtrCore_BTRegisterPairErrorCb (void* apBtConn, fPtr_BtrCore_BTPairErrorCb afpcBPairError, void* apUserData);
 int   BtrCore_BTRegisterAutoConnectErrorCb (void* apBtConn, fPtr_BtrCore_BTAutoConnectErrorCb afpcBAutoConnectError, void* apUserData);
 int   BtrCore_BTRegisterMediaStatusUpdateCb (void* apBtConn, fPtr_BtrCore_BTMediaStatusUpdateCb afpcBMediaStatusUpdate, void* apUserData);
 int   BtrCore_BTRegisterConnIntimationCb (void* apBtConn, fPtr_BtrCore_BTConnIntimCb afpcBConnIntim, void* apUserData);

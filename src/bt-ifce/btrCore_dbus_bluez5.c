@@ -116,6 +116,9 @@ typedef struct _stBtIfceHdl {
     fPtr_BtrCore_BTConnectErrorCb           fpcBConnectError;
     void*                                   pcBConnectErrorUserData;
 
+    fPtr_BtrCore_BTPairErrorCb              fpcBPairError;
+    void*                                   pcBPairErrorUserData;
+
     fPtr_BtrCore_BTAutoConnectErrorCb       fpcBAutoConnectError;
     void*                                   pcBAutoConnectErrorUserData;
 
@@ -1105,10 +1108,10 @@ btrCore_BTPairDeviceReply (
                               lpstContext->pcDevicePath,
                               dbus_message_get_error_name(lpDBusReply));
             if (lDBusErr.name && !strcmp(lDBusErr.name, "org.bluez.Error.AuthenticationFailed") &&
-                lpstContext->pstBtIfce->fpcBConnectError) {
-                lpstContext->pstBtIfce->fpcBConnectError(lpstContext->pcDevicePath,
-                                                         enBTDevPairErrorAuthenticationFailed,
-                                                         lpstContext->pstBtIfce->pcBConnectErrorUserData);
+                lpstContext->pstBtIfce->fpcBPairError) {
+                lpstContext->pstBtIfce->fpcBPairError(lpstContext->pcDevicePath,
+                                                      enBTDevPairErrorAuthenticationFailed,
+                                                      lpstContext->pstBtIfce->pcBPairErrorUserData);
             }
             btrCore_BTHandleDusError(&lDBusErr, __LINE__, __FUNCTION__);
         }
@@ -5566,10 +5569,10 @@ BtrCore_BTPerformAdapterOp (
             if (!lpDBusReply) {
                 BTRCORELOG_ERROR ("Pairing failed...\n");
                 if (lDBusErr.name && !strcmp(lDBusErr.name, "org.bluez.Error.AuthenticationFailed") &&
-                    pstlhBtIfce->fpcBConnectError) {
-                    pstlhBtIfce->fpcBConnectError(deviceObjectPath,
-                                                  enBTDevPairErrorAuthenticationFailed,
-                                                  pstlhBtIfce->pcBConnectErrorUserData);
+                    pstlhBtIfce->fpcBPairError) {
+                    pstlhBtIfce->fpcBPairError(deviceObjectPath,
+                                               enBTDevPairErrorAuthenticationFailed,
+                                               pstlhBtIfce->pcBPairErrorUserData);
                 }
                 btrCore_BTHandleDusError(&lDBusErr, __LINE__, __FUNCTION__);
                 return -1;
@@ -5601,6 +5604,8 @@ BtrCore_BTPerformAdapterOp (
             }
             if (!lpDBusPendC ||
                 !dbus_pending_call_set_notify(lpDBusPendC, btrCore_BTPairDeviceReply, lpstPairContext, NULL)) {
+                if (lpDBusPendC)
+                    dbus_pending_call_unref(lpDBusPendC);
                 free(lpstPairContext);
                 dbus_message_unref(lpDBusMsg);
                 return -1;
@@ -8004,6 +8009,22 @@ BtrCore_BTRegisterConnectErrorCb (
 
     pstlhBtIfce->fpcBConnectError = afpcBConnectError;
     pstlhBtIfce->pcBConnectErrorUserData = apUserData;
+    return 0;
+}
+
+int
+BtrCore_BTRegisterPairErrorCb (
+    void* apBtIfceHdl,
+    fPtr_BtrCore_BTPairErrorCb afpcBPairError,
+    void* apUserData
+) {
+    stBtIfceHdl* pstlhBtIfce = apBtIfceHdl;
+
+    if (!pstlhBtIfce || !afpcBPairError)
+        return -1;
+
+    pstlhBtIfce->fpcBPairError = afpcBPairError;
+    pstlhBtIfce->pcBPairErrorUserData = apUserData;
     return 0;
 }
 

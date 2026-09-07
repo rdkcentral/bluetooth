@@ -150,6 +150,7 @@ typedef struct _stBTRCoreDevStateInfo {
      * explicit Connect()/Pair() D-Bus reply, so the explicit result always
      * wins in BTRCore_GetDeviceConnectError. */
     enBTRCoreConnectError   eDeviceAutoConnectError;
+    enBTRCoreConnectError   eDevicePairingError;
 } stBTRCoreDevStateInfo;
 
 
@@ -180,6 +181,7 @@ typedef struct _stBTRCoreHdl {
     unsigned int                    numOfScannedDevices;
     stBTRCoreBTDevice               stScannedDevicesArr[BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES];
     stBTRCoreDevStateInfo           stScannedDevStInfoArr[BTRCORE_MAX_NUM_BT_DISCOVERED_DEVICES];
+    GMutex                          scannedPairingMutex;
 
     unsigned int                    numOfPairedDevices;
     stBTRCoreBTDevice               stKnownDevicesArr[BTRCORE_MAX_NUM_BT_DEVICES];
@@ -195,6 +197,7 @@ typedef struct _stBTRCoreHdl {
     fPtr_BTRCore_DeviceDiscCb       fpcBBTRCoreDeviceDisc;
     fPtr_BTRCore_StatusCb           fpcBBTRCoreStatus;
     fPtr_BTRCore_ConnectionFailureCb fpcBBTRCoreConnectionFailure;
+    fPtr_BTRCore_PairingFailureCb   fpcBBTRCorePairingFailure;
     fPtr_BTRCore_MediaStatusCb      fpcBBTRCoreMediaStatus;
     fPtr_BTRCore_ConnIntimCb        fpcBBTRCoreConnIntim; 
     fPtr_BTRCore_ConnAuthCb         fpcBBTRCoreConnAuth;
@@ -202,6 +205,7 @@ typedef struct _stBTRCoreHdl {
     void*                           pvcBDevDiscUserData;
     void*                           pvcBStatusUserData;
     void*                           pvcBConnectionFailureUserData;
+    void*                           pvcBPairingFailureUserData;
     void*                           pvcBMediaStatusUserData;
     void*                           pvcBConnIntimUserData;
     void*                           pvcBConnAuthUserData;
@@ -283,6 +287,7 @@ static gpointer btrCore_BatteryLevelThread( gpointer apsthBTRCore);
 STATIC  int btrCore_BTAdapterStatusUpdateCb (enBTAdapterProp aeBtAdapterProp, stBTAdapterInfo* apstBTAdapterInfo,  void* apUserData);
 STATIC  int btrCore_BTDeviceStatusUpdateCb (enBTDeviceType aeBtDeviceType, enBTDeviceState aeBtDeviceState, stBTDeviceInfo* apstBTDeviceInfo,  void* apUserData);
 STATIC  void btrCore_BTConnectErrorCb (const char* apDevPath, enBTDeviceConnectError aenError, void* apUserData);
+STATIC  void btrCore_BTPairErrorCb (const char* apDevPath, enBTDeviceConnectError aenError, void* apUserData);
 STATIC  void btrCore_BTAutoConnectErrorCb (const char* apDevPath, enBTDeviceConnectError aenError, void* apUserData);
 STATIC  int btrCore_BTDeviceConnectionIntimationCb (enBTDeviceType  aeBtDeviceType, stBTDeviceInfo* apstBTDeviceInfo, unsigned int aui32devPassKey, unsigned char ucIsReqConfirmation, void* apUserData);
 STATIC  int btrCore_BTDeviceAuthenticationCb (enBTDeviceType  aeBtDeviceType, stBTDeviceInfo* apstBTDeviceInfo, void* apUserData);
@@ -341,6 +346,7 @@ btrCore_InitDataSt (
         apsthBTRCore->stScannedDevStInfoArr[i].eDeviceCurrState = enBTRCoreDevStInitialized;
         apsthBTRCore->stScannedDevStInfoArr[i].eDeviceConnectError = enBTRCoreConnectErrorUnknown;
         apsthBTRCore->stScannedDevStInfoArr[i].eDeviceAutoConnectError = enBTRCoreConnectErrorUnknown;
+        apsthBTRCore->stScannedDevStInfoArr[i].eDevicePairingError = enBTRCoreConnectErrorUnknown;
     }
 
     apsthBTRCore->numOfScannedDevices = 0;
@@ -365,6 +371,7 @@ btrCore_InitDataSt (
         apsthBTRCore->stKnownDevStInfoArr[i].eDeviceCurrState = enBTRCoreDevStInitialized;
         apsthBTRCore->stKnownDevStInfoArr[i].eDeviceConnectError = enBTRCoreConnectErrorUnknown;
         apsthBTRCore->stKnownDevStInfoArr[i].eDeviceAutoConnectError = enBTRCoreConnectErrorUnknown;
+        apsthBTRCore->stKnownDevStInfoArr[i].eDevicePairingError = enBTRCoreConnectErrorUnknown;
     }
 
     /* Callback Info */
@@ -377,6 +384,7 @@ btrCore_InitDataSt (
     apsthBTRCore->fpcBBTRCoreDeviceDisc     = NULL;
     apsthBTRCore->fpcBBTRCoreStatus         = NULL;
     apsthBTRCore->fpcBBTRCoreConnectionFailure = NULL;
+    apsthBTRCore->fpcBBTRCorePairingFailure = NULL;
     apsthBTRCore->fpcBBTRCoreMediaStatus    = NULL;
     apsthBTRCore->fpcBBTRCoreConnIntim      = NULL;
     apsthBTRCore->fpcBBTRCoreConnAuth       = NULL;
@@ -1252,7 +1260,6 @@ btrCore_AddDeviceToScannedDevicesArr (
             apsthBTRCore->stScannedDevStInfoArr[i].eDeviceCurrState = enBTRCoreDevStFound;
 
             apsthBTRCore->numOfScannedDevices++;
-
             break;
         }
     }
@@ -3628,6 +3635,7 @@ BTRCore_Init (
 
     g_mutex_init(&pstlhBTRCore->batteryLevelMutex);
     g_cond_init(&pstlhBTRCore->batteryLevelCond);
+    g_mutex_init(&pstlhBTRCore->scannedPairingMutex);
     g_mutex_init(&pstlhBTRCore->hidNameWaitMutex);
     g_cond_init(&pstlhBTRCore->hidNameWaitCond);
     pstlhBTRCore->hidNameWaitInitialized = TRUE;
@@ -3685,6 +3693,12 @@ BTRCore_Init (
 
     if(BtrCore_BTRegisterConnectErrorCb(pstlhBTRCore->connHdl, &btrCore_BTConnectErrorCb, pstlhBTRCore)) {
         BTRCORELOG_ERROR ("Failed to Register Connect Error CB - enBTRCoreInitFailure\n");
+        BTRCore_DeInit((tBTRCoreHandle)pstlhBTRCore);
+        return enBTRCoreInitFailure;
+    }
+
+    if(BtrCore_BTRegisterPairErrorCb(pstlhBTRCore->connHdl, &btrCore_BTPairErrorCb, pstlhBTRCore)) {
+        BTRCORELOG_ERROR ("Failed to Register Pair Error CB - enBTRCoreInitFailure\n");
         BTRCore_DeInit((tBTRCoreHandle)pstlhBTRCore);
         return enBTRCoreInitFailure;
     }
@@ -3835,6 +3849,7 @@ BTRCore_DeInit (
         g_async_queue_unref(pstlhBTRCore->pGAQueueOutTask);
         pstlhBTRCore->pGAQueueOutTask = NULL;
     }
+    g_mutex_clear(&pstlhBTRCore->scannedPairingMutex);
     g_mutex_lock(&pstlhBTRCore->batteryLevelMutex);
     if (pstlhBTRCore->batteryLevelThread)
     {
@@ -4731,13 +4746,18 @@ BTRCore_PairDevice (
         pDeviceAddress  = pstScannedDev->pcDeviceAddress;
 
 
-    if (!pstScannedDev || !pDeviceAddress || !strlen(pDeviceAddress)) {
+    if (!pstScannedDev || !pstScannedDev->bFound || !pDeviceAddress || !strlen(pDeviceAddress) ||
+        !strlen(pstScannedDev->pcDevicePath)) {
         BTRCORELOG_ERROR ("Failed to find device in Scanned devices list\n");
         return enBTRCoreDeviceNotFound;
     }
 
     BTRCORELOG_DEBUG ("We will pair     %s\n", pstScannedDev->pcDeviceName);
     BTRCORELOG_DEBUG ("We will address  %s\n", pDeviceAddress);
+
+    g_mutex_lock(&pstlhBTRCore->scannedPairingMutex);
+    pstlhBTRCore->stScannedDevStInfoArr[pstScannedDev - pstlhBTRCore->stScannedDevicesArr].eDevicePairingError = enBTRCoreConnectErrorUnknown;
+    g_mutex_unlock(&pstlhBTRCore->scannedPairingMutex);
 
     if ((pstScannedDev->enDeviceType == enBTRCore_DC_HID_Keyboard)      ||
         (pstScannedDev->enDeviceType == enBTRCore_DC_HID_Mouse)         ||
@@ -5268,6 +5288,33 @@ BTRCore_GetDeviceConnectError (
     }
 
     BTRCORELOG_WARN("Connect error device not found device=%llu\n", aBTRCoreDevId);
+    return enBTRCoreDeviceNotFound;
+}
+
+enBTRCoreRet
+BTRCore_GetDevicePairingError (
+    tBTRCoreHandle hBTRCore,
+    tBTRCoreDevId aBTRCoreDevId,
+    enBTRCoreConnectError* apenPairingError
+) {
+    stBTRCoreHdl* pstlhBTRCore = hBTRCore;
+    unsigned int ui32LoopIdx;
+
+    if (!pstlhBTRCore)
+        return enBTRCoreNotInitialized;
+    if (!apenPairingError)
+        return enBTRCoreInvalidArg;
+
+    *apenPairingError = enBTRCoreConnectErrorUnknown;
+    g_mutex_lock(&pstlhBTRCore->scannedPairingMutex);
+    for (ui32LoopIdx = 0; ui32LoopIdx < pstlhBTRCore->numOfScannedDevices; ui32LoopIdx++) {
+        if (aBTRCoreDevId == pstlhBTRCore->stScannedDevicesArr[ui32LoopIdx].tDeviceId) {
+            *apenPairingError = pstlhBTRCore->stScannedDevStInfoArr[ui32LoopIdx].eDevicePairingError;
+            g_mutex_unlock(&pstlhBTRCore->scannedPairingMutex);
+            return enBTRCoreSuccess;
+        }
+    }
+    g_mutex_unlock(&pstlhBTRCore->scannedPairingMutex);
     return enBTRCoreDeviceNotFound;
 }
 
@@ -7303,6 +7350,22 @@ BTRCore_RegisterConnectionFailureCb (
     return enBTRCoreSuccess;
 }
 
+enBTRCoreRet
+BTRCore_RegisterPairingFailureCb (
+    tBTRCoreHandle                hBTRCore,
+    fPtr_BTRCore_PairingFailureCb afpcBBTRCorePairingFailure,
+    void*                         apUserData
+) {
+    stBTRCoreHdl* pstlhBTRCore = hBTRCore;
+
+    if (!pstlhBTRCore || !afpcBBTRCorePairingFailure)
+        return enBTRCoreInvalidArg;
+
+    pstlhBTRCore->fpcBBTRCorePairingFailure = afpcBBTRCorePairingFailure;
+    pstlhBTRCore->pvcBPairingFailureUserData = apUserData;
+    return enBTRCoreSuccess;
+}
+
 
 enBTRCoreRet
 BTRCore_RegisterMediaStatusCb (
@@ -7536,6 +7599,37 @@ btrCore_BTConnectErrorCb (
 
     BTRCORELOG_WARN ("Connect error device not in known/scanned list path=%s error=%d\n",
                      apDevPath, aenError);
+}
+
+STATIC void
+btrCore_BTPairErrorCb (
+    const char* apDevPath,
+    enBTDeviceConnectError aenError,
+    void* apUserData
+) {
+    stBTRCoreHdl* pstlhBTRCore = apUserData;
+    stBTRCorePairingFailureCBInfo lstPairingFailureCbInfo;
+    int i;
+
+    if (!pstlhBTRCore || !apDevPath || aenError != enBTDevPairErrorAuthenticationFailed)
+        return;
+
+    MEMSET_S(&lstPairingFailureCbInfo, sizeof(lstPairingFailureCbInfo), 0, sizeof(lstPairingFailureCbInfo));
+    g_mutex_lock(&pstlhBTRCore->scannedPairingMutex);
+    for (i = 0; i < (int)pstlhBTRCore->numOfScannedDevices; i++) {
+        if (!strcmp(pstlhBTRCore->stScannedDevicesArr[i].pcDevicePath, apDevPath) &&
+            !pstlhBTRCore->stScannedDevicesArr[i].bDeviceConnected) {
+            pstlhBTRCore->stScannedDevStInfoArr[i].eDevicePairingError = (enBTRCoreConnectError)aenError;
+            lstPairingFailureCbInfo.deviceId = pstlhBTRCore->stScannedDevicesArr[i].tDeviceId;
+            lstPairingFailureCbInfo.eDevicePairingError = (enBTRCoreConnectError)aenError;
+            break;
+        }
+    }
+    g_mutex_unlock(&pstlhBTRCore->scannedPairingMutex);
+
+    if (lstPairingFailureCbInfo.deviceId && pstlhBTRCore->fpcBBTRCorePairingFailure)
+        pstlhBTRCore->fpcBBTRCorePairingFailure(&lstPairingFailureCbInfo,
+                                                pstlhBTRCore->pvcBPairingFailureUserData);
 }
 
 STATIC  void
