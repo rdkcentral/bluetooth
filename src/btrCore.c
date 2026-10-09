@@ -1497,9 +1497,9 @@ btrCore_PopulateListOfPairedDevices (
     /* Prevent UAF during teardown is in progress */
     BTRCORE_API_ENTER();
 
-    if (!apsthBTRCore) {
-        BTRCORELOG_WARN("apsthBTRCore is null\n");
-        return enBTRCoreNotInitialized;
+    if (!apsthBTRCore || !apsthBTRCore->connHdl || !pAdapterPath) {
+        BTRCORELOG_ERROR ("Invalid args or BTRCore connection released\n");
+        return enBTRCoreFailure;
     }
 
     if ((pstBTPairedDeviceInfo = g_malloc0(sizeof(stBTPairedDeviceInfo))) == NULL) {
@@ -3871,11 +3871,12 @@ BTRCore_DeInit (
     }
 
     if (pstlhBTRCore->connHdl) {
-        if (BtrCore_BTDeInitReleaseConnection(pstlhBTRCore->connHdl)) {
+        void* tmpConnHdl = pstlhBTRCore->connHdl;
+        pstlhBTRCore->connHdl = NULL;
+        if (BtrCore_BTDeInitReleaseConnection(tmpConnHdl)) {
             BTRCORELOG_ERROR ("Failure BtrCore_BTDeInitReleaseConnection\n");
             lenBTRCoreRet = enBTRCoreFailure;
         }
-        pstlhBTRCore->connHdl = NULL;
     }
 
     if (hBTRCore) {
