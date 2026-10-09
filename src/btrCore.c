@@ -74,6 +74,18 @@ int b_rdk_logger_enabled = 0;
 #define BTRCORE_GOOGLE_OUI_LENGTH 8
 #define BTCORE_DEFAULT_CONTROLLER_NAME "Game Controller"
 
+/* Prevent UAF during teardown */
+static gint gIsBtrCoreTerminating = 0;
+
+/* Guards against new public API entry once teardown begin */
+#define BTRCORE_API_ENTER()                                      \
+    do {                                                         \
+        if (g_atomic_int_get(&gIsBtrCoreTerminating)) {          \
+            BTRCORELOG_ERROR ("Termination is in progress, from %s\n", __FUNCTION__); \
+            return enBTRCoreNotInitialized;                      \
+        }                                                        \
+    } while (0)
+
 static char * BTRCORE_REMOTE_OUI_VALUES[] = {
     "20:44:41", //LC103
     "E8:0F:C8", //EC302
@@ -1482,10 +1494,18 @@ btrCore_PopulateListOfPairedDevices (
     stBTPairedDeviceInfo*   pstBTPairedDeviceInfo = NULL;
     stBTRCoreBTDevice       knownDevicesArr[BTRCORE_MAX_NUM_BT_DEVICES];
 
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
 
-    if ((pstBTPairedDeviceInfo = g_malloc0(sizeof(stBTPairedDeviceInfo))) == NULL)
+    if (!apsthBTRCore) {
+        BTRCORELOG_WARN("apsthBTRCore is null\n");
+        return enBTRCoreNotInitialized;
+    }
+
+    if ((pstBTPairedDeviceInfo = g_malloc0(sizeof(stBTPairedDeviceInfo))) == NULL) {
+        BTRCORELOG_WARN("btrCore: g_malloc0 failed\n");
         return enBTRCoreFailure;
-
+    }
 
     pstBTPairedDeviceInfo->numberOfDevices = 0;
     for (i_idx = 0; i_idx < BT_MAX_NUM_DEVICE; i_idx++) {
@@ -1681,6 +1701,14 @@ btrCore_GetDeviceInfo (
     unsigned int            ui32NumOfDevices        = 0;
     unsigned int            ui32LoopIdx             = 0;
 
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
+
+    if (!apsthBTRCore) {
+        BTRCORELOG_WARN("apsthBTRCore is null\n");
+        return enBTRCoreNotInitialized;
+    }
+
     if (!apsthBTRCore->numOfPairedDevices) {
         BTRCORELOG_INFO ("Possibly the list is not populated; like booted and connecting\n");
         btrCore_PopulateListOfPairedDevices(apsthBTRCore, apsthBTRCore->curAdapterPath);    /* Keep the list upto date */
@@ -1848,6 +1876,14 @@ btrCore_GetDeviceInfoKnown (
 ) {
     unsigned int            ui32NumOfDevices        = 0;
     unsigned int            ui32LoopIdx             = 0;
+
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
+
+    if (!apsthBTRCore) {
+        BTRCORELOG_WARN("apsthBTRCore is null\n");
+        return enBTRCoreNotInitialized;
+    }
 
     if (!apsthBTRCore->numOfPairedDevices) {
         BTRCORELOG_INFO ("Possibly the list is not populated; like booted and connecting\n");
@@ -3524,6 +3560,8 @@ BTRCore_Init (
     }
     MEMSET_S(pstlhBTRCore, sizeof(stBTRCoreHdl), 0, sizeof(stBTRCoreHdl));
 
+    /* Reset the variable indicating btrCore is initialized, not terminating */
+    g_atomic_int_set(&gIsBtrCoreTerminating, 0);
 
     pstlhBTRCore->connHdl = BtrCore_BTInitGetConnection();
     if (!pstlhBTRCore->connHdl) {
@@ -3685,6 +3723,9 @@ BTRCore_DeInit (
     }
 
     pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
+
+    /* Set Terminating variable when deinit is in progress. */
+    g_atomic_int_set(&gIsBtrCoreTerminating, 1);
 
     BTRCORELOG_INFO ("hBTRCore   =   %8p\n", hBTRCore);
 
@@ -4634,6 +4675,9 @@ BTRCore_PairDevice (
     int                     ispairable = 1;
     int                     PairableMode = 0;
 
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
+
     if (!hBTRCore) {
         BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
         return enBTRCoreNotInitialized;
@@ -4745,6 +4789,9 @@ BTRCore_UnPairDevice (
     enBTRCoreDeviceType     aenBTRCoreDevType = enBTRCoreUnknown;
     stBTRCoreBTDevice       pstScannedDevice;
 
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
+
     /* We can enhance the BTRCore with passcode support later point in time */
     if (!hBTRCore) {
         BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
@@ -4810,6 +4857,9 @@ BTRCore_GetListOfPairedDevices (
 ) {
     stBTRCoreHdl*   pstlhBTRCore = NULL;
     int             i32DevIdx = 0;
+
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
 
     if (!hBTRCore) {
         BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
@@ -5022,6 +5072,8 @@ BTRCore_IsDeviceConnectable (
     const char*         pDeviceMac = NULL;
     stBTRCoreBTDevice*  pstKnownDevice = NULL;
 
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
 
     if (!hBTRCore) {
         BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
@@ -5394,6 +5446,10 @@ enBTRCoreRet BTRCore_refreshLEActionListForGamepads(tBTRCoreHandle hBTRCore)
     FILE*           lpcBtmgmtCmd = NULL;
     int             i32DevIdx = 0;
     stBTRCoreHdl*   pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
+
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
+
     if (!pstlhBTRCore)
     {
         BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
@@ -5458,6 +5514,10 @@ enBTRCoreRet BTRCore_clearLEActionListForGamepads(tBTRCoreHandle hBTRCore)
     FILE*           lpcBtmgmtCmd = NULL;
     int             i32DevIdx = 0;
     stBTRCoreHdl*   pstlhBTRCore = (stBTRCoreHdl*)hBTRCore;
+
+    /* Prevent UAF during teardown is in progress */
+    BTRCORE_API_ENTER();
+
     if (!pstlhBTRCore)
     {
         BTRCORELOG_ERROR ("enBTRCoreNotInitialized\n");
